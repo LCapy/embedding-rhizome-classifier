@@ -1,0 +1,48 @@
+name: Keep HF Space Awake
+
+# Pings the /health endpoint every 24 hours so the free Space never
+# hits the 48-hour inactivity sleep limit.
+# Also runs on push to main so you can verify it works immediately.
+
+on:
+  schedule:
+    - cron: "0 12 * * *"   # every day at 12:00 UTC
+  push:
+    branches: [main]
+  workflow_dispatch:        # allow manual trigger from the Actions tab
+
+jobs:
+  ping:
+    name: Ping HF Space
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        env:
+          # Set this in your GitHub repo → Settings → Secrets → Actions
+          # Value: https://your-username-coredrill.hf.space
+          HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}
+        run: |
+          if [ -z "$HF_SPACE_URL" ]; then
+            echo "HF_SPACE_URL secret is not set. Skipping ping."
+            exit 0
+          fi
+
+          echo "Pinging $HF_SPACE_URL/health ..."
+
+          # Retry up to 5 times with 30s gaps — Space may be cold-starting
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+                     --max-time 120 \
+                     "$HF_SPACE_URL/health" || echo "000")
+            echo "Attempt $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ]; then
+              echo "Space is alive."
+              exit 0
+            fi
+            echo "Not ready yet, waiting 30s ..."
+            sleep 30
+          done
+
+          echo "WARNING: Space did not respond with 200 after 5 attempts."
+          # Do not fail the workflow — Space may just be rebuilding
+          exit 0
