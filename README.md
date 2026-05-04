@@ -1,12 +1,6 @@
 ---
 title: Coredrill — Rhizome Text Classifier
-emoji: 🌿
-colorFrom: green
-colorTo: gray
-sdk: docker
-pinned: false
-license: mit
-short_description: Geometry-native multilingual text classification, 238-node rhizomatic taxonomy
+Geometry-native multilingual text classification, 238-node rhizomatic taxonomy
 ---
 
 # Coredrill API
