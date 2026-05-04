@@ -1,6 +1,3 @@
----
-title: Coredrill — Rhizome Text Classifier
----
 
 # Coredrill API
 
