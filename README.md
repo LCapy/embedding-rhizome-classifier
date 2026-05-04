@@ -1,6 +1,5 @@
 ---
 title: Coredrill — Rhizome Text Classifier
-Geometry-native multilingual text classification, 238-node rhizomatic taxonomy
 ---
 
 # Coredrill API
