@@ -1,6 +1,6 @@
 # Free Deployment Guide
 
-Everything here is free. No credit card required anywhere.
+Everything here is open-source.
 
 ---
 
