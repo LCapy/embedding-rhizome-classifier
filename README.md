@@ -10,7 +10,9 @@ Based on the paper: **Geometry-Native Text Classification via High-Dimensional E
 
 ## What it does
 
-Coredrill maps any text — in any language — to a position in a hand-crafted 238-node semantic taxonomy. Instead of a softmax classifier, it uses the geometric structure of the embedding space: each taxonomy node has a centroid and a dispersion estimate (sigma) computed from 164,444 real-world training sentences. The output is not a single label. It is a **rhizome profile**: the set of semantic territories simultaneously activated by the text, their relative intensities, and a topological flow classification (Territorialization, Deterritorialization, Line of Flight, BwO Approach, Reterritorialization).
+Coredrill maps any text, in any of the 109 language, to a position in a crafted 238-node semantic taxonomy. 
+Instead of a softmax classifier, it uses the geometric structure of the embedding space: each taxonomy node has a centroid and a dispersion estimate (sigma) computed from 164,444 real-world sentences. 
+The output is not a single label. It is a **rhizome profile**: the set of semantic territories simultaneously activated by the text, their relative intensities, and a topological flow classification (Territorialization, Deterritorialization, Line of Flight, BwO Approach, Reterritorialization).
 
 The winner selection uses the **Gram-inverse score**:
 
