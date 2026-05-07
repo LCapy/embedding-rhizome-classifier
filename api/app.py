@@ -23,7 +23,8 @@ from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, Security, status
+from fastapi import FastAPI, HTTPException, Security, status, UploadFile
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
@@ -76,6 +77,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 from rhizome_engine import (  # type: ignore
     predict,
     analyze_text_rhizome,
+    analyze_text_rhizome_v2,
+    gram_inverse_scores,
     SKIP_NODES,
 )
 
@@ -195,23 +198,39 @@ def _run_predict(text: str, tau: float | None) -> dict:
     cd = _get_coredrill()
     model = _get_model()
     t0 = time.perf_counter()
-    result = analyze_text_rhizome(cd, text, model, tau=tau or cd.get("tau", 0.1), print_output=False)
+    result = analyze_text_rhizome_v2(cd, text, model, tau=tau or cd.get("tau", 0.1), print_output=False)
     result["_latency_ms"] = (time.perf_counter() - t0) * 1000
     return result
 
 
-def _build_response(raw: dict, full: bool = False) -> PredictResponse:
+def _build_response(raw: dict, full: bool = False) -> PredictionResponse:
     pred = raw["prediction"]
     active = raw.get("active_overlap_set", [])
-
-    # lineage: flatten the best path
-    paths = pred.get("best_lineage_paths", [])
-    lineage = paths[0] if paths else [pred.get("best_node", "")]
-
-    # flow
+    results_all = raw.get("results", [])
+    cd = _get_coredrill()
+    tree = cd.get("tree", {})
+    gram_winner = raw.get("gram_winner")
+    if gram_winner and gram_winner not in SKIP_NODES:
+        best_node = gram_winner
+    else:
+        rec = raw.get("recommended_winner")
+        if rec and isinstance(rec, dict) and rec.get("node"):
+            best_node = rec["node"]
+        elif results_all:
+            best_node = results_all[0]["node"]
+        else:
+            best_node = pred.get("best_node", "unknown")
+    best_level = int(tree.get(best_node, {}).get("level", pred.get("best_level", -1)))
+    best_result = next((r for r in results_all if r["node"] == best_node), None)
+    confidence = round(best_result["conf"], 4) if best_result else round(pred.get("top_level_confidence", 0.0), 4)
+    backbone = cd.get("taxonomy_backbone", {})
+    lineage_map = backbone.get("lineage_paths", {})
+    paths = lineage_map.get(best_node, [])
+    paths = [[n for n in p if n not in SKIP_NODES] for p in paths]
+    paths = [p for p in paths if p]
+    lineage = paths[0] if paths else [best_node]
     from rhizome_engine import _deleuzian_flow  # type: ignore
-    flow = _deleuzian_flow(active, raw.get("results", []), pred)
-
+    flow = _deleuzian_flow(active, results_all, pred)
     def _node_result(r: dict) -> NodeResult:
         return NodeResult(
             node=r["node"],
@@ -221,17 +240,15 @@ def _build_response(raw: dict, full: bool = False) -> PredictResponse:
             production_score=round(r["production_score"], 4),
             sigma_dist=round(r["sigma_dist"], 3),
         )
-
     active_results = [_node_result(r) for r in active if r["node"] not in SKIP_NODES]
     ranked = None
     if full:
-        ranked = [_node_result(r) for r in raw.get("results", [])[:40] if r["node"] not in SKIP_NODES]
-
-    return PredictResponse(
+        ranked = [_node_result(r) for r in results_all[:40] if r["node"] not in SKIP_NODES]
+    return PredictionResponse(
         text=raw["text"],
-        best_node=pred.get("best_node", "unknown"),
-        best_level=pred.get("best_level", -1),
-        confidence=round(pred.get("top_level_confidence", 0.0), 4),
+        best_node=best_node,
+        best_level=best_level,
+        confidence=confidence,
         lineage=lineage,
         flow_type=flow["flow_type"],
         flow_label=flow["flow_label"],
@@ -283,7 +300,7 @@ def info():
     )
 
 
-@app.post("/predict", response_model=PredictResponse, tags=["classify"])
+@app.post("/predict", response_model=PredictionResponse, tags=["classify"])
 def predict_endpoint(
     req: PredictRequest,
     credentials: HTTPAuthorizationCredentials = Security(security),
@@ -344,6 +361,276 @@ def predict_batch(
     total_ms = (time.perf_counter() - t_total) * 1000
     return BatchPredictResponse(results=results, total_latency_ms=round(total_ms, 1))
 
+
+
+@app.post("/predict/text", response_class=PlainTextResponse, tags=["classify"])
+def predict_text(
+    req: PredictRequest,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    """
+    Classify a text and return a human-readable plain-text report
+    matching the terminal output style of the rhizome engine.
+    Useful for curl or browser testing.
+    """
+    _check_key(credentials)
+    try:
+        raw = _run_predict(req.text, req.tau)
+        resp = _build_response(raw, full=False)
+        active = raw.get("active_overlap_set", [])
+        results_all = raw.get("results", [])
+        gram_scores = raw.get("gram_scores", {})
+        gram_winner = raw.get("gram_winner", "n/a")
+
+        W = 72
+        lines = []
+        lines.append("=" * W)
+        lines.append("COREDRILL  —  RHIZOME PROFILE")
+        lines.append("=" * W)
+        text_short = req.text[:W-4] + ("..." if len(req.text) > W-4 else "")
+        lines.append(f"  {text_short}")
+        lines.append("")
+
+        # ── GRAM-INVERSE first ───────────────────────────────────────────
+        if gram_scores:
+            GW = 88
+            gram_state = raw.get("gram_state", "ok")
+            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
+            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
+            lines.append(f"  winner: {gram_winner}")
+            lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
+            lines.append("  " + "-" * GW)
+            result_nodes = {r["node"]: r for r in results_all if r["node"] not in SKIP_NODES}
+            gram_ranked = sorted(gram_scores.items(), key=lambda x: -x[1])
+            shown = 0
+            for node, gs in gram_ranked:
+                if shown >= 12 or node in SKIP_NODES:
+                    continue
+                r = result_nodes.get(node)
+                if not r:
+                    continue
+                cos  = r["score"]
+                sig  = r.get("sigma_eff", 0.0)
+                z    = r["sigma_dist"]
+                lap  = r.get("laplace_score", 0.0)
+                gau  = r.get("gaussian_score", 0.0)
+                man  = r.get("manifold_score", 0.0)
+                mass = r.get("mass", 0.0)
+                marker = " <<" if node == gram_winner else ""
+                lines.append(
+                    f"  {node:<28} {gs:+9.4f} {cos:7.4f} {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  {mass:5.1f}%{marker}"
+                )
+                shown += 1
+        else:
+            lines.append(f"  GRAM-INVERSE: not available")
+        lines.append("")
+
+        # ── Active territory profile ──────────────────────────────────────
+        lines.append(f"  {'NODE':<28}  {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
+        lines.append("  " + "-" * (W - 2))
+        for r in active[:6]:
+            if r["node"] in SKIP_NODES:
+                continue
+            z    = r["sigma_dist"]
+            mass = r.get("mass", 0.0)
+            sig  = r.get("sigma_eff", r.get("sigma_dist", 0.0))
+            lap  = r.get("laplace_score", 0.0)
+            gau  = r.get("gaussian_score", 0.0)
+            man  = r.get("manifold_score", 0.0)
+            filled = int((mass / 100.0) * 10)
+            bar = "|" * filled + "." * (10 - filled)
+            lines.append(f"  {r['node']:<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
+        lines.append("")
+
+        # ── Recommended and lineage ───────────────────────────────────────
+        lines.append(f"  RECOMMENDED: {resp.best_node}  (level {resp.best_level})")
+        lines.append("")
+        if resp.lineage:
+            lines.append("  CLADISTIC PATH:")
+            lines.append(f"  {' -> '.join(resp.lineage)}")
+            lines.append("")
+
+        # ── Flow topology ─────────────────────────────────────────────────
+        lines.append("  FLOW TOPOLOGY:")
+        lines.append("")
+        for r in active[:5]:
+            if r["node"] in SKIP_NODES:
+                continue
+            z    = r["sigma_dist"]
+            mass = r.get("mass", 0.0)
+            stem = "===>" if mass >= 80 else ("==- " if mass >= 40 else ("--- " if mass >= 20 else "... "))
+            pos  = "in  " if z < 1.0 else ("edge" if z < 1.5 else "out ")
+            lines.append(f"    {stem} {r['node']:<28} [{pos}] z={z:.2f}s  {mass:5.1f}%")
+        lines.append("")
+        lines.append(f"  PRIMARY FLOW: {resp.flow_label}")
+        lines.append("")
+        for fname, fval in sorted(resp.flow_intensities.items(), key=lambda x: -x[1]):
+            bar_len = int(fval * 28)
+            bar = "#" * bar_len + "." * (28 - bar_len)
+            marker = " <<" if fname == resp.flow_type else ""
+            label = fname.replace("_", " ").upper()
+            lines.append(f"    {label:<22} [{bar}] {fval:.2f}{marker}")
+        lines.append("")
+
+        # ── Full ranked table ─────────────────────────────────────────────
+        lines.append("  FULL RANKED TABLE (top 20)")
+        lines.append(f"  {'NODE':<28} {'sigma':>6} {'cos':>7} {'z':>6} {'prod':>9} {'mass':>7} {'lvl':>4}")
+        lines.append("  " + "-" * (W - 2))
+        for r in results_all[:20]:
+            if r["node"] in SKIP_NODES:
+                continue
+            lines.append(
+                f"  {r['node']:<28} {r.get('sigma_eff', 0):6.4f} {r['score']:7.4f} "
+                f"{r['sigma_dist']:5.2f}s {r['production_score']:9.4f} "
+                f"{r.get('mass', 0):6.1f}% {r['level']:4d}"
+            )
+        lines.append("")
+        lines.append("=" * W)
+
+        return "\n".join(lines)
+    except Exception as e:
+        import traceback
+        return f"ERROR: {e}\n{traceback.format_exc()}"
+
+
+@app.post("/predict/file", response_model=PredictionResponse, tags=["classify"])
+async def predict_file(
+    file: UploadFile,
+    tau: Optional[float] = None,
+    full: bool = False,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    """
+    Classify a plain-text file (.txt). Upload via multipart/form-data.
+    Returns the same JSON response as /predict.
+
+    Example:
+        curl -X POST https://your-space.hf.space/predict/file \
+             -H "Authorization: Bearer TOKEN" \
+             -F "file=@mytext.txt"
+    """
+    _check_key(credentials)
+    try:
+        content = await file.read()
+        text = content.decode("utf-8", errors="replace").strip()
+        if not text:
+            raise HTTPException(status_code=422, detail="File is empty.")
+        if len(text) > 8000:
+            text = text[:8000]
+        raw = _run_predict(text, tau)
+        return _build_response(raw, full=full)
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.exception("predict/file failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/predict/file/text", response_class=PlainTextResponse, tags=["classify"])
+async def predict_file_text(
+    file: UploadFile,
+    tau: Optional[float] = None,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+):
+    """
+    Classify a plain-text file (.txt) and return human-readable output.
+    Upload via multipart/form-data.
+
+    Example:
+        curl -X POST https://your-space.hf.space/predict/file/text \
+             -H "Authorization: Bearer TOKEN" \
+             -F "file=@mytext.txt"
+    """
+    _check_key(credentials)
+    try:
+        content = await file.read()
+        text = content.decode("utf-8", errors="replace").strip()
+        if not text:
+            return "ERROR: File is empty."
+        if len(text) > 8000:
+            text = text[:8000]
+        # Reuse the predict/text logic by calling _run_predict directly
+        from fastapi import Request
+        raw = _run_predict(text, tau)
+        resp = _build_response(raw, full=False)
+        active = raw.get("active_overlap_set", [])
+        results_all = raw.get("results", [])
+        gram_scores = raw.get("gram_scores", {})
+        gram_winner = raw.get("gram_winner", "n/a")
+
+        W = 72
+        lines = []
+        lines.append("=" * W)
+        lines.append(f"FILE: {file.filename}")
+        lines.append("COREDRILL  —  RHIZOME PROFILE")
+        lines.append("=" * W)
+        text_short = text[:W-4] + ("..." if len(text) > W-4 else "")
+        lines.append(f"  {text_short}")
+        lines.append("")
+
+        if gram_scores:
+            GW = 88
+            gram_state = raw.get("gram_state", "ok")
+            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
+            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
+            lines.append(f"  winner: {gram_winner}")
+            lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
+            lines.append("  " + "-" * GW)
+            result_nodes = {r["node"]: r for r in results_all if r["node"] not in SKIP_NODES}
+            gram_ranked = sorted(gram_scores.items(), key=lambda x: -x[1])
+            shown = 0
+            for node, gs in gram_ranked:
+                if shown >= 12 or node in SKIP_NODES:
+                    continue
+                r = result_nodes.get(node)
+                if not r:
+                    continue
+                cos  = r["score"]
+                sig  = r.get("sigma_eff", 0.0)
+                z    = r["sigma_dist"]
+                lap  = r.get("laplace_score", 0.0)
+                gau  = r.get("gaussian_score", 0.0)
+                man  = r.get("manifold_score", 0.0)
+                mass = r.get("mass", 0.0)
+                marker = " <<" if node == gram_winner else ""
+                lines.append(
+                    f"  {node:<28} {gs:+9.4f} {cos:7.4f} {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  {mass:5.1f}%{marker}"
+                )
+                shown += 1
+        lines.append("")
+
+        lines.append(f"  {'NODE':<28}  {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
+        lines.append("  " + "-" * (W - 2))
+        for r in active[:6]:
+            if r["node"] in SKIP_NODES:
+                continue
+            z    = r["sigma_dist"]
+            mass = r.get("mass", 0.0)
+            sig  = r.get("sigma_eff", r.get("sigma_dist", 0.0))
+            lap  = r.get("laplace_score", 0.0)
+            gau  = r.get("gaussian_score", 0.0)
+            man  = r.get("manifold_score", 0.0)
+            filled = int((mass / 100.0) * 10)
+            bar = "|" * filled + "." * (10 - filled)
+            lines.append(f"  {r['node']:<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
+        lines.append("")
+        lines.append(f"  RECOMMENDED: {resp.best_node}  (level {resp.best_level})")
+        lines.append("")
+        if resp.lineage:
+            lines.append(f"  CLADISTIC: {' -> '.join(resp.lineage)}")
+            lines.append("")
+        lines.append(f"  PRIMARY FLOW: {resp.flow_label}")
+        for fname, fval in sorted(resp.flow_intensities.items(), key=lambda x: -x[1]):
+            bar_len = int(fval * 28)
+            bar = "#" * bar_len + "." * (28 - bar_len)
+            marker = " <<" if fname == resp.flow_type else ""
+            lines.append(f"    {fname.replace('_',' ').upper():<22} [{bar}] {fval:.2f}{marker}")
+        lines.append("")
+        lines.append("=" * W)
+        return "\n".join(lines)
+    except Exception as e:
+        import traceback
+        return f"ERROR: {e}\n{traceback.format_exc()}"
 
 @app.get("/taxonomy/nodes", tags=["taxonomy"])
 def taxonomy_nodes(level: Optional[int] = None):

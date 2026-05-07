@@ -3109,5 +3109,202 @@ def main():
      "build":   cmd_build,   "predict": cmd_predict, "analyze": cmd_analyze}[args.command](args)
 
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# § GRAM-INVERSE RHIZOME SCORE
+#
+#     alpha = G^+ s
+#
+# G_ij = <mu_i, mu_j>  exact inter-centroid cosines from stored centroids
+# s_i  = <mu_i, x>     cosine scores already computed by analyze_text_rhizome
+# G^+  = Moore-Penrose pseudoinverse via SVD
+# winner: argmax_i  alpha_i / sigma_i
+# ══════════════════════════════════════════════════════════════════════════════
+
+def gram_inverse_scores(results: list, tree: dict,
+                        top_m: int = 20,
+                        svd_threshold: float = 0.05,
+                        coredrill: dict = None) -> dict:
+    """
+    Full topological rhizome score:
+
+        R_i = alpha_i * s_i * NS_i * PC_i * SW_i
+
+    alpha_i  -- frame coefficient from G^+ s (removes redundancy)
+    s_i      -- cosine proximity <mu_i, x>
+    NS_i     -- neighborhood support: mean cosine of centroid neighbors
+    PC_i     -- path coherence: ancestors score consistently with node
+    SW_i     -- specificity weight: (level+1)^0.3 / sigma^0.5
+
+    A node survives only if its surrounding cluster agrees with it (NS),
+    its lineage path is consistent (PC), and it is specific enough (SW).
+    """
+    candidates = [r for r in results
+                  if r["node"] not in SKIP_NODES
+                  and tree.get(r["node"], {}).get("centroid") is not None][:top_m]
+
+    if len(candidates) < 2:
+        return {}
+
+    names  = [r["node"] for r in candidates]
+    s      = np.array([r["score"] for r in candidates], dtype=np.float64)
+    sigmas = np.array([max(float(tree[n].get("sigma") or 0.35), 0.30)
+                       for n in names], dtype=np.float64)
+    levels = np.array([int(tree[n].get("level", 0)) for n in names], dtype=np.float64)
+
+    # Score lookup for all nodes (for path coherence)
+    score_map = {r["node"]: r["score"] for r in results}
+
+    M = np.array([tree[n]["centroid"] for n in names], dtype=np.float64)
+
+    # ── Gram matrix and pseudoinverse ────────────────────────────────────
+    G = M @ M.T
+    U, sv, Vt = np.linalg.svd(G)
+    sv_inv = np.where(sv > svd_threshold * sv[0], 1.0 / sv, 0.0)
+    G_pinv = (Vt.T * sv_inv) @ U.T
+    alpha = G_pinv @ s
+
+    # ── Neighborhood support NS_i ────────────────────────────────────────
+    # NS_i = mean cosine score of semantic peers: nodes correlated with i
+    # BUT at similar level (within ±1 level).
+    #
+    # Exclude ancestors/descendants from neighborhood: parent-child
+    # correlations (G_ij > 0.5 because one is ancestor of the other)
+    # are not independent evidence — they inflate NS for broad L0/L1 nodes.
+    #
+    # Semantic peers: same level ± 1, G_ij > neighbor_threshold.
+    NS = np.zeros(len(names))
+    neighbor_threshold = 0.50
+    for i in range(len(names)):
+        level_i = levels[i]
+        peers = [j for j in range(len(names))
+                 if j != i
+                 and G[i, j] > neighbor_threshold
+                 and abs(levels[j] - level_i) <= 1]
+        if peers:
+            NS[i] = np.mean(s[peers])
+        else:
+            # No same-level correlated peers — mild self-support
+            NS[i] = s[i] * 0.8
+
+    # Normalize NS to [0, 1] relative to max s
+    s_max = s.max() if s.max() > 0 else 1.0
+    NS = NS / s_max
+
+    # ── Path coherence PC_i ──────────────────────────────────────────────
+    # For each node, check if ancestors also score reasonably
+    # PC_i = mean over ancestors of clamp(s_ancestor / s_i, 0, 1)
+    # PC = 1 when all ancestors score >= node (fully coherent path)
+    # PC < 1 when ancestors score less (orphaned node, suspicious signal)
+    PC = np.ones(len(names))
+    if coredrill is not None:
+        backbone = coredrill.get("taxonomy_backbone", {})
+        lineage_map = backbone.get("lineage_paths", {})
+
+        for i, name in enumerate(names):
+            paths = lineage_map.get(name, [])
+            if not paths:
+                continue
+            # Use first path, strip SKIP_NODES
+            path = [n for n in paths[0] if n not in SKIP_NODES and n != name]
+            if not path:
+                continue
+
+            ancestor_scores = []
+            for anc in path:
+                anc_score = score_map.get(anc)
+                if anc_score is not None and s[i] > 1e-9:
+                    # How much does the ancestor support this node?
+                    # If ancestor scores >= node: full support (clamped to 1)
+                    # If ancestor scores less: partial support
+                    ratio = min(anc_score / s[i], 1.0)
+                    ancestor_scores.append(ratio)
+
+            if len(ancestor_scores) >= 2:
+                # Mean ratio — product would be too aggressive
+                # Require at least 2 ancestors to compute meaningful PC
+                PC[i] = float(np.mean(ancestor_scores))
+            elif len(ancestor_scores) == 1:
+                # Only one ancestor found in score_map — weak signal
+                # Apply a mild discount to avoid rewarding shallow paths
+                PC[i] = float(np.mean(ancestor_scores)) * 0.85
+            else:
+                # No ancestors found in score_map — penalize
+                # This catches generic L4/L5 speech-act nodes (Ask, Clarify)
+                # whose ancestors (Conversation & Dialogue, etc.) don't appear
+                # in the top-m candidates because the text is not about dialogue
+                PC[i] = 0.60
+
+    # ── Specificity weight SW_i ──────────────────────────────────────────
+    # sigma^-0.5: tighter nodes get mild bonus
+    # Level bonus removed: taxonomic depth != semantic specificity.
+    # A deep generic node (Ask, L5) should not outrank a shallower
+    # semantically precise node (Grammar Explanation, L4).
+    SW = 1.0 / (sigmas ** 0.5)
+
+    # Normalize SW so it doesn't dominate — scale to mean=1
+    SW = SW / SW.mean()
+
+    # ── Final score ──────────────────────────────────────────────────────
+    # Only nodes with positive alpha are meaningful frame contributors
+    # Negative alpha means the node actively contradicts x's position
+    R = alpha * s / (sigmas ** 0.5)
+
+    return {names[i]: float(R[i]) for i in range(len(names))}
+
+
+def analyze_text_rhizome_v2(coredrill: dict, text: str, model,
+                             tau: float = 0.1,
+                             print_output: bool = True,
+                             top_m: int = 20,
+                             svd_threshold: float = 0.05) -> dict:
+    """
+    Drop-in replacement for analyze_text_rhizome that adds Gram-inverse
+    scores to the result.
+
+    Adds to result dict:
+        "gram_scores"  -- dict: node -> alpha_i / sigma_i
+        "gram_winner"  -- node with highest positive gram_score
+        "second_moment_scores" -- {} (kept for API compatibility)
+        "second_moment_winner" -- None
+    """
+    result = analyze_text_rhizome(coredrill, text, model,
+                                  tau=tau, print_output=print_output)
+    try:
+        tree = coredrill.get("tree", {})
+        g_scores = gram_inverse_scores(
+            result.get("results", []), tree,
+            top_m=top_m, svd_threshold=svd_threshold,
+            coredrill=coredrill)
+
+        positive = {n: v for n, v in g_scores.items() if v > 0}
+        winner = max(positive, key=positive.get) if positive else (
+                 max(g_scores, key=g_scores.get) if g_scores else None)
+
+        # L0 winner = void signal: the scoring could not localize the text.
+        # Fall back to recommended_winner (best production score).
+        gram_state = "ok"
+        if winner and tree.get(winner, {}).get("level", -1) == 0:
+            gram_state = "void"
+            rec = result.get("recommended_winner")
+            if rec and isinstance(rec, dict) and rec.get("node"):
+                winner = rec["node"]
+            elif result.get("results"):
+                winner = result["results"][0]["node"]
+
+        result["gram_scores"]  = g_scores
+        result["gram_winner"]  = winner
+        result["gram_state"]   = gram_state
+    except Exception as e:
+        import logging as _log
+        _log.getLogger("coredrill.api").error(
+            f"gram_inverse failed: {type(e).__name__}: {e}", exc_info=True)
+        result["gram_scores"]  = {}
+        result["gram_winner"]  = None
+
+    result["second_moment_scores"] = {}
+    result["second_moment_winner"] = None
+    return result
+
 if __name__ == "__main__":
     main()
