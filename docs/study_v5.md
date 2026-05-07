@@ -2,13 +2,13 @@
 
 ## From Cross-Lingual Alignment to Rhizomatic Semantic Tagging at Scale
 
-**Lucas — Independent Researcher, 2026**
+**Lucas - Independent Researcher, 2026**
 
 \---
 
 ## Abstract
 
-This paper reports the complete arc of a two-phase research programme into whether the geometric structure of multilingual sentence embedding spaces is sufficient for text classification without trained classifiers, learned labels, or inference at classification time. Phase I (study\_v3) established the geometric foundations: 99.84% cross-lingual alignment recall on a parallel Russian–Spanish literary corpus, five formal theorems on the LaBSE manifold structure, and the empirical demonstration that topic dominates language as the primary geometric axis in 69.4% of triplets across 20 typological language families. Classification feasibility (H10) was left pending. Phase II (this study) answers H10 definitively by scaling the approach from 8 Wikipedia topics to a hand-crafted 238-node hierarchical taxonomy covering all major domains of human knowledge, training on 164,444 records from 16 heterogeneous real-world sources, and replacing the tree-walk classifier with a rhizomatic scoring architecture. Empirical results on real business emails show cosine similarities of 0.64–0.66 (well inside relevant node clouds, z < 1σ), flat prototype accuracy of 91.3%, and correct multi-node activation profiles that reflect the genuine semantic complexity of real-world text — a sentence about a duplicate bank charge simultaneously activates Customer Service, Double Charge Complaint, Complaint Handling, and Work \& Economy as co-primary semantic territories. **H10 is answered: geometry-native classification is feasible, and a rhizome architecture is its natural mathematical form.**
+This paper reports the complete arc of a two-phase research programme into whether the geometric structure of multilingual sentence embedding spaces is sufficient for text classification without trained classifiers, learned labels, or inference at classification time. Phase I (study\_v3) established the geometric foundations: 99.84% cross-lingual alignment recall on a parallel Russian–Spanish literary corpus, five formal theorems on the LaBSE manifold structure, and the empirical demonstration that topic dominates language as the primary geometric axis in 69.4% of triplets across 20 typological language families. Classification feasibility (H10) was left pending. Phase II (this study) answers H10 definitively by scaling the approach from 8 Wikipedia topics to a hand-crafted 238-node hierarchical taxonomy covering all major domains of human knowledge, training on 164,444 records from 16 heterogeneous real-world sources, and replacing the tree-walk classifier with a rhizomatic scoring architecture. Empirical results on real business emails show cosine similarities of 0.64–0.66 (well inside relevant node clouds, z < 1σ), flat prototype accuracy of 91.3%, and correct multi-node activation profiles that reflect the genuine semantic complexity of real-world text - a sentence about a duplicate bank charge simultaneously activates Customer Service, Double Charge Complaint, Complaint Handling, and Work \& Economy as co-primary semantic territories. **H10 is answered: geometry-native classification is feasible, and a rhizome architecture is its natural mathematical form.**
 
 \---
 
@@ -26,7 +26,7 @@ Phase I (study\_v3) investigated the geometric structure of the LaBSE embedding 
 
 ### 1.2 The Unanswered Question
 
-Phase I established that the LaBSE geometry *encodes* semantic structure. The remaining question was whether that structure is *exploitable* for practical classification of real-world, mixed-domain text — not eight curated Wikipedia articles, but the full breadth of human knowledge, applied to documents from the wild (emails, complaints, research notes, dialogues, news reports). Phase II answers this question.
+Phase I established that the LaBSE geometry *encodes* semantic structure. The remaining question was whether that structure is *exploitable* for practical classification of real-world, mixed-domain text - not eight curated Wikipedia articles, but the full breadth of human knowledge, applied to documents from the wild (emails, complaints, research notes, dialogues, news reports). Phase II answers this question.
 
 \---
 
@@ -45,13 +45,13 @@ The core contribution of Phase II is a hand-crafted 238-node hierarchical taxono
 |L4|Scenario|Doctor Appointment, Double Charge Complaint|\~60|
 |L5|Action|Request, Complain, Clarify, Confirm|\~26|
 
-The taxonomy is not a repurposed ontology — it was designed specifically to reflect how language actually clusters in LaBSE embedding space. Every node has a description, a parent, and a set of Wikipedia article mappings used for data collection. The taxonomy file (`TAXONOMY\\\_fixed.txt`) is a Python list of 238 dicts, machine-readable and human-interpretable.
+The taxonomy is not a repurposed ontology - it was designed specifically to reflect how language actually clusters in LaBSE embedding space. Every node has a description, a parent, and a set of Wikipedia article mappings used for data collection. The taxonomy file (`TAXONOMY\\\_fixed.txt`) is a Python list of 238 dicts, machine-readable and human-interpretable.
 
 **Design principles:**
 
 * Nodes at L0–L2 map to Wikipedia articles (encyclopedic content, stable centroids)
 * Nodes at L3–L5 map to conversational datasets (bitext, CFPB, SGD, DailyDialog, etc.)
-* Sibling nodes are semantically discriminable — their centroids are separable in embedding space
+* Sibling nodes are semantically discriminable - their centroids are separable in embedding space
 * The hierarchy reflects containment, not just thematic proximity
 
 ### 2.2 Data Pipeline
@@ -76,8 +76,8 @@ The taxonomy is not a repurposed ontology — it was designed specifically to re
 
 A single file pair is the source of truth:
 
-* `sentences.json` — every record from every source, unified schema: `{text, category, level, parent, lang, source}`
-* `embeddings.npz` — single `(N, 768)` float32 array; row `i = LaBSE(sentences.json\\\[i])`
+* `sentences.json` - every record from every source, unified schema: `{text, category, level, parent, lang, source}`
+* `embeddings.npz` - single `(N, 768)` float32 array; row `i = LaBSE(sentences.json\\\[i])`
 
 The row index is the only join key. The embed step is incremental: if `embeddings.npz` has fewer rows than `sentences.json`, only the new rows are embedded. The build step asserts `len(records) == len(embeddings)` before proceeding.
 
@@ -97,7 +97,7 @@ The row index is the only join key. The embed step is incremental: if `embedding
 |Embedding shape|(164,444, 768)|
 |Embedding file size|82 MB (leaner benchmark)|
 
-The 17 missing nodes (Commuting, Doctor Appointment, Agreement Formation, etc.) all have parents with data. Predictions stop at the parent level rather than guessing — the correct behavior for a system that knows what it doesn't know.
+The 17 missing nodes (Commuting, Doctor Appointment, Agreement Formation, etc.) all have parents with data. Predictions stop at the parent level rather than guessing - the correct behavior for a system that knows what it doesn't know.
 
 \---
 
@@ -125,13 +125,13 @@ Each level applied three gates: sigma gate (σ\_dist > threshold → DEEP SPACE)
 |"Can I get a refund on my double charge?"|DEEP SPACE at L0|✗ WRONG|
 |"I need to cancel my order"|WEAK at L0|✗ WRONG|
 
-**Root cause of failures:** The four L0 nodes had critically sparse direct records (Human Activity \& Society: n=66, Human Mind \& Knowledge: n=149). Short transactional sentences scored \~25% across all four branches — the L0 gates fired before any useful classification could occur.
+**Root cause of failures:** The four L0 nodes had critically sparse direct records (Human Activity \& Society: n=66, Human Mind \& Knowledge: n=149). Short transactional sentences scored \~25% across all four branches - the L0 gates fired before any useful classification could occur.
 
 ### 3.2 Failed Fix: Subtree Centroid Propagation
 
-The intuitive fix — compute each node's centroid from all descendant records rather than direct records — was implemented and tested. It catastrophically degraded flat accuracy from 91.3% to 69.2%.
+The intuitive fix - compute each node's centroid from all descendant records rather than direct records - was implemented and tested. It catastrophically degraded flat accuracy from 91.3% to 69.2%.
 
-**Why it fails:** When a parent node's centroid is computed from its entire subtree (all descendants), it moves toward wherever most of the subtree records cluster — typically the most populated leaf nodes. Sibling discrimination is destroyed because parent centroids now represent mixed spaces rather than their own specific semantic territory. A node with a well-calibrated tight centroid (σ = 0.37) now scores worse than a diffuse mixed centroid in the production formula.
+**Why it fails:** When a parent node's centroid is computed from its entire subtree (all descendants), it moves toward wherever most of the subtree records cluster - typically the most populated leaf nodes. Sibling discrimination is destroyed because parent centroids now represent mixed spaces rather than their own specific semantic territory. A node with a well-calibrated tight centroid (σ = 0.37) now scores worse than a diffuse mixed centroid in the production formula.
 
 **Lesson:** Centroids must always be computed from **direct records only**. The L0/L1 routing problem is a data problem (not enough directly-tagged records for broad concepts), not a centroid computation problem.
 
@@ -142,7 +142,7 @@ The tree walk failures revealed a deeper architectural mismatch. Real-world text
 * Human Activity \& Society → Work \& Economy → Billing \& Refunds (it's a financial complaint)
 * Communication \& Expression → Conversation \& Dialogue → Request (it's a question)
 
-Forcing a single tree path through an exclusive hierarchy is the wrong model. The taxonomy should be a **vocabulary**, not a routing tree. Classification should return a **semantic profile** — which nodes does this text activate, and how strongly? — not a single path.
+Forcing a single tree path through an exclusive hierarchy is the wrong model. The taxonomy should be a **vocabulary**, not a routing tree. Classification should return a **semantic profile** - which nodes does this text activate, and how strongly? - not a single path.
 
 This is the rhizome model (Deleuze \& Guattari, 1980): a structure with no mandatory root, where any node can connect to any other, where meaning is distributed rather than hierarchical, where a sentence enters the taxonomy at any level through any node that resonates with it.
 
@@ -157,7 +157,7 @@ Score all 238 nodes directly against the query embedding. No tree walk. No gates
 The production score formula:
 
 ```
-sigma\\\_z    = min(sigma\\\_eff, 0.45)         # sigma cap — diffuse nodes capped
+sigma\\\_z    = min(sigma\\\_eff, 0.45)         # sigma cap - diffuse nodes capped
 z          = (1 - cosine) / sigma\\\_z       # normalized distance
 lap        = -z
 gau        = -0.5 \\\* z²
@@ -186,11 +186,11 @@ This captures multi-topical texts: a long email about insurance claims and regul
 
 #### Mode 4: Rhizome Neighbor Graph
 
-At build time, the cosine similarity between all 238 node centroids is computed. Each node stores its top-K nearest neighbors with relation labels (direct\_lineage, shared\_ancestor, sibling, cross\_branch). At predict time, the winner's neighbors are reported as the **lateral semantic context** — other nodes that are geometrically close to the best match regardless of their tree position.
+At build time, the cosine similarity between all 238 node centroids is computed. Each node stores its top-K nearest neighbors with relation labels (direct\_lineage, shared\_ancestor, sibling, cross\_branch). At predict time, the winner's neighbors are reported as the **lateral semantic context** - other nodes that are geometrically close to the best match regardless of their tree position.
 
 ### 3.5 SKIP\_NODES: Blacklisting Contaminated Centroids
 
-Some nodes receive semantically mixed training data that produces diffuse, centrally-located centroids. These nodes appear near the top of every ranking because their high σ gives small z-scores across all queries — they are always "inside their cloud" because the cloud contains everything.
+Some nodes receive semantically mixed training data that produces diffuse, centrally-located centroids. These nodes appear near the top of every ranking because their high σ gives small z-scores across all queries - they are always "inside their cloud" because the cloud contains everything.
 
 **Identified contaminated nodes:**
 
@@ -204,7 +204,7 @@ These are added to `SKIP\\\_NODES` (a Python set at the top of the script) and e
 3. Top global matches display
 4. Lineage path construction
 
-Adding more nodes to SKIP\_NODES requires only editing the constant — no rebuild needed.
+Adding more nodes to SKIP\_NODES requires only editing the constant - no rebuild needed.
 
 \---
 
@@ -226,7 +226,7 @@ Adding more nodes to SKIP\_NODES requires only editing the constant — no rebui
 
 * Customer Service 100%, Complaint Handling 57%, Work \& Economy 50%
 
-**Cladistic path:** Human Activity \& Society → Work \& Economy → Customer Service (WEAK at L2, stops correctly — no deeper specific data)
+**Cladistic path:** Human Activity \& Society → Work \& Economy → Customer Service (WEAK at L2, stops correctly - no deeper specific data)
 
 **Assessment:** Correct. No noise nodes. The system correctly stops at L2 rather than guessing an L3 it has no data for.
 
@@ -259,7 +259,7 @@ Human Activity \\\& Society (L0, conf=45.8%) OK
 
 **Assessment:** Outstanding. Cosines of 0.64–0.66 (deeply inside relevant clouds, z < 1σ). Tree walk correctly identifies the most specific applicable node (`Complain` at L5) via the exact right taxonomic path (Billing \& Refunds → Double Charge Complaint → Complain). The rhizome profile captures the email's multi-dimensional nature: a formal written complaint (Complaint Handling) to a financial institution (Work \& Economy, Customer Service) about a specific billing error (Double Charge Complaint).
 
-**What the system correctly misses:** Rights \& Obligations and Refund Processing are not prominently activated — both have sparse training data. This is correct uncertainty reporting: the system activates only what it has evidence for.
+**What the system correctly misses:** Rights \& Obligations and Refund Processing are not prominently activated - both have sparse training data. This is correct uncertainty reporting: the system activates only what it has evidence for.
 
 ### 4.3 Comparison with Phase I Baseline
 
@@ -267,10 +267,10 @@ Human Activity \\\& Society (L0, conf=45.8%) OK
 |-|-|-|-|
 |Taxonomy size|8 nodes|238 nodes|+30×|
 |Training records|\~7,249|164,444|+23×|
-|Languages|20|1 (EN primary)|—|
-|Architecture|Soft K-means|Rhizome flat scoring|—|
-|"Refund" query|Not tested|Customer Service #1 ✓|—|
-|"Cancer diagnosis"|Not tested|Medicine → Diagnosis ✓|—|
+|Languages|20|1 (EN primary)|-|
+|Architecture|Soft K-means|Rhizome flat scoring|-|
+|"Refund" query|Not tested|Customer Service #1 ✓|-|
+|"Cancer diagnosis"|Not tested|Medicine → Diagnosis ✓|-|
 |Short transactional text|N/A|Correctly classified|✓|
 |H10 status|PENDING|**ANSWERED**|✓|
 
@@ -286,17 +286,17 @@ The most important calibration finding is that the production formula used in pr
 z = (1 - cosine) / min(sigma\\\_eff, 0.45)
 ```
 
-Without this cap, nodes with high σ (diffuse centroids built from mixed data) always achieve small z-scores regardless of actual semantic distance. They float to the top of every ranking. The cap ensures that nodes more diffuse than σ=0.45 receive no z-score advantage — their high sigma is treated as a data quality problem, not as evidence of a wide semantic cloud.
+Without this cap, nodes with high σ (diffuse centroids built from mixed data) always achieve small z-scores regardless of actual semantic distance. They float to the top of every ranking. The cap ensures that nodes more diffuse than σ=0.45 receive no z-score advantage - their high sigma is treated as a data quality problem, not as evidence of a wide semantic cloud.
 
 The companion threshold penalty `max(0, sigma\\\_eff - 0.40) \\\* 0.60` adds a direct production score penalty for diffuseness, further suppressing contaminated nodes.
 
-This is a new finding relative to Phase I. Phase I used Laplace bandwidth σ calibrated to within-class mean L1 distance (Theorem 1, σ\* = 7.82 for Fedorov). Phase II finds that in the multi-class 238-node setting, σ calibration must be capped above to prevent dominance by high-variance nodes — a qualitatively different regime where the problem is not too-wide bandwidth but too-diffuse centroids.
+This is a new finding relative to Phase I. Phase I used Laplace bandwidth σ calibrated to within-class mean L1 distance (Theorem 1, σ\* = 7.82 for Fedorov). Phase II finds that in the multi-class 238-node setting, σ calibration must be capped above to prevent dominance by high-variance nodes - a qualitatively different regime where the problem is not too-wide bandwidth but too-diffuse centroids.
 
 ### 5.2 Why Subtree Propagation Fails
 
 Phase II tested and rejected the hypothesis that parent node centroids should be computed from all descendant records. The failure mode is instructive:
 
-When `Human Activity \\\& Society` (66 direct records) is given the centroid of all 99,000 records in its subtree, it moves to the mean of all human activity text — near the sphere center, maximally diffuse, σ ≈ 0.70. This is geometrically the least discriminative position. The centroid should represent what *this specific level of abstraction* looks like, not the average of everything below it.
+When `Human Activity \\\& Society` (66 direct records) is given the centroid of all 99,000 records in its subtree, it moves to the mean of all human activity text - near the sphere center, maximally diffuse, σ ≈ 0.70. This is geometrically the least discriminative position. The centroid should represent what *this specific level of abstraction* looks like, not the average of everything below it.
 
 The correct fix for sparse L0/L1 nodes is to collect more Wikipedia text **directly tagged at that level** (articles about "Society", "Human behavior", "Everyday life" tagged as L0, not as their subdisciplines). The data problem must be fixed at data collection time, not at centroid computation time.
 
@@ -304,13 +304,13 @@ The correct fix for sparse L0/L1 nodes is to collect more Wikipedia text **direc
 
 The tree walk asks: *which single branch best describes this text?* The rhizome asks: *which nodes does this text activate, and how strongly?*
 
-For most academic text (physics paper, history article), the answers are identical — the text lives firmly in one node's territory. For real-world text (business emails, news articles, social media), the answers diverge fundamentally. A bank dispute email is simultaneously a financial transaction complaint, a customer service interaction, a legal rights assertion, and a formal written communication. No single node captures this — but the rhizome profile does.
+For most academic text (physics paper, history article), the answers are identical - the text lives firmly in one node's territory. For real-world text (business emails, news articles, social media), the answers diverge fundamentally. A bank dispute email is simultaneously a financial transaction complaint, a customer service interaction, a legal rights assertion, and a formal written communication. No single node captures this - but the rhizome profile does.
 
 This connects to Phase I's concept orbit analysis (§10, study\_v3): the orbit radius σ ≈ 0.92 is large because individual sentences vary substantially around their topic centroid. In the 238-node taxonomy, the equivalent statement is: real-world documents don't live in points, they live in *regions*, and those regions overlap across multiple taxonomy nodes. The rhizome score vector (one scalar per node) is the correct representation of that overlap.
 
 ### 5.4 Micro-Text Decomposition
 
-A paragraph or email is not a point in embedding space — it is a trajectory. The LaBSE encoder compresses the entire input to a single point, but the semantic content is distributed across subphrases that may activate different taxonomy regions. The micro-text decomposition (overlapping sliding windows, barycenter aggregation) recovers some of this distribution by forcing the encoder to process each semantic unit separately.
+A paragraph or email is not a point in embedding space - it is a trajectory. The LaBSE encoder compresses the entire input to a single point, but the semantic content is distributed across subphrases that may activate different taxonomy regions. The micro-text decomposition (overlapping sliding windows, barycenter aggregation) recovers some of this distribution by forcing the encoder to process each semantic unit separately.
 
 In practice, the barycenter tends to sit closer to the most informative parts of a document than the full-text embedding, which is pulled toward the dominant statistical pattern. For the bank dispute email (6 micro-chunks), the barycenter shows higher cosine similarities to complaint/billing nodes than the full-text embedding alone.
 
@@ -382,22 +382,22 @@ Without `--analyze`, returns the faster cladistic-only tree walk prediction.
 
 |#|Hypothesis|Phase I Status|Phase II Status|Key Evidence|
 |-|-|-|-|-|
-|H1|AUC = 1.0 under all metrics|✓ Supported|— (not retested)|Phase I: AUC = 1.000|
-|H2|DIEM independent of cosine|Conditional|—|r = 0.977 on S^767|
+|H1|AUC = 1.0 under all metrics|✓ Supported|- (not retested)|Phase I: AUC = 1.000|
+|H2|DIEM independent of cosine|Conditional|-|r = 0.977 on S^767|
 |H8|Laplace > cosine at optimal σ|✓ Supported|Extended|σ\* = 7.82, 6.7:1 ratio; Phase II: sigma-cap discovery|
 |H9|σ calibration improves Laplace|✓ Supported|Extended|Phase II: cap at 0.45, diffuse penalty|
 |H10|Geometry-native classification feasible|PENDING|**✓ ANSWERED**|91.3% flat accuracy; cos 0.64-0.66 on real emails|
-|H11|W1 is translation metric|✗ Revised|—|Signal = 0.0 (negative control)|
-|H11r|W1 detects language within discourse|✓ Supported|—|ARI 0.035 vs. 0.010|
+|H11|W1 is translation metric|✗ Revised|-|Signal = 0.0 (negative control)|
+|H11r|W1 detects language within discourse|✓ Supported|-|ARI 0.035 vs. 0.010|
 |Th A|Topic > language geometric axis|✓ Supported|✓ Extended|69.4% triplets; 3.24× centroid separation|
-|Th B|Discourse ≥ Topic ≥ Language variance|✓ Supported|—|Norms: 0.449 ≥ 0.449 ≥ 0.197|
-|Th C|W1 detects language within discourse|✓ Supported|—|7/8 clusters, ARI improvement|
+|Th B|Discourse ≥ Topic ≥ Language variance|✓ Supported|-|Norms: 0.449 ≥ 0.449 ≥ 0.197|
+|Th C|W1 detects language within discourse|✓ Supported|-|7/8 clusters, ARI improvement|
 |Th D|Wikipedia category recovery|Partial|Extended|91.3% flat accuracy at 238 nodes|
-|Th E|Ring structure|Partial|—|Confirmed ring, weak pitch|
-|**NEW**|Subtree propagation fails|—|✗ Refuted|91.3% → 69.2% accuracy drop|
-|**NEW**|Sigma-cap required (σ\_max = 0.45)|—|✓ New finding|Prevents high-σ node dominance|
-|**NEW**|Rhizome > tree for multi-topic text|—|✓ New finding|Profile captures semantic multiplicity|
-|**NEW**|238-node classification at scale|—|✓ Demonstrated|221/238 nodes, real-world validation|
+|Th E|Ring structure|Partial|-|Confirmed ring, weak pitch|
+|**NEW**|Subtree propagation fails|-|✗ Refuted|91.3% → 69.2% accuracy drop|
+|**NEW**|Sigma-cap required (σ\_max = 0.45)|-|✓ New finding|Prevents high-σ node dominance|
+|**NEW**|Rhizome > tree for multi-topic text|-|✓ New finding|Profile captures semantic multiplicity|
+|**NEW**|238-node classification at scale|-|✓ Demonstrated|221/238 nodes, real-world validation|
 
 \---
 
@@ -413,39 +413,39 @@ Phase I established that the LaBSE geometry encodes semantic structure. Phase II
 * Cosine similarities of 0.64–0.66 on real business emails (well inside relevant clouds, z < 1σ)
 * Correct activation of multiple semantically appropriate nodes simultaneously
 
-The classification is not approximate or noisy — a bank dispute email produces Customer Service and Double Charge Complaint as co-primary activations at 89–100% overlap, with correct tree walk all the way to L5 (`Complain`). This is precisely what a human categorizer would say about that email.
+The classification is not approximate or noisy - a bank dispute email produces Customer Service and Double Charge Complaint as co-primary activations at 89–100% overlap, with correct tree walk all the way to L5 (`Complain`). This is precisely what a human categorizer would say about that email.
 
 Hypothesis is answered: **geometry-native classification is feasible, does not require a trained classifier, and produces semantically correct multi-node profiles that a tree-walk classifier cannot produce.**
 
 ### 8.2 The Rhizome as the Correct Model
 
-The move from tree to rhizome is not just an engineering choice — it is the mathematically correct model for how text inhabits semantic space. From Phase I, Theorem E established that the LaBSE manifold has a ring-like topology in PCA space with topic as the angular coordinate. A ring has no root, no hierarchy — it is already a rhizome. The tree walk we imposed on it was always an approximation.
+The move from tree to rhizome is not just an engineering choice - it is the mathematically correct model for how text inhabits semantic space. From Phase I, Theorem E established that the LaBSE manifold has a ring-like topology in PCA space with topic as the angular coordinate. A ring has no root, no hierarchy - it is already a rhizome. The tree walk we imposed on it was always an approximation.
 
-In the 238-node taxonomy, the rhizome structure manifests as lateral edges between nodes from different branches: `Double Charge Complaint` (under Billing \& Refunds under Transactions under Work \& Economy) is a cross-branch neighbor of `Complaint Handling` (under Customer Service) and `Request` (under Communication \& Expression). A bank dispute email sits in the overlap zone of all three simultaneously — and the rhizome profile reports exactly this.
+In the 238-node taxonomy, the rhizome structure manifests as lateral edges between nodes from different branches: `Double Charge Complaint` (under Billing \& Refunds under Transactions under Work \& Economy) is a cross-branch neighbor of `Complaint Handling` (under Customer Service) and `Request` (under Communication \& Expression). A bank dispute email sits in the overlap zone of all three simultaneously - and the rhizome profile reports exactly this.
 
 ### 8.3 From 8 Topics to 238: What Scales and What Doesn't
 
 **What scales well:**
 
-* LaBSE embedding quality — cosines remain high (0.4–0.7 inside relevant clouds) even with 238 competing nodes
-* Centroid stability — nodes with 50+ direct records have stable, discriminative centroids
-* The production scoring formula — performs consistently across academic (Wikipedia) and conversational (bitext, CFPB) domains
+* LaBSE embedding quality - cosines remain high (0.4–0.7 inside relevant clouds) even with 238 competing nodes
+* Centroid stability - nodes with 50+ direct records have stable, discriminative centroids
+* The production scoring formula - performs consistently across academic (Wikipedia) and conversational (bitext, CFPB) domains
 
 **What doesn't scale:**
 
-* Strict tree walk — L0 gates fail on short transactional text because L0 nodes are semantically broad and require many direct records to form tight centroids
-* Subtree centroid propagation — catastrophically degrades sibling discrimination
-* Equal-σ assumptions — nodes from different source types have vastly different σ values (encyclopedic: σ ≈ 0.35–0.40; SGD task dialogues: σ ≈ 0.60–0.70); the scoring formula must adapt
+* Strict tree walk - L0 gates fail on short transactional text because L0 nodes are semantically broad and require many direct records to form tight centroids
+* Subtree centroid propagation - catastrophically degrades sibling discrimination
+* Equal-σ assumptions - nodes from different source types have vastly different σ values (encyclopedic: σ ≈ 0.35–0.40; SGD task dialogues: σ ≈ 0.60–0.70); the scoring formula must adapt
 
 ### 8.4 Limitations and Open Problems
 
 **Data sparsity at L0–L1:** The four L0 nodes remain the weakest part of the system. With only 66–375 direct records, their centroids are less stable than lower-level nodes. The correct fix is targeted Wikipedia collection for broad concepts ("Society", "Human behavior", "Everyday life") tagged directly at L0.
 
-**17 missing nodes:** All conversational L3–L5 nodes that require DailyDialog or MultiWOZ data. These datasets use legacy `.py` loading scripts incompatible with current HuggingFace `datasets` library versions. The nodes are gracefully absent — predictions stop at their parent rather than guessing.
+**17 missing nodes:** All conversational L3–L5 nodes that require DailyDialog or MultiWOZ data. These datasets use legacy `.py` loading scripts incompatible with current HuggingFace `datasets` library versions. The nodes are gracefully absent - predictions stop at their parent rather than guessing.
 
 **SKIP\_NODES are manually identified:** Contaminated centroids (Dialogue Scene, Request–Response Dialogue) are identified by inspecting σ values and source counts, not automatically detected. An automated contamination detection step (σ > threshold AND source\_entropy < threshold) would make the system more robust.
 
-**Single embedding model:** All results use LaBSE. The geometry may differ for other multilingual encoders (SONAR, mE5, multilingual-E5-large). The rhizome architecture is encoder-agnostic — the centroids and σ values would simply need to be recomputed.
+**Single embedding model:** All results use LaBSE. The geometry may differ for other multilingual encoders (SONAR, mE5, multilingual-E5-large). The rhizome architecture is encoder-agnostic - the centroids and σ values would simply need to be recomputed.
 
 \---
 
@@ -461,7 +461,7 @@ This paper has completed the arc from geometric foundations (Phase I, study\_v3)
 
 The key technical contributions of Phase II are: (1) the sigma-cap and threshold diffuseness penalty as essential calibrations for multi-class scoring; (2) the empirical refutation of subtree centroid propagation as a fix for sparse parent nodes; (3) the rhizome architecture as the mathematically appropriate model for multi-topic semantic tagging; (4) the micro-text decomposition and barycenter embedding as a method for capturing the semantic complexity of longer documents; and (5) a complete, self-contained pipeline that trains on 16 heterogeneous sources and classifies at query time using only the coredrill JSON and LaBSE (no external files, no database, no training loop at inference).
 
-H10 — the feasibility of geometry-native classification — is answered affirmatively.
+H10 - the feasibility of geometry-native classification - is answered affirmatively.
 
 \---
 
@@ -484,11 +484,11 @@ All Phase I references apply (Bregman, Ethayarajh, Feng et al., Peyré \& Cuturi
 
 The 238-node taxonomy was designed from scratch over the course of Phase II. Key design decisions:
 
-**Why 6 levels?** Four levels (L0–L3) is sufficient for academic/encyclopedic text. Two additional levels (L4–L5) are needed for conversational text where the *scenario* (Doctor Appointment) and the *communicative act* (Request, Complain) must be distinguished. Six levels covers the full range from "Natural World" (L0) to "Confirm" (L5 — a single communicative act).
+**Why 6 levels?** Four levels (L0–L3) is sufficient for academic/encyclopedic text. Two additional levels (L4–L5) are needed for conversational text where the *scenario* (Doctor Appointment) and the *communicative act* (Request, Complain) must be distinguished. Six levels covers the full range from "Natural World" (L0) to "Confirm" (L5 - a single communicative act).
 
 **Why these L0 branches?** `Natural World`, `Human Mind \\\& Knowledge`, `Human Activity \\\& Society`, `Communication \\\& Expression`. These four cover all possible text: text about the physical world, text that reasons or defines, text about what people do, and text that constitutes a communicative act. Every sentence belongs to at least one; many belong to more than one (the rhizome).
 
-**Why these L5 action nodes?** The L5 action nodes (Request, Confirm, Complain, Agree, Clarify, etc.) are speech act categories in the Austin/Searle tradition. They answer "what is this sentence *doing*?" rather than "what is it *about*?". This captures a dimension of meaning that purely topical nodes (L2–L4) cannot — a sentence about medicine can be a Question (Information Seeking), a Report (Diagnosis), or a Directive (Treatment). The L5 nodes provide this pragmatic layer.
+**Why these L5 action nodes?** The L5 action nodes (Request, Confirm, Complain, Agree, Clarify, etc.) are speech act categories in the Austin/Searle tradition. They answer "what is this sentence *doing*?" rather than "what is it *about*?". This captures a dimension of meaning that purely topical nodes (L2–L4) cannot - a sentence about medicine can be a Question (Information Seeking), a Report (Diagnosis), or a Directive (Treatment). The L5 nodes provide this pragmatic layer.
 
 \---
 
@@ -573,7 +573,7 @@ SKIP\\\_NODES: set = {
 }
 ```
 
-To add a node: append its exact name to this set. No rebuild required — takes effect immediately at predict time.
+To add a node: append its exact name to this set. No rebuild required - takes effect immediately at predict time.
 
 \---
 
@@ -595,26 +595,26 @@ To add a node: append its exact name to this set. No rebuild required — takes 
 
 \---
 
-## Appendix E: Phase I.5 — The Anchor-Only Coredrill (Intermediate Experiment)
+## Appendix E: Phase I.5 - The Anchor-Only Coredrill (Intermediate Experiment)
 
 Between the Wikipedia benchmark of Phase I and the full 238-node taxonomy of Phase II, an intermediate experiment was conducted: building a coredrill from dictionary anchors *only* (before Wikipedia embeddings were available), testing it, discovering its failure modes, and using those failures to design better gates for the full system.
 
 ### E.1 Motivation
 
-The Wikipedia embed step (128,158 paragraphs through LaBSE) takes 3–5 hours on CPU. The anchor embed (500 definition sentences) takes 2 minutes. While the Wikipedia embed was running, the anchor embeddings were used to build a coredrill and begin testing the prediction pipeline immediately. This was not a throwaway experiment — the anchor-only coredrill revealed structural problems in the confidence gating logic that carried forward into the final design.
+The Wikipedia embed step (128,158 paragraphs through LaBSE) takes 3–5 hours on CPU. The anchor embed (500 definition sentences) takes 2 minutes. While the Wikipedia embed was running, the anchor embeddings were used to build a coredrill and begin testing the prediction pipeline immediately. This was not a throwaway experiment - the anchor-only coredrill revealed structural problems in the confidence gating logic that carried forward into the final design.
 
 ### E.2 The Anchor-Only Coredrill
 
 Built from 4 sources:
 
-* **Simple English Wikipedia** (A): first 6 paragraphs of each concept's Simple English article — short, definitional, low-jargon
+* **Simple English Wikipedia** (A): first 6 paragraphs of each concept's Simple English article - short, definitional, low-jargon
 * **WordNet** (B): top-3 synset definitions per concept via NLTK
 * **Wiktionary** (C): first English noun definition via REST API, with multi-word fallback table
 * **Wikipedia lead paragraphs** (D): first paragraph of each Wikipedia article already in sentences.json, filtered to those containing definitional markers ("is a", "refers to", "defined as")
 
 \~15 anchor texts per node × 40 nodes = \~600 texts total. Each node's centroid is the L2-normalized mean of its anchor embeddings.
 
-**Key property of anchor centroids:** σ (spread) is systematically underestimated because it's computed from 6–21 samples instead of 3,000+. This inflates σ\_dist for all predictions — even correct ones score σ\_dist > 2.0.
+**Key property of anchor centroids:** σ (spread) is systematically underestimated because it's computed from 6–21 samples instead of 3,000+. This inflates σ\_dist for all predictions - even correct ones score σ\_dist > 2.0.
 
 ### E.3 What Worked
 
@@ -635,13 +635,13 @@ Without confidence gating, the tree walk always descended to L3. For "The large-
 
 ```
 L0 → Natural World    (correct, margin=0.082)
-L1 → Life Sciences    (WRONG — should be Earth Sciences)
-         margin=0.039, σ\\\_dist=2.73 — both screaming "don't know"
-L2 → Biology          (86.8% inside Life Sciences — correct branch, wrong subtree)
+L1 → Life Sciences    (WRONG - should be Earth Sciences)
+         margin=0.039, σ\\\_dist=2.73 - both screaming "don't know"
+L2 → Biology          (86.8% inside Life Sciences - correct branch, wrong subtree)
 L3 → Ecology          (nonsense)
 ```
 
-Root cause: once Life Sciences was chosen at L1 (by a margin of 0.039 — barely above chance), the walk was trapped inside that subtree. The system confidently navigated a wrong branch.
+Root cause: once Life Sciences was chosen at L1 (by a margin of 0.039 - barely above chance), the walk was trapped inside that subtree. The system confidently navigated a wrong branch.
 
 ### E.5 The Confidence Gating Design
 
@@ -677,7 +677,7 @@ Applied to failing case ("Big Bang universe"):
 ```
 L0: margin=0.082 > 0.005 ✓  conf=55% > 30% ✓  sigma\\\_disabled  → descend
 L1: margin=0.039 > 0.010 ✓  conf=43% > 30% ✓  sigma\\\_disabled  → descend
-    (but at L1 it picks wrong branch — gating doesn't fix centroid errors)
+    (but at L1 it picks wrong branch - gating doesn't fix centroid errors)
 ```
 
 Applied to ambiguous case ("A book"):
@@ -706,21 +706,21 @@ The anchor-only experiment established three design principles that carried into
 
 \---
 
-## Appendix F: The Dialogue Scene Problem — A Case Study in Data Contamination
+## Appendix F: The Dialogue Scene Problem - A Case Study in Data Contamination
 
 ### F.1 The Symptom
 
-In every test query run against the coredrill, `Dialogue Scene` appeared at rank #1 or #2 regardless of input topic. Insurance claim emails, bank dispute letters, physics questions — all returned Dialogue Scene as the top match.
+In every test query run against the coredrill, `Dialogue Scene` appeared at rank #1 or #2 regardless of input topic. Insurance claim emails, bank dispute letters, physics questions - all returned Dialogue Scene as the top match.
 
 ### F.2 Diagnosis
 
 `Dialogue Scene` (L3, under Communication \& Expression) had:
 
-* σ\_eff = 0.6439 — extremely high (typical well-calibrated node: 0.35–0.45)
+* σ\_eff = 0.6439 - extremely high (typical well-calibrated node: 0.35–0.45)
 * n = 541 training records
 * Source: `wikipedia` (Wikipedia articles about dramatic scenes, film dialogue, etc.)
 
-**Root cause:** The node was populated with SGD task dialogues (restaurant bookings, hotel reservations, doctor appointments, insurance queries) — generic multi-domain conversational text with no common semantic focus. The centroid settled near the center of the embedding sphere, equidistant from everything.
+**Root cause:** The node was populated with SGD task dialogues (restaurant bookings, hotel reservations, doctor appointments, insurance queries) - generic multi-domain conversational text with no common semantic focus. The centroid settled near the center of the embedding sphere, equidistant from everything.
 
 The production formula without sigma-cap:
 
@@ -728,20 +728,20 @@ The production formula without sigma-cap:
 z = (1 - cosine) / sigma\\\_eff = (1 - 0.298) / 0.644 = 1.09
 ```
 
-Even with cosine = 0.298 (mediocre similarity), z = 1.09 means "inside the cloud." Compare with Billing \& Refunds (cosine = 0.41, sigma = 0.41, z = 1.44) — genuinely closer text but penalized by the smaller sigma. Dialogue Scene won by being maximally diffuse.
+Even with cosine = 0.298 (mediocre similarity), z = 1.09 means "inside the cloud." Compare with Billing \& Refunds (cosine = 0.41, sigma = 0.41, z = 1.44) - genuinely closer text but penalized by the smaller sigma. Dialogue Scene won by being maximally diffuse.
 
 ### F.3 The Three-Layer Fix
 
-**Layer 1 — SIGMA\_CAP:** Cap sigma at 0.45 in the z-score denominator. Any node with σ > 0.45 gets no z-score advantage. Dialogue Scene's effective z becomes (1 - 0.298) / 0.45 = 1.56 instead of 1.09.
+**Layer 1 - SIGMA\_CAP:** Cap sigma at 0.45 in the z-score denominator. Any node with σ > 0.45 gets no z-score advantage. Dialogue Scene's effective z becomes (1 - 0.298) / 0.45 = 1.56 instead of 1.09.
 
-**Layer 2 — diffuse\_pen:** Direct penalty for σ > 0.40:
+**Layer 2 - diffuse\_pen:** Direct penalty for σ > 0.40:
 
 ```python
 diffuse\\\_pen = max(0, sigma\\\_eff - 0.40) \\\* 0.60
 # Dialogue Scene: max(0, 0.644 - 0.40) \\\* 0.60 = 0.146 points deducted
 ```
 
-**Layer 3 — SKIP\_NODES:** Complete exclusion from scoring, rhizome graph, top matches, and lineage paths:
+**Layer 3 - SKIP\_NODES:** Complete exclusion from scoring, rhizome graph, top matches, and lineage paths:
 
 ```python
 SKIP\\\_NODES: set = {
@@ -764,5 +764,5 @@ Dialogue Scene gone from top 15. No noise nodes. Both production winner and cosi
 
 ### F.5 General Lesson
 
-A node's σ is a direct measurement of its semantic coherence. A σ of 0.65 means the training records for that node are geometrically scattered — they do not share a common semantic focus. This is almost always a data problem: either the node attracted records from multiple unrelated topics (contamination), or it attracted records that are semantically empty for that concept (noise). The fix is always at data collection time — but while the data problem exists, the sigma-cap and SKIP\_NODES mechanism prevents the contaminated node from polluting all predictions.
+A node's σ is a direct measurement of its semantic coherence. A σ of 0.65 means the training records for that node are geometrically scattered - they do not share a common semantic focus. This is almost always a data problem: either the node attracted records from multiple unrelated topics (contamination), or it attracted records that are semantically empty for that concept (noise). The fix is always at data collection time - but while the data problem exists, the sigma-cap and SKIP\_NODES mechanism prevents the contaminated node from polluting all predictions.
 
