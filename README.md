@@ -2,7 +2,7 @@
 
 **Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.**
 
-No trained classifiers. No labelled inference. Classification by the geometric structure of the [LaBSE](https://huggingface.co/sentence-transformers/LaBSE) embedding manifold — the same manifold across all 109 languages LaBSE supports.
+No trained classifiers. No labelled inference. Classification by the geometric structure of the [LaBSE](https://huggingface.co/sentence-transformers/LaBSE) embedding manifold, the same manifold across all 109 languages LaBSE supports.
 
 Based on the paper: **Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis** (Lucas, 2026).
 
