@@ -1,4 +1,4 @@
-# Coredrill — Rhizome Text Classifier
+# Embedding Rhizome Classifier:
 
 **Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.**
 
