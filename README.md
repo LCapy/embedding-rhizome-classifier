@@ -9,7 +9,7 @@ Futuree paper: *Geometry-Native Text Classification via High-Dimensional Embeddi
 
 ## What it does
 
-Coredrill maps any text, in any of the 109 supported languages, to a position inside a crafted 238-node semantic taxonomy.
+The "clasifier" is the Coredrill. It can map any text, in any of the 109 supported languages, to a position inside a crafted 238-node semantic taxonomy.
 
 Instead of treating classification as a single-label prediction problem, it models the text as a point in embedding space and measures how that point activates multiple semantic territories at once. Each taxonomy node has:
 
