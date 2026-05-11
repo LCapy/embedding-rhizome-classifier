@@ -297,19 +297,6 @@ The summary is taxonomy-backed: the API does not merely print the top-ranked iso
 
 The same taxonomy applies across all LaBSE-supported languages. Tested languages include Portuguese, Spanish, Russian, Japanese, German, French, Korean, Hebrew, Vietnamese, Arabic, Chinese, and English.
 
-| Text | Language | Domain | Gram winner |
-|---|---|---|---|
-| Riemann hypothesis | EN | Mathematics | Cosmology, when no pure math node is available |
-| Customer complaint | ES | Customer service | Customer Service |
-| Physicist grief | RU | Physics + emotion | Physical Reality |
-| AI fairness debate | PT/EN | Philosophy + statistics | Verbal Dispute |
-| Cardiology note | FR | Clinical | Symptoms & Self-Care |
-| Amazon ecology | EN | Science | Climate Change |
-| Inflation policy | VI | Economics | Macroeconomics |
-| Therapist burnout | DE | Psychology / health | Symptoms & Self-Care |
-| Billing refund | KO | Customer service / billing | Customer Service |
-| Doctor appointment | PT | Health routine | Medicine / Appointments & Medication neighborhood |
-
 ---
 
 ## Project structure
