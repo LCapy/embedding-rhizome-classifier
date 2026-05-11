@@ -1,6 +1,6 @@
 # Embedding Rhizome Classifier:
 
-Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.
+**Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.
 No trained classifiers. No labelled inference. Classification is performed through the geometric structure of the LaBSE embedding manifold: the same multilingual manifold shared across all 109 languages supported by LaBSE.
 Based on the paper: Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis (Lucas, 2026).
 ---
