@@ -2,7 +2,6 @@
 
 Geometry-Native text classification via high-dimensional embedding space over a 238-node rhizomatic taxonomy.
 No trained classifiers. No labelled inference. Classification is performed through the geometric structure of the embedding manifold: the same multilingual manifold shared across all 109 languages supported by LaBSE.
-Based on the paper:  (Lucas, 2026).
 ---
 What it does
 Coredrill maps any text, in any of the 109 supported languages, to a position inside a crafted 238-node semantic taxonomy.
