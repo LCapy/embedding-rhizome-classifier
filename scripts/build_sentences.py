@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build_sentences_rhizome.py — Build a multi-label rhizomatic sentence dataset.
+build_sentences_rhizome.py - Build a multi-label rhizomatic sentence dataset.
 
 Reads:
   - data/sentences.json       (existing single-label corpus)
@@ -59,13 +59,13 @@ logging.basicConfig(
 )
 log = logging.getLogger("build_sentences_rhizome")
 
-# ── Constants — must match full_build_rhizome_final.py ───────────────────────
+# ── Constants - must match full_build_rhizome_final.py ───────────────────────
 SIGMA_CAP = 0.45
-SIGMA_FLOOR = 0.25   # minimum sigma for z computation — prevents collapse
+SIGMA_FLOOR = 0.25   # minimum sigma for z computation - prevents collapse
 MIN_WEIGHT  = 0.01
 
 SKIP_NODES: set = {
-    # Original — void centroids
+    # Original - void centroids
     "Dialogue Scene",
     "Request\u2013Response Dialogue",
     # Collapsed (sigma > 0.70)
@@ -75,7 +75,7 @@ SKIP_NODES: set = {
     "Empathy & Support",
     "Emotion & Social Bonding",
     "Transactions",
-    # SGD bulk — task dialogues, not semantic territories
+    # SGD bulk - task dialogues, not semantic territories
     "Domestic Planning",
     "Task Assignment",
     "Move",
@@ -87,7 +87,7 @@ SKIP_NODES: set = {
     "Repair",
     "Jobs & Professions",
     "Commuting",
-    # Non-wiki bulk — Circa/Dolly single-action nodes
+    # Non-wiki bulk - Circa/Dolly single-action nodes
     "Report",
     "Agree",
     "Clarify",
@@ -172,7 +172,7 @@ def score_all(embeddings: np.ndarray,
               ) -> List[List[dict]]:
     """
     Score every sentence against every centroid using a FIXED cosine
-    distance threshold — not a fixed z_cutoff.
+    distance threshold - not a fixed z_cutoff.
 
     A sentence belongs to a territory if:
         (1 - cosine) < cos_threshold   (fixed radius in cosine space)
@@ -230,7 +230,7 @@ def score_all(embeddings: np.ndarray,
     log.info(f"  Max: {max(counts)}  Min: {min(counts)}")
     log.info(f"  Sentences with 0 categories: {n_empty:,} ({100*n_empty/N_sent:.1f}%)")
     if n_empty > N_sent * 0.40:
-        log.warning(f"  HIGH EMPTY RATE — consider increasing --cos-threshold")
+        log.warning(f"  HIGH EMPTY RATE - consider increasing --cos-threshold")
     return all_categories
 
 
@@ -261,7 +261,7 @@ def build_rhizome_sentences(records:        List[dict],
             "source":            rec.get("source", ""),
             "lang":              rec.get("lang", "en"),
             "original_category": rec.get("category", ""),
-            # Optional metadata — keep if present
+            # Optional metadata - keep if present
         }
         # Preserve any extra metadata fields
         for k in ["lang_name", "lang_family", "lang_tier",
@@ -335,7 +335,7 @@ def print_stats(out_path: str, node_names: List[str]) -> None:
     # Empty nodes
     empty = [n for n in node_names if n not in node_counts]
     if empty:
-        print(f"\n  EMPTY NODES ({len(empty)}) — no sentence assigned:")
+        print(f"\n  EMPTY NODES ({len(empty)}) - no sentence assigned:")
         for n in empty:
             print(f"    {n}")
     print(f"{'='*70}")
@@ -369,7 +369,7 @@ def main():
 
     print()
     print("=" * 70)
-    print("BUILD SENTENCES RHIZOME — Multi-label dataset")
+    print("BUILD SENTENCES RHIZOME - Multi-label dataset")
     print("=" * 70)
     print(f"  sentences:  {args.sentences}")
     print(f"  embeddings: {args.embeddings}")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-12_benchmark_full_taxonomy.py — Full 238-node taxonomy benchmark.
+12_benchmark_full_taxonomy.py - Full 238-node taxonomy benchmark.
 
 DATA SOURCES (7 total)
 ──────────────────────
@@ -61,23 +61,23 @@ warnings.filterwarnings("ignore", message=".*position_ids.*")
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; research-bot/1.0)"}
 
 # Nodes excluded from ALL scoring and centroid updates.
-# These have sigma > 0.70 — their centroids are so diffuse they sit near
+# These have sigma > 0.70 - their centroids are so diffuse they sit near
 # the center of S^767 and score highly against everything.
 # Deleuze: the rhizome has no center. These nodes ARE the center.
-# They are not territories — they are the void between territories.
+# They are not territories - they are the void between territories.
 # Prohibited from prediction moving forward.
 SKIP_NODES: set = {
-    # Original — void centroids
+    # Original - void centroids
     "Dialogue Scene",
     "Request–Response Dialogue",
-    # Collapsed (sigma > 0.70) — territory lost coherence
+    # Collapsed (sigma > 0.70) - territory lost coherence
     "Instruction & Procedure",
     "Home Repair Request",
     "Household Maintenance",
     "Empathy & Support",
     "Emotion & Social Bonding",
     "Transactions",
-    # SGD bulk — task dialogues, not semantic territories
+    # SGD bulk - task dialogues, not semantic territories
     "Domestic Planning",
     "Task Assignment",
     "Move",
@@ -89,19 +89,19 @@ SKIP_NODES: set = {
     "Repair",
     "Jobs & Professions",
     "Commuting",
-    # Non-wiki bulk — Circa/Dolly single-action nodes, no coherence
+    # Non-wiki bulk - Circa/Dolly single-action nodes, no coherence
     "Report",
     "Agree",
     "Clarify",
     "Meal Preparation",
-    # Anchor-only with high sigma — misleading centroids
+    # Anchor-only with high sigma - misleading centroids
     "Meaning Relations",
     "Agreement Formation",
     "Project Agreement",
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
-# § RFF — Random Fourier Features for Rhizome-Centroid (v3)
+# § RFF - Random Fourier Features for Rhizome-Centroid (v3)
 # ══════════════════════════════════════════════════════════════════════════════
 
 class _RFF:
@@ -403,7 +403,7 @@ def _normalize_record(r: dict) -> dict:
 # Primary English Wikipedia articles per node name.
 # Falls back to node["en_category"] if not listed here.
 WIKI_ARTICLES: Dict[str, List[str]] = {
-    # L0 — broad introductory articles for the 4 root branches
+    # L0 - broad introductory articles for the 4 root branches
     "Natural World": ["Nature", "Natural science", "Natural environment"],
     "Human Mind & Knowledge": ["Humanities", "Cognition", "Knowledge",
                                "Human intelligence"],
@@ -585,7 +585,8 @@ def _fetch_wiki(title: str, simple: bool = False) -> List[str]:
         if r.status_code != 200:
             return []
         html = r.text
-    except Exception:
+    except Exception as e:
+        logging.warning("Wikipedia fetch failed: %s", e)
         return []
     try:
         from bs4 import BeautifulSoup
@@ -718,7 +719,7 @@ def load_source_dir(source_dir: Path, source_name: str) -> List[dict]:
         """
         import re as _re
 
-        # Resolve text field — try text, then snippet
+        # Resolve text field - try text, then snippet
         text = r.get("text", "").strip()
         if not text:
             text = r.get("snippet", "").strip()
@@ -731,7 +732,7 @@ def load_source_dir(source_dir: Path, source_name: str) -> List[dict]:
         if len(text) < 10:
             return None
 
-        # Resolve category — try category, then node
+        # Resolve category - try category, then node
         cat = r.get("category", "").strip() or r.get("node", default_cat).strip()
 
         # Apply node remaps
@@ -764,8 +765,8 @@ def load_source_dir(source_dir: Path, source_name: str) -> List[dict]:
                 r = _norm(json.loads(line), default_cat)
                 if r:
                     records.append(r)
-            except Exception:
-                pass
+            except Exception as e:
+                logging.warning("Skipped malformed Bitext record: %s", e)
         return records
 
     # Top-level sentences.json
@@ -870,8 +871,8 @@ def load_dailydialog(dd_dir: Path) -> List[dict]:
                     for cat in cats:
                         records.append({"text": text, "category": cat,
                                         "source": "dailydialog", "lang": "en"})
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("DailyDialog parse error: %s", e)
     if records:
         print(f"  DailyDialog: {len(records):,} records (HF JSON)")
         return records
@@ -954,8 +955,8 @@ def load_multiwoz(mwoz_dir: Path) -> List[dict]:
                 continue
             for dial in data:
                 _add(dial, dial.get("services", dial.get("domains", [])))
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("MultiWOZ parse error: %s", e)
         if records:
             break
     print(f"  MultiWOZ: {len(records):,} records")
@@ -965,7 +966,7 @@ def load_multiwoz(mwoz_dir: Path) -> List[dict]:
 
 # ══════════════════════════════════════════════════════════════════════════════
 # § 8b  Additional dataset parsers (SGD, Empathetic, Taskmaster, Circa, Dolly,
-#        Persuasion) — all load from Arrow format saved by download_datasets.py
+#        Persuasion) - all load from Arrow format saved by download_datasets.py
 # ══════════════════════════════════════════════════════════════════════════════
 
 # SGD domain → taxonomy node mapping
@@ -1059,7 +1060,8 @@ def _try_arrow(data_dir: Path) -> Optional[object]:
     try:
         from datasets import load_from_disk
         return load_from_disk(str(data_dir))
-    except Exception:
+    except Exception as e:
+        logging.debug("Could not load Arrow dataset from %s: %s", data_dir, e)
         return None
 
 
@@ -1124,8 +1126,8 @@ def load_sgd(sgd_dir: Path) -> List[dict]:
                         for cat in cats:
                             records.append({"text": text, "category": cat,
                                             "source": "sgd", "lang": "en"})
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("SGD parse error: %s", e)
 
     print(f"  SGD: {len(records):,} records (raw JSON)")
     return records
@@ -1223,8 +1225,8 @@ def load_empathetic(emp_dir: Path) -> List[dict]:
                 text    = parts[utt_i].strip().strip('"')
                 if len(text) >= 10:
                     _add(text, emotion)
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("Empathetic Dialogues parse error: %s", e)
 
     print(f"  Empathetic: {len(records):,} records (CSV)")
     return records
@@ -1327,15 +1329,15 @@ def load_taskmaster(tm_dir: Path) -> List[dict]:
                             records.append({"text": text, "category": cat,
                                             "source": "taskmaster",
                                             "lang": "en"})
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("Taskmaster parse error: %s", e)
 
     print(f"  Taskmaster: {len(records):,} records (raw JSON)")
     return records
 
 
 def load_circa(circa_dir: Path) -> List[dict]:
-    """Parse Circa yes/no question dataset — maps to Clarify, Answer, Agree."""
+    """Parse Circa yes/no question dataset - maps to Clarify, Answer, Agree."""
     if not circa_dir:
         return []
     ds = load_from_disk_or_hf(circa_dir, "circa")
@@ -1407,7 +1409,7 @@ def load_dolly(dolly_dir: Path) -> List[dict]:
 
 
 def load_persuasion(prs_dir: Path) -> List[dict]:
-    """Parse PersuasionForGood dataset — maps to Election Campaign Speech."""
+    """Parse PersuasionForGood dataset - maps to Election Campaign Speech."""
     if not prs_dir:
         return []
     ds = load_from_disk_or_hf(prs_dir, "Salesforce/dialogstudio",
@@ -1585,7 +1587,7 @@ def merge_and_save(new_records: List[dict], existing: List[dict],
         added += 1
 
     if capped_total or capped_source:
-        print(f"  Capped {capped_total:,} total-per-node and {capped_source:,} per-source records — accepted {added:,} new")
+        print(f"  Capped {capped_total:,} total-per-node and {capped_source:,} per-source records - accepted {added:,} new")
 
     tmp_path = out_path.with_suffix(".tmp.json")
     with open(tmp_path, "w", encoding="utf-8") as f:
@@ -1611,7 +1613,7 @@ def merge_and_save(new_records: List[dict], existing: List[dict],
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# § 12  Centralized embed — ONE embeddings.npz
+# § 12  Centralized embed - ONE embeddings.npz
 # ══════════════════════════════════════════════════════════════════════════════
 
 def embed_all(data_dir: Path, batch_size: int = 32,
@@ -1622,7 +1624,7 @@ def embed_all(data_dir: Path, batch_size: int = 32,
     INCREMENTAL: if embeddings.npz already exists with fewer rows than
     sentences.json (because new records were collected), only the new
     rows are embedded and the file is rebuilt complete. Existing
-    embeddings are reused — no re-embedding.
+    embeddings are reused - no re-embedding.
 
     CHECKPOINT-SAFE: saves partial progress every ~checkpoint_every
     batches. On crash, restart with the same command. Atomic
@@ -1644,15 +1646,16 @@ def embed_all(data_dir: Path, batch_size: int = 32,
         try:
             existing_emb = np.load(final_path)["embeddings"].astype(np.float32)
             if len(existing_emb) == n:
-                print(f"  embeddings.npz complete ({n:,} rows) — nothing to do")
+                print(f"  embeddings.npz complete ({n:,} rows) - nothing to do")
                 return existing_emb
             elif len(existing_emb) < n:
                 print(f"  embeddings.npz has {len(existing_emb):,} rows, "
-                      f"sentences.json has {n:,} — embedding {n - len(existing_emb):,} new")
+                      f"sentences.json has {n:,} - embedding {n - len(existing_emb):,} new")
             else:
-                print(f"  embeddings.npz has MORE rows than sentences.json — re-embedding all")
+                print(f"  embeddings.npz has MORE rows than sentences.json - re-embedding all")
                 existing_emb = None
-        except Exception:
+        except Exception as e:
+            logging.warning("Could not load existing embeddings.npz: %s", e)
             existing_emb = None
 
     # Resume from checkpoint
@@ -1665,8 +1668,8 @@ def embed_all(data_dir: Path, batch_size: int = 32,
             embs_done = [ckpt["embeddings"]]
             start_from = int(ckpt["n_done"])
             print(f"  Resuming from checkpoint: {start_from:,}/{n:,}")
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("Could not load embedding checkpoint: %s", e)
 
     if start_from >= n:
         emb = np.vstack(embs_done) if embs_done else np.zeros((0,768), dtype=np.float32)
@@ -2013,6 +2016,7 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
             "tau": tau, "flat_prototype_accuracy": round(nc / nt if nt > 0 else 0, 4),
             "build_direction": "bottom_up", "levels": {str(lv): names for lv, names in levels.items()},
             "hierarchy": children_map, "tree": tree,
+            "skip_nodes": sorted(SKIP_NODES),
             "taxonomy_backbone": {"roots": roots, "parents_map": parents_map, "primary_parent_map": primary_parent_map,
                                   "lineage_paths": lineage_paths, "top_branches": top_branch_map},
             "rhizome": {"overlay": rhizome_overlay, "top_k": int(rhizome_top_k), "min_sim": float(rhizome_min_sim)},
@@ -2028,12 +2032,12 @@ LEVEL_LABELS = {0:"Branch", 1:"Domain", 2:"Discipline",
 
 # Level-aware sigma thresholds.
 # L0 centroids have high variance (4 very broad branches from diverse sources)
-# so a short colloquial sentence will always sit far from them — don't gate hard.
+# so a short colloquial sentence will always sit far from them - don't gate hard.
 # Tighten progressively as we descend into more specific nodes.
 LEVEL_SIGMA  = {0: 4.0, 1: 3.5, 2: 3.0, 3: 2.5, 4: 2.5, 5: 2.5}
 
 # Level-aware confidence thresholds.
-# At L0 with 4 branches, random chance = 25% — threshold must be < 33%.
+# At L0 with 4 branches, random chance = 25% - threshold must be < 33%.
 # At deeper levels with 2-3 siblings, 35% is more meaningful.
 LEVEL_CONF   = {0: 0.27, 1: 0.30, 2: 0.32, 3: 0.35, 4: 0.35, 5: 0.35}
 
@@ -2193,7 +2197,7 @@ def _print_rhizome_terminal(text: str, active: list, results: list, pred: dict,
     nl  = lambda: out("\n")
 
     nl(); out("=" * W + "\n")
-    out("COREDRILL  —  RHIZOME PROFILE\n")
+    out("COREDRILL  -  RHIZOME PROFILE\n")
     out("=" * W + "\n")
     out(f'  {text[:W-4]}{"..." if len(text) > W-4 else ""}\n')
     nl()
@@ -2334,7 +2338,7 @@ def _dump_full_metrics(text: str, results: list, active: list, pred: dict,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# § CARTOGRAPHY — Consume and reterritorialize
+# § CARTOGRAPHY - Consume and reterritorialize
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _welford_update(mean: list, M2: list, n: int, new_vec: list) -> tuple:
@@ -2465,7 +2469,7 @@ def cartography_prompt(text: str, embedding: list, active: list,
 
     print()
     print("=" * W)
-    print("CARTOGRAPHY — Consume this document?")
+    print("CARTOGRAPHY - Consume this document?")
     print("=" * W)
     print(f"  Text: {text[:100]}{'...' if len(text) > 100 else ''}")
     print()
@@ -2552,7 +2556,7 @@ def cartography_prompt(text: str, embedding: list, active: list,
 
 
 def print_result(result: dict, text: str = "", active: list = None, results_all: list = None) -> None:
-    """Legacy thin wrapper — just prints cladistic path. Full display via _print_rhizome_terminal."""
+    """Legacy thin wrapper - just prints cladistic path. Full display via _print_rhizome_terminal."""
     ICONS = {"confident": "OK", "ambiguous": "AMBIGUOUS", "weak": "WEAK", "deep_space": "DEEP SPACE"}
     print("\n" + "=" * 72)
     if text:
@@ -3164,13 +3168,18 @@ def gram_inverse_scores(results: list, tree: dict,
     G_pinv = (Vt.T * sv_inv) @ U.T
     alpha = G_pinv @ s
 
+    if np.all(np.abs(alpha) < 1e-9):
+        logging.getLogger("coredrill").warning(
+            "gram_inverse: rank-deficient Gram matrix - alpha collapsed to zero; returning empty")
+        return {}
+
     # ── Neighborhood support NS_i ────────────────────────────────────────
     # NS_i = mean cosine score of semantic peers: nodes correlated with i
     # BUT at similar level (within ±1 level).
     #
     # Exclude ancestors/descendants from neighborhood: parent-child
     # correlations (G_ij > 0.5 because one is ancestor of the other)
-    # are not independent evidence — they inflate NS for broad L0/L1 nodes.
+    # are not independent evidence - they inflate NS for broad L0/L1 nodes.
     #
     # Semantic peers: same level ± 1, G_ij > neighbor_threshold.
     NS = np.zeros(len(names))
@@ -3184,7 +3193,7 @@ def gram_inverse_scores(results: list, tree: dict,
         if peers:
             NS[i] = np.mean(s[peers])
         else:
-            # No same-level correlated peers — mild self-support
+            # No same-level correlated peers - mild self-support
             NS[i] = s[i] * 0.8
 
     # Normalize NS to [0, 1] relative to max s
@@ -3221,15 +3230,15 @@ def gram_inverse_scores(results: list, tree: dict,
                     ancestor_scores.append(ratio)
 
             if len(ancestor_scores) >= 2:
-                # Mean ratio — product would be too aggressive
+                # Mean ratio - product would be too aggressive
                 # Require at least 2 ancestors to compute meaningful PC
                 PC[i] = float(np.mean(ancestor_scores))
             elif len(ancestor_scores) == 1:
-                # Only one ancestor found in score_map — weak signal
+                # Only one ancestor found in score_map - weak signal
                 # Apply a mild discount to avoid rewarding shallow paths
                 PC[i] = float(np.mean(ancestor_scores)) * 0.85
             else:
-                # No ancestors found in score_map — penalize
+                # No ancestors found in score_map - penalize
                 # This catches generic L4/L5 speech-act nodes (Ask, Clarify)
                 # whose ancestors (Conversation & Dialogue, etc.) don't appear
                 # in the top-m candidates because the text is not about dialogue
@@ -3242,13 +3251,14 @@ def gram_inverse_scores(results: list, tree: dict,
     # semantically precise node (Grammar Explanation, L4).
     SW = 1.0 / (sigmas ** 0.5)
 
-    # Normalize SW so it doesn't dominate — scale to mean=1
+    # Normalize SW so it doesn't dominate - scale to mean=1
     SW = SW / SW.mean()
 
     # ── Final score ──────────────────────────────────────────────────────
-    # Only nodes with positive alpha are meaningful frame contributors
-    # Negative alpha means the node actively contradicts x's position
-    R = alpha * s / (sigmas ** 0.5)
+    # Only nodes with positive alpha are meaningful frame contributors.
+    # Negative alpha means the node actively contradicts x's position.
+    # Full formula: R_i = alpha_i * s_i * NS_i * PC_i * SW_i
+    R = alpha * s * NS * PC * SW
 
     return {names[i]: float(R[i]) for i in range(len(names))}
 
@@ -3296,11 +3306,11 @@ def analyze_text_rhizome_v2(coredrill: dict, text: str, model,
         result["gram_winner"]  = winner
         result["gram_state"]   = gram_state
     except Exception as e:
-        import logging as _log
-        _log.getLogger("coredrill.api").error(
+        logging.getLogger("coredrill.api").error(
             f"gram_inverse failed: {type(e).__name__}: {e}", exc_info=True)
         result["gram_scores"]  = {}
         result["gram_winner"]  = None
+        result["gram_state"]   = "error"
 
     result["second_moment_scores"] = {}
     result["second_moment_winner"] = None

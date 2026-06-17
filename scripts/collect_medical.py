@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-collect_medical.py — Targeted medical data collection for coredrill.
+collect_medical.py - Targeted medical data collection for coredrill.
 
 Fetches clinical text from HuggingFace datasets and injects it
 directly into the existing sentences.json, then triggers a rebuild
 of affected nodes in the coredrill JSON.
 
 Target nodes:
-  - Medicine (L2)          — needs clinical text, not encyclopedic
-  - Treatment (L3)         — only 16 records
-  - Diagnosis (L3)         — only 30 records
-  - Doctor Appointment (L4)— NO CENTROID
-  - Health Routine (L2)    — 54 records, needs more
-  - Symptoms & Self-Care (L3) — 54 records
-  - Appointments & Medication (L3) — 66 records
+  - Medicine (L2)          - needs clinical text, not encyclopedic
+  - Treatment (L3)         - only 16 records
+  - Diagnosis (L3)         - only 30 records
+  - Doctor Appointment (L4)- NO CENTROID
+  - Health Routine (L2)    - 54 records, needs more
+  - Symptoms & Self-Care (L3) - 54 records
+  - Appointments & Medication (L3) - 66 records
 
 Usage:
   python collect_medical.py \
@@ -58,7 +58,7 @@ MEDICAL_NODES = {
         "level": 2,
         "keywords": ["patient", "clinical", "medical", "symptom", "disease",
                      "condition", "health", "physician", "hospital", "nurse"],
-        "description": "Clinical medicine — doctor-patient interactions, clinical notes"
+        "description": "Clinical medicine - doctor-patient interactions, clinical notes"
     },
     "Symptoms & Self-Care": {
         "level": 3,
@@ -235,7 +235,7 @@ def update_coredrill(coredrill_path: str, new_records: List[dict],
 
     for node, embs in by_node.items():
         if node not in tree:
-            log.warning(f"  Node '{node}' not in tree — skipping")
+            log.warning(f"  Node '{node}' not in tree - skipping")
             continue
 
         stats = tree[node]
@@ -305,7 +305,7 @@ def main():
         sys.exit(1)
 
     if args.dry_run:
-        log.info("DRY RUN — not writing anything")
+        log.info("DRY RUN - not writing anything")
         from collections import Counter
         c = Counter(r["category"] for r in records)
         for node, cnt in sorted(c.items(), key=lambda x: -x[1]):

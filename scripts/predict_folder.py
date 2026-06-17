@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-predict_folder.py — Batch prediction with optional A/B comparison.
+predict_folder.py - Batch prediction with optional A/B comparison.
 
 Single mode:
   python predict_folder.py \
@@ -70,7 +70,7 @@ def parse_output(raw: str) -> dict:
     for line in lines:
         s = line.strip()
 
-        if "COREDRILL  —  RHIZOME PROFILE" in line:
+        if "COREDRILL  -  RHIZOME PROFILE" in line:
             in_profile = True; in_table = in_flow = False; continue
         if "FULL RANKED TABLE" in line:
             in_table = True; in_profile = in_flow = False; continue
@@ -97,8 +97,8 @@ def parse_output(raw: str) -> dict:
                         nums = [c for c in cols[-6:] if c.replace(".", "").replace("-", "").isdigit()]
                         if nums:
                             p["top_cos"] = float(nums[0])
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logging.debug("Could not parse top_cos from table row: %s", e)
 
         if in_table and s and not any(s.startswith(k) for k in ("NODE", "---", "[->", "===")):
             p["table"].append(s)
@@ -116,8 +116,8 @@ def parse_output(raw: str) -> dict:
                 try:
                     p["flow_score"] = tok
                     float(tok); break
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.debug("Could not parse flow score token '%s': %s", tok, e)
             break
 
     return p
@@ -369,8 +369,8 @@ def main():
 
     if ab_mode:
         sl += [
-            f"**A:** `{args.label_a}` — `{args.script_a}` + `{args.coredrill_a}`  ",
-            f"**B:** `{args.label_b}` — `{args.script_b}` + `{args.coredrill_b}`",
+            f"**A:** `{args.label_a}` - `{args.script_a}` + `{args.coredrill_a}`  ",
+            f"**B:** `{args.label_b}` - `{args.script_b}` + `{args.coredrill_b}`",
             f"",
             f"| # | File | A top | A flow | B top | B flow | Δ |",
             f"|---|------|-------|--------|-------|--------|---|",
@@ -394,7 +394,7 @@ def main():
 
     print()
     print("=" * 60)
-    print(f"DONE — {len(summary_rows)} files → {output_dir}")
+    print(f"DONE - {len(summary_rows)} files → {output_dir}")
     print(f"Summary: {summary_path}")
     print("=" * 60)
 

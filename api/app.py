@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-api/app.py — FastAPI serving layer for the Coredrill rhizome classifier.
+api/app.py - FastAPI serving layer for the Coredrill rhizome classifier.
 
 Startup:
     uvicorn api.app:app --host 0.0.0.0 --port 8000
@@ -33,7 +33,7 @@ log = logging.getLogger("coredrill.api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 # ---------------------------------------------------------------------------
-# Lazy global state — loaded once on first request
+# Lazy global state - loaded once on first request
 # ---------------------------------------------------------------------------
 _coredrill: dict | None = None
 _model = None
@@ -43,7 +43,7 @@ _api_key: str | None = os.environ.get("API_KEY")
 
 
 def _get_coredrill() -> dict:
-    global _coredrill
+    global _coredrill, SKIP_NODES
     if _coredrill is None:
         p = Path(_coredrill_path)
         if not p.exists():
@@ -53,7 +53,13 @@ def _get_coredrill() -> dict:
                 "The coredrill file is produced by: python scripts/rhizome_engine.py build ..."
             )
         log.info(f"Loading coredrill from {p} ...")
-        _coredrill = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            _coredrill = json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            raise RuntimeError(f"Failed to parse coredrill JSON at {p}: {e}") from e
+        if "skip_nodes" in _coredrill:
+            SKIP_NODES = set(_coredrill["skip_nodes"])
+            log.info(f"SKIP_NODES loaded from coredrill: {len(SKIP_NODES)} nodes")
         log.info(f"Coredrill loaded. Nodes: {len(_coredrill.get('tree', {}))}")
     return _coredrill
 
@@ -69,7 +75,7 @@ def _get_model():
 
 
 # ---------------------------------------------------------------------------
-# Import predict / analyze from engine — the engine is the single source of truth
+# Import predict / analyze from engine - the engine is the single source of truth
 # ---------------------------------------------------------------------------
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
@@ -79,14 +85,341 @@ from rhizome_engine import (  # type: ignore
     analyze_text_rhizome,
     analyze_text_rhizome_v2,
     gram_inverse_scores,
-    SKIP_NODES,
+    SKIP_NODES as _SKIP_NODES_DEFAULT,
 )
+
+# Runtime skip-node set - overwritten by coredrill JSON on first load so that
+# the skip list stays version-locked with the model data.
+SKIP_NODES: set = set(_SKIP_NODES_DEFAULT)
+
+
+# ---------------------------------------------------------------------------
+# Taxonomy-backed lineage helpers for human-readable summaries
+# ---------------------------------------------------------------------------
+
+try:
+    from api.taxonomy import TAXONOMY
+except Exception:
+    try:
+        from taxonomy import TAXONOMY
+    except Exception as _tax_err:
+        log.warning("Could not import TAXONOMY - lineage summaries will be unavailable: %s", _tax_err)
+        TAXONOMY = []
+
+TAXONOMY_BY_NAME = {
+    x.get("name"): x
+    for x in TAXONOMY
+    if isinstance(x, dict) and x.get("name")
+}
+
+TAXONOMY_PARENT = {
+    x.get("name"): x.get("parent")
+    for x in TAXONOMY
+    if isinstance(x, dict) and x.get("name")
+}
+
+TAXONOMY_LEVEL = {
+    x.get("name"): x.get("level")
+    for x in TAXONOMY
+    if isinstance(x, dict) and x.get("name")
+}
+
+
+def _taxonomy_path(node: str) -> list[str]:
+    """Return root -> node path using api/taxonomy.py parent links."""
+    if not node:
+        return []
+
+    if node not in TAXONOMY_BY_NAME:
+        return [node]
+
+    path = []
+    seen = set()
+    cur = node
+
+    while cur and cur not in seen:
+        seen.add(cur)
+        path.append(cur)
+        cur = TAXONOMY_PARENT.get(cur)
+
+    return list(reversed(path))
+
+
+def _display_taxonomy_path(node: str) -> list[str]:
+    """Return taxonomy path without broad L0 root."""
+    path = _taxonomy_path(node)
+
+    if len(path) > 1 and TAXONOMY_LEVEL.get(path[0]) == 0:
+        return path[1:]
+
+    return path
+
+
+def _taxonomy_area(node: str) -> str:
+    """Return L1 area for node."""
+    path = _taxonomy_path(node)
+
+    for p in path:
+        if TAXONOMY_LEVEL.get(p) == 1:
+            return p
+
+    return node
+
+
+def _build_cluster_summary_lines(gram_scores: dict, results_all: list, gram_winner: str) -> list[str]:
+    """
+    Build a taxonomy-backed natural-language summary.
+
+    Uses:
+      - GRAM nodes for recommendation signal
+      - FULL-ranked neighborhood for secondary coherent areas
+      - api/taxonomy.py parent links for full paths
+    """
+
+    if not gram_scores:
+        return []
+
+    result_map = {
+        r.get("node"): r
+        for r in results_all
+        if isinstance(r, dict) and r.get("node")
+    }
+
+    def _sf(value, default=0.0):
+        try:
+            return float(value)
+        except Exception:
+            return default
+
+    def _dedupe_keep_order(values):
+        out = []
+        seen = set()
+
+        for value in values:
+            if value and value not in seen:
+                out.append(value)
+                seen.add(value)
+
+        return out
+
+    winner_score = max(gram_scores.values()) if gram_scores else 1.0
+    noise_threshold = winner_score * 0.10
+
+    active_names = set()
+
+    # 1) GRAM-positive nodes.
+    for node, score in gram_scores.items():
+        if node in SKIP_NODES:
+            continue
+        if score > noise_threshold:
+            active_names.add(node)
+
+    # 2) Strong FULL-ranked neighborhood nodes.
+    # This is what lets the human-readable part mention secondary combinations.
+    for r in results_all[:25]:
+        node = r.get("node")
+        if not node or node in SKIP_NODES:
+            continue
+
+        z = _sf(r.get("sigma_dist"), 99.0)
+        mass = _sf(r.get("mass"), 0.0)
+        cos = _sf(r.get("score"), 0.0)
+
+        if (
+            mass >= 20.0
+            or z <= 1.65
+            or cos >= 0.43
+            or node == gram_winner
+        ):
+            active_names.add(node)
+
+    def _node_strength(node):
+        row = result_map.get(node, {})
+        gram = _sf(gram_scores.get(node), 0.0)
+        mass = _sf(row.get("mass"), 0.0)
+        z = _sf(row.get("sigma_dist"), 99.0)
+        cos = _sf(row.get("score"), 0.0)
+
+        return (
+            gram
+            + (mass / 100.0 * 0.015)
+            + max(0.0, 2.2 - z) * 0.004
+            + cos * 0.002
+        )
+
+    def _display_area_and_path(node):
+        path = _display_taxonomy_path(node)
+
+        if not path:
+            return node, [node]
+
+        area = _taxonomy_area(node)
+
+        # Display repair for the family/daily-life rhizome:
+        # the taxonomy may place Family Life under Social Relations,
+        # but if Daily Life is also active, the readable surface should show
+        # the practical daily-life combination.
+        if (
+            area == "Social Relations"
+            and "Daily Life" in active_names
+            and any(x in path for x in ["Family Life", "Family Discussion", "Family Planning Talk"])
+        ):
+            repaired = ["Daily Life"] + [x for x in path if x != "Social Relations"]
+            return "Daily Life", repaired
+
+        return area, path
+
+    clusters = {}
+
+    for node in active_names:
+        if node not in TAXONOMY_BY_NAME:
+            continue
+
+        area, path = _display_area_and_path(node)
+
+        if not area:
+            continue
+
+        clusters.setdefault(area, {
+            "area": area,
+            "nodes": set(),
+            "paths": [],
+            "strength": 0.0,
+        })
+
+        clusters[area]["nodes"].add(node)
+        clusters[area]["paths"].append(path)
+        clusters[area]["strength"] += _node_strength(node)
+
+    def _path_score(path):
+        return (
+            sum(_node_strength(n) for n in path if n in active_names)
+            + len(path) * 0.01
+        )
+
+    def _best_path(area, cluster):
+        paths = cluster["paths"]
+
+        if not paths:
+            return [area]
+
+        # Force the GRAM winner path for the winner's area.
+        # This prevents high-mass sibling branches like Ecology/Ecosystems
+        # from replacing the actual recommended chain Genes.
+        winner_area, winner_path = _display_area_and_path(gram_winner)
+
+        if area == winner_area and winner_path:
+            return winner_path
+
+        return sorted(
+            paths,
+            key=lambda p: (_path_score(p), len(p)),
+            reverse=True,
+        )[0]
+
+    cluster_rows = []
+
+    for area, cluster in clusters.items():
+        best = _best_path(area, cluster)
+        best_set = set(best)
+
+        nearby = []
+
+        # For biology/evolution, these are better explanatory neighbors than
+        # Ecology/Ecosystems when the winner path is Genes.
+        if area == "Life & Biology" and gram_winner in best_set:
+            for n in ["Adaptation", "Evolution", "Natural Selection"]:
+                if n in active_names and n not in best_set:
+                    nearby.append(n)
+        else:
+            for node in sorted(cluster["nodes"], key=_node_strength, reverse=True):
+                if node not in best_set:
+                    nearby.append(node)
+
+        nearby = _dedupe_keep_order(nearby)[:5]
+
+        cluster_rows.append({
+            "area": area,
+            "path": best,
+            "nearby": nearby,
+            "strength": cluster["strength"],
+        })
+
+    winner_area, _winner_path = _display_area_and_path(gram_winner)
+
+    # Winner area first; then strongest secondary coherent area.
+    cluster_rows = sorted(
+        cluster_rows,
+        key=lambda c: (
+            c["area"] != winner_area,
+            -c["strength"],
+            -len(c["path"]),
+        )
+    )
+
+    selected = []
+    covered = set()
+
+    for c in cluster_rows:
+        if c["area"] in covered:
+            continue
+
+        if len(c["path"]) < 2 and selected:
+            continue
+
+        selected.append(c)
+        covered.add(c["area"])
+
+        if len(selected) >= 2:
+            break
+
+    lines = []
+
+    if selected:
+        if len(selected) == 1:
+            c = selected[0]
+            path_s = " -> ".join(c["path"])
+
+            if c["nearby"]:
+                lines.append(
+                    f"  This text is mainly concentrated in {c['area']}: "
+                    f"{path_s}, with nearby signals {', '.join(c['nearby'])}."
+                )
+            else:
+                lines.append(
+                    f"  This text is mainly concentrated in {c['area']}: {path_s}."
+                )
+
+        else:
+            lines.append(
+                f"  This text is mainly distributed across {len(selected)} coherent rhizome areas:"
+            )
+
+            for idx, c in enumerate(selected, start=1):
+                path_s = " -> ".join(c["path"])
+
+                if c["nearby"]:
+                    lines.append(
+                        f"    {idx}) {c['area']}: {path_s}, "
+                        f"with nearby signals {', '.join(c['nearby'])}."
+                    )
+                else:
+                    lines.append(
+                        f"    {idx}) {c['area']}: {path_s}."
+                    )
+
+        lines.append(f"  Final recommendation: {gram_winner}.")
+    else:
+        lines.append(f"  This text is likely about {gram_winner}.")
+        lines.append(f"  Final recommendation: {gram_winner}.")
+
+    return lines
 
 # ---------------------------------------------------------------------------
 # FastAPI app
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="Coredrill — Rhizome Text Classifier",
+    title="Coredrill - Rhizome Text Classifier",
     description=(
         "Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy. "
         "Based on LaBSE embedding space structure. No trained classifiers. "
@@ -204,7 +537,7 @@ def _run_predict(text: str, tau: float | None) -> dict:
 
 
 def _build_response(raw: dict, full: bool = False) -> PredictionResponse:
-    pred = raw["prediction"]
+    pred = raw.get("prediction") or {}
     active = raw.get("active_overlap_set", [])
     results_all = raw.get("results", [])
     cd = _get_coredrill()
@@ -217,12 +550,12 @@ def _build_response(raw: dict, full: bool = False) -> PredictionResponse:
         if rec and isinstance(rec, dict) and rec.get("node"):
             best_node = rec["node"]
         elif results_all:
-            best_node = results_all[0]["node"]
+            best_node = results_all[0].get("node", "unknown")
         else:
             best_node = pred.get("best_node", "unknown")
     best_level = int(tree.get(best_node, {}).get("level", pred.get("best_level", -1)))
-    best_result = next((r for r in results_all if r["node"] == best_node), None)
-    confidence = round(best_result["conf"], 4) if best_result else round(pred.get("top_level_confidence", 0.0), 4)
+    best_result = next((r for r in results_all if r.get("node") == best_node), None)
+    confidence = round(best_result.get("conf", best_result.get("score", 0.0)), 4) if best_result else round(pred.get("top_level_confidence", 0.0), 4)
     backbone = cd.get("taxonomy_backbone", {})
     lineage_map = backbone.get("lineage_paths", {})
     paths = lineage_map.get(best_node, [])
@@ -230,33 +563,33 @@ def _build_response(raw: dict, full: bool = False) -> PredictionResponse:
     paths = [p for p in paths if p]
     lineage = paths[0] if paths else [best_node]
     from rhizome_engine import _deleuzian_flow  # type: ignore
-    flow = _deleuzian_flow(active, results_all, pred)
+    flow = _deleuzian_flow(active, results_all, pred) or {}
     def _node_result(r: dict) -> NodeResult:
         return NodeResult(
-            node=r["node"],
-            level=r["level"],
-            cosine_similarity=round(r["score"], 4),
+            node=r.get("node", "unknown"),
+            level=r.get("level", -1),
+            cosine_similarity=round(r.get("score", 0.0), 4),
             mass=round(r.get("mass", 0.0), 2),
-            production_score=round(r["production_score"], 4),
-            sigma_dist=round(r["sigma_dist"], 3),
+            production_score=round(r.get("production_score", 0.0), 4),
+            sigma_dist=round(r.get("sigma_dist", 0.0), 3),
         )
-    active_results = [_node_result(r) for r in active if r["node"] not in SKIP_NODES]
+    active_results = [_node_result(r) for r in active if r.get("node") not in SKIP_NODES]
     ranked = None
     if full:
-        ranked = [_node_result(r) for r in results_all[:40] if r["node"] not in SKIP_NODES]
+        ranked = [_node_result(r) for r in results_all[:40] if r.get("node") not in SKIP_NODES]
     return PredictionResponse(
-        text=raw["text"],
+        text=raw.get("text", ""),
         best_node=best_node,
         best_level=best_level,
         confidence=confidence,
         lineage=lineage,
-        flow_type=flow["flow_type"],
-        flow_label=flow["flow_label"],
-        flow_intensities=flow["intensities"],
+        flow_type=flow.get("flow_type", "unknown"),
+        flow_label=flow.get("flow_label", ""),
+        flow_intensities=flow.get("intensities", {}),
         active_overlap=active_results,
         ranked=ranked,
         pca_xyz=pred.get("pca_xyz", [0.0, 0.0, 0.0]),
-        latency_ms=round(raw["_latency_ms"], 1),
+        latency_ms=round(raw.get("_latency_ms", 0.0), 1),
     )
 
 
@@ -348,7 +681,7 @@ def predict_batch(
                 latency_ms=resp.latency_ms,
             ))
         except Exception as e:
-            log.warning(f"batch item failed: {text[:60]!r} — {e}")
+            log.warning(f"batch item failed: {text[:60]!r} - {e}")
             results.append(BatchItem(
                 text=text[:120],
                 best_node="error",
@@ -385,7 +718,7 @@ def predict_text(
         W = 72
         lines = []
         lines.append("=" * W)
-        lines.append("COREDRILL  —  RHIZOME PROFILE")
+        lines.append("COREDRILL  -  RHIZOME PROFILE")
         lines.append("=" * W)
         text_short = req.text[:W-4] + ("..." if len(req.text) > W-4 else "")
         lines.append(f"  {text_short}")
@@ -395,12 +728,19 @@ def predict_text(
         if gram_scores:
             GW = 88
             gram_state = raw.get("gram_state", "ok")
-            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
-            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
+            state_tag = "  [VOID - L0 fallback]" if gram_state == "void" else ""
+
+            # ── Natural language cluster summary ──────────────────────────
+            for sl in _build_cluster_summary_lines(gram_scores, results_all, gram_winner):
+                lines.append(sl)
+            lines.append("")
+            # ─────────────────────────────────────────────────────────────
+
+            lines.append(f"  GRAM-INVERSE  score = alpha * cos * NS * PC * SW{state_tag}")
             lines.append(f"  winner: {gram_winner}")
             lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
             lines.append("  " + "-" * GW)
-            result_nodes = {r["node"]: r for r in results_all if r["node"] not in SKIP_NODES}
+            result_nodes = {r["node"]: r for r in results_all if r.get("node") not in SKIP_NODES}
             gram_ranked = sorted(gram_scores.items(), key=lambda x: -x[1])
             shown = 0
             for node, gs in gram_ranked:
@@ -409,9 +749,9 @@ def predict_text(
                 r = result_nodes.get(node)
                 if not r:
                     continue
-                cos  = r["score"]
+                cos  = r.get("score", 0.0)
                 sig  = r.get("sigma_eff", 0.0)
-                z    = r["sigma_dist"]
+                z    = r.get("sigma_dist", 0.0)
                 lap  = r.get("laplace_score", 0.0)
                 gau  = r.get("gaussian_score", 0.0)
                 man  = r.get("manifold_score", 0.0)
@@ -429,9 +769,9 @@ def predict_text(
         lines.append(f"  {'NODE':<28}  {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
         lines.append("  " + "-" * (W - 2))
         for r in active[:6]:
-            if r["node"] in SKIP_NODES:
+            if r.get("node") in SKIP_NODES:
                 continue
-            z    = r["sigma_dist"]
+            z    = r.get("sigma_dist", 0.0)
             mass = r.get("mass", 0.0)
             sig  = r.get("sigma_eff", r.get("sigma_dist", 0.0))
             lap  = r.get("laplace_score", 0.0)
@@ -439,7 +779,7 @@ def predict_text(
             man  = r.get("manifold_score", 0.0)
             filled = int((mass / 100.0) * 10)
             bar = "|" * filled + "." * (10 - filled)
-            lines.append(f"  {r['node']:<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
+            lines.append(f"  {r.get('node','?'):<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
         lines.append("")
 
         # ── Recommended and lineage ───────────────────────────────────────
@@ -454,13 +794,13 @@ def predict_text(
         lines.append("  FLOW TOPOLOGY:")
         lines.append("")
         for r in active[:5]:
-            if r["node"] in SKIP_NODES:
+            if r.get("node") in SKIP_NODES:
                 continue
-            z    = r["sigma_dist"]
+            z    = r.get("sigma_dist", 0.0)
             mass = r.get("mass", 0.0)
             stem = "===>" if mass >= 80 else ("==- " if mass >= 40 else ("--- " if mass >= 20 else "... "))
             pos  = "in  " if z < 1.0 else ("edge" if z < 1.5 else "out ")
-            lines.append(f"    {stem} {r['node']:<28} [{pos}] z={z:.2f}s  {mass:5.1f}%")
+            lines.append(f"    {stem} {r.get('node','?'):<28} [{pos}] z={z:.2f}s  {mass:5.1f}%")
         lines.append("")
         lines.append(f"  PRIMARY FLOW: {resp.flow_label}")
         lines.append("")
@@ -477,12 +817,12 @@ def predict_text(
         lines.append(f"  {'NODE':<28} {'sigma':>6} {'cos':>7} {'z':>6} {'prod':>9} {'mass':>7} {'lvl':>4}")
         lines.append("  " + "-" * (W - 2))
         for r in results_all[:20]:
-            if r["node"] in SKIP_NODES:
+            if r.get("node") in SKIP_NODES:
                 continue
             lines.append(
-                f"  {r['node']:<28} {r.get('sigma_eff', 0):6.4f} {r['score']:7.4f} "
-                f"{r['sigma_dist']:5.2f}s {r['production_score']:9.4f} "
-                f"{r.get('mass', 0):6.1f}% {r['level']:4d}"
+                f"  {r.get('node','?'):<28} {r.get('sigma_eff', 0):6.4f} {r.get('score', 0.0):7.4f} "
+                f"{r.get('sigma_dist', 0.0):5.2f}s {r.get('production_score', 0.0):9.4f} "
+                f"{r.get('mass', 0):6.1f}% {r.get('level', -1):4d}"
             )
         lines.append("")
         lines.append("=" * W)
@@ -562,7 +902,7 @@ async def predict_file_text(
         lines = []
         lines.append("=" * W)
         lines.append(f"FILE: {file.filename}")
-        lines.append("COREDRILL  —  RHIZOME PROFILE")
+        lines.append("COREDRILL  -  RHIZOME PROFILE")
         lines.append("=" * W)
         text_short = text[:W-4] + ("..." if len(text) > W-4 else "")
         lines.append(f"  {text_short}")
@@ -571,12 +911,19 @@ async def predict_file_text(
         if gram_scores:
             GW = 88
             gram_state = raw.get("gram_state", "ok")
-            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
-            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
+            state_tag = "  [VOID - L0 fallback]" if gram_state == "void" else ""
+
+            # ── Natural language cluster summary ──────────────────────────
+            for sl in _build_cluster_summary_lines(gram_scores, results_all, gram_winner):
+                lines.append(sl)
+            lines.append("")
+            # ─────────────────────────────────────────────────────────────
+
+            lines.append(f"  GRAM-INVERSE  score = alpha * cos * NS * PC * SW{state_tag}")
             lines.append(f"  winner: {gram_winner}")
             lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
             lines.append("  " + "-" * GW)
-            result_nodes = {r["node"]: r for r in results_all if r["node"] not in SKIP_NODES}
+            result_nodes = {r["node"]: r for r in results_all if r.get("node") not in SKIP_NODES}
             gram_ranked = sorted(gram_scores.items(), key=lambda x: -x[1])
             shown = 0
             for node, gs in gram_ranked:
@@ -585,9 +932,9 @@ async def predict_file_text(
                 r = result_nodes.get(node)
                 if not r:
                     continue
-                cos  = r["score"]
+                cos  = r.get("score", 0.0)
                 sig  = r.get("sigma_eff", 0.0)
-                z    = r["sigma_dist"]
+                z    = r.get("sigma_dist", 0.0)
                 lap  = r.get("laplace_score", 0.0)
                 gau  = r.get("gaussian_score", 0.0)
                 man  = r.get("manifold_score", 0.0)
@@ -602,9 +949,9 @@ async def predict_file_text(
         lines.append(f"  {'NODE':<28}  {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
         lines.append("  " + "-" * (W - 2))
         for r in active[:6]:
-            if r["node"] in SKIP_NODES:
+            if r.get("node") in SKIP_NODES:
                 continue
-            z    = r["sigma_dist"]
+            z    = r.get("sigma_dist", 0.0)
             mass = r.get("mass", 0.0)
             sig  = r.get("sigma_eff", r.get("sigma_dist", 0.0))
             lap  = r.get("laplace_score", 0.0)
@@ -612,7 +959,7 @@ async def predict_file_text(
             man  = r.get("manifold_score", 0.0)
             filled = int((mass / 100.0) * 10)
             bar = "|" * filled + "." * (10 - filled)
-            lines.append(f"  {r['node']:<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
+            lines.append(f"  {r.get('node','?'):<28}  {sig:6.4f}  {z:5.2f}s  {lap:7.4f}  {gau:7.4f}  {man:7.4f}  [{bar}] {mass:5.1f}%")
         lines.append("")
         lines.append(f"  RECOMMENDED: {resp.best_node}  (level {resp.best_level})")
         lines.append("")
