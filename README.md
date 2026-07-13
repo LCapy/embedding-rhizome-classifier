@@ -1,25 +1,24 @@
-# Embedding Rhizome Classifier:
+# Embedding Rhizome Classifier
 
 Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.
-Performs classification through the geometric structure of the LaBSE embedding manifold. It does not use a trained softmax classifier and does not require labelled inference. The same multilingual manifold is used across all 109 languages supported by LaBSE.
 
-Futuree paper: *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
+Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a position inside a hand-built semantic taxonomy — without a trained softmax classifier and without labelled inference. Classification is a matrix-vector product against a set of stored centroids, so the same multilingual manifold serves every supported language.
+
+Full paper: [`docs/study_v5.md`](docs/study_v5.md) — *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
 
 ---
 
 ## What it does
 
-The "clasifier" is the Coredrill. It can map any text, in any of the 109 supported languages, to a position inside a crafted 238-node semantic taxonomy.
+Instead of predicting a single label, Coredrill measures how a piece of text activates 238 semantic territories at once. Each taxonomy node has:
 
-Instead of treating classification as a single-label prediction problem, it models the text as a point in embedding space and measures how that point activates multiple semantic territories at once. Each taxonomy node has:
+- a **centroid**, the center of a semantic territory;
+- a **dispersion estimate** (sigma), the territory's radius or spread;
+- **parent links**, defining a six-level taxonomy from broad domains down to specific actions.
 
-- a centroid, representing the center of a semantic territory;
-- a dispersion estimate, sigma, representing the territory's radius or spread;
-- parent links, defining a six-level taxonomy from broad domains to specific actions.
+The output is a **rhizome profile**: the territories a text activates, their relative intensities, their full taxonomy paths, and a topological flow classification (Territorialization, Deterritorialization, Line of Flight, BwO Approach, Reterritorialization).
 
-The output is a **rhizome profile**: a structured view of the semantic territories activated by the text, their relative intensities, their full taxonomy paths, and a topological flow classification.
-
-The human-readable API output reconstructs coherent rhizome areas from the taxonomy parent map. For example, a sentence about natural selection can activate both the biological chain and a secondary daily-life or family-planning neighborhood:
+The human-readable API output reconstructs coherent rhizome areas from the taxonomy parent map. For example, a sentence about natural selection can activate both the biological chain and a secondary daily-life/family-planning neighborhood:
 
 ```text
 This text is mainly distributed across 2 coherent rhizome areas:
@@ -28,51 +27,26 @@ This text is mainly distributed across 2 coherent rhizome areas:
 Final recommendation: Genes.
 ```
 
-The topological flow classes are:
-
-- **Territorialization**
-- **Deterritorialization**
-- **Line of Flight**
-- **BwO Approach**
-- **Reterritorialization**
-
 ---
 
-## Gram-inverse winner selection
+## How it works
 
-The winner selection uses the Gram-inverse score:
+Winner selection uses a Gram-inverse topological score. For each candidate node *i*:
 
-$$
-R_i = \alpha_i \cdot \langle \mu_i, x \rangle \cdot \sigma_i^{-0.5}
-$$
+```text
+R_i = alpha_i * s_i * NS_i * PC_i * SW_i * sqrt(mass_i)
+```
 
-where:
+- **alpha** — oblique projection of the query onto the centroid frame (`G⁺s`, where `G` is the Gram matrix of all centroids). This removes redundancy between correlated nodes so near-duplicate centroids don't both "win" for the same reason.
+- **s** — cosine proximity between the query and the node centroid.
+- **NS** — neighborhood support: do this node's semantic peers (same level, correlated) also score it well?
+- **PC** — path coherence: do the node's ancestors in the taxonomy agree with it, or is this an orphaned signal?
+- **SW** — specificity weight: tighter, better-calibrated centroids (lower sigma) are preferred over diffuse ones.
+- **sqrt(mass)** — damps nodes the text sits far from, even if they pass the other checks.
 
-$$
-\alpha = G^+s
-$$
+The full derivation and the experiments that led to this formula are in [`docs/study_v5.md`](docs/study_v5.md).
 
-is the oblique projection of the query onto the centroid frame, removing frame redundancy between correlated nodes.
-
-$$
-\langle \mu_i, x \rangle
-$$
-
-is the cosine proximity between the query embedding and the node centroid.
-
-$$
-\sigma_i^{-0.5}
-$$
-
-is a mild specificity reward.
-
-The Gram matrix is computed exactly from the stored centroids:
-
-$$
-G_{ij} = \langle \mu_i, \mu_j \rangle
-$$
-
-This makes winner selection algebraically equivalent to asking which node most uniquely explains the query's position in the 768-dimensional unit sphere, after accounting for all inter-centroid correlations.
+The approach originated from an earlier cross-lingual alignment study — a Spanish↔Russian literary corpus used to test whether embedding-space geometry alone is enough to align meaning across languages — described in the same paper.
 
 ---
 
@@ -87,35 +61,7 @@ This makes winner selection algebraically equivalent to asking which node most u
 | L4 | Scenario | Doctor Appointment, Double Charge Complaint, Natural Selection | ~60 |
 | L5 | Action / fine node | Request, Complain, Clarify, Confirm, Genes | ~26 |
 
-The taxonomy parent map is stored in:
-
-```text
-api/taxonomy.py
-```
-
-The API uses this file to reconstruct full human-readable paths such as:
-
-```text
-Life & Biology -> Biology -> Genetics -> DNA Inheritance -> Genes
-```
-
-and:
-
-```text
-Human Activity & Society -> Work & Economy -> Customer Service -> Complaint Handling
-```
-
----
-
-## Key results
-
-- Flat prototype accuracy: **91.3%** on held-out test sentences.
-- Cosine similarity to correct node centroid: **0.64–0.66**.
-- Correct-node distance: typically **z < 1σ**.
-- Cross-lingual behavior: topology is language-agnostic.
-- Topic dominance: topic dominates language in **69.4%** of triplets across 20 language families.
-- Training data: **164,444 records** from 16 heterogeneous sources.
-- Taxonomy size: **238 nodes**.
+The taxonomy parent map is stored in `api/taxonomy.py`. The API uses it to reconstruct full human-readable paths such as `Life & Biology -> Biology -> Genetics -> DNA Inheritance -> Genes`.
 
 ---
 
@@ -123,17 +69,8 @@ Human Activity & Society -> Work & Economy -> Customer Service -> Complaint Hand
 
 The API runs on a private Hugging Face Space. To request access, contact the author.
 
-**Base URL**
-
-```text
-https://lcapy-coredrill.hf.space
-```
-
-**Interactive docs**
-
-```text
-https://lcapy-coredrill.hf.space/docs
-```
+**Base URL:** `https://lcapy-coredrill.hf.space`
+**Interactive docs:** `https://lcapy-coredrill.hf.space/docs`
 
 ---
 
@@ -270,7 +207,7 @@ COREDRILL  —  RHIZOME PROFILE
     2) Daily Life: Daily Life -> Family Life -> Family Discussion -> Family Planning Talk.
   Final recommendation: Genes.
 
-  GRAM-INVERSE  score = alpha * cos / sigma^0.5
+  GRAM-INVERSE  score = alpha * cos * NS * PC * SW
   winner: Genes
   NODE                             score     cos  sigma      z      lap      gau      man    MASS
   ----------------------------------------------------------------------------------------
@@ -289,33 +226,36 @@ COREDRILL  —  RHIZOME PROFILE
 ========================================================================
 ```
 
+(Illustrative sample — exact scores shift as the taxonomy and scoring weights are tuned.)
+
 The summary is taxonomy-backed: the API does not merely print the top-ranked isolated nodes. It reconstructs full parent chains from `api/taxonomy.py`.
 
 ---
 
-## Multilingual examples
+## Multilingual support
 
-The same taxonomy applies across all LaBSE-supported languages. Tested languages include Portuguese, Spanish, Russian, Japanese, German, French, Korean, Hebrew, Vietnamese, Arabic, Chinese, and English.
+The same taxonomy applies across all LaBSE-supported languages. Tested languages include Portuguese, Spanish, Russian, Japanese, German, French, Korean, Hebrew, Vietnamese, Arabic, Chinese, and English — with no per-language configuration.
 
 ---
 
 ## Project structure
 
 ```text
-predict_embedding/
+embedding-rhizome-classifier/
 ├── .github/
 │   └── workflows/
+│       └── keep_alive.yml      # pings the HF Space so it doesn't sleep
 ├── api/
 │   ├── __init__.py
 │   ├── app.py                  # FastAPI application
 │   └── taxonomy.py             # 238-node taxonomy parent map
 ├── docs/
-│   ├── free_deployment.md      # Deployment guide
-│   └── study_v5.md             # Full research paper
+│   ├── free_deployment.md      # deployment guide
+│   └── study_v5.md             # full research paper
 ├── scripts/
-│   ├── build_sentences.py      # Sentence dataset builder
-│   ├── predict_folder.py       # Batch prediction and comparison
-│   └── rhizome_engine.py       # Core engine: collect / embed / build / predict
+│   ├── build_sentences.py      # sentence dataset builder
+│   ├── predict_folder.py       # batch prediction and comparison
+│   └── rhizome_engine.py       # core engine: collect / embed / build / predict
 ├── Dockerfile
 ├── README.md
 ├── requirements-api.txt
@@ -324,58 +264,9 @@ predict_embedding/
 
 ---
 
-## Theoretical background
-
-Classification is a single matrix-vector product on the unit sphere:
-
-$$
-s = Mx,\quad M \in \mathbb{R}^{k \times 768},\quad x \in S^{767}
-$$
-
-where `M` is the centroid matrix, one unit-normalized row per taxonomy node.
-
-The Gram-inverse winner selection solves:
-
-$$
-\alpha = G^+s,\quad G_{ij} = \langle \mu_i, \mu_j \rangle
-$$
-
-This removes frame redundancy between correlated centroids before scoring.
-
-Geometrically, this asks which node most uniquely explains the query's position in the embedding manifold after accounting for all inter-centroid correlations.
-
----
-
-## Formal claims established in Phase I
-
-1. **Geometric sufficiency**  
-   Cross-lingual alignment recall reaches 99.84%; geometry alone is sufficient for semantic localization.
-
-2. **Topic dominance**  
-   Topic separation is 3.24× larger than language separation.
-
-3. **Orbit overlap**  
-   Concepts have stable cross-language geometric locations.
-
-4. **Rhizome structure**  
-   Semantic territories overlap and co-activate; they resist a purely linear hierarchy.
-
-5. **Flow topology**  
-   The Deleuzian flow categories are thresholds in sigma-normalized distance and active-set cardinality space.
-
----
-
 ## Deployment
 
-See:
-
-```text
-docs/free_deployment.md
-```
-
-for the complete guide to deploying on Hugging Face Spaces.
-
-The coredrill JSON is distributed separately and fetched at container startup.
+See [`docs/free_deployment.md`](docs/free_deployment.md) for the complete guide to deploying your own instance on Hugging Face Spaces. The coredrill JSON is distributed separately and fetched at container startup.
 
 ---
 
@@ -383,9 +274,7 @@ The coredrill JSON is distributed separately and fetched at container startup.
 
 MIT.
 
-The LaBSE model is Apache 2.0.
-
-Training datasets are subject to their respective licenses.
+The LaBSE model is Apache 2.0. Training datasets are subject to their respective licenses.
 
 ---
 
@@ -396,6 +285,6 @@ Training datasets are subject to their respective licenses.
   title  = {Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis},
   author = {Lucas},
   year   = {2026},
-  note   = {https://github.com/LCapy/predict_embedding}
+  note   = {https://github.com/LCapy/embedding-rhizome-classifier}
 }
 ```
