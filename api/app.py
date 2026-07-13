@@ -88,13 +88,10 @@ from rhizome_engine import (  # type: ignore
     SKIP_NODES as _SKIP_NODES_DEFAULT,
 )
 
-<<<<<<< HEAD
 # Runtime skip-node set - overwritten by coredrill JSON on first load so that
 # the skip list stays version-locked with the model data.
 SKIP_NODES: set = set(_SKIP_NODES_DEFAULT)
 
-=======
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
 
 # ---------------------------------------------------------------------------
 # Taxonomy-backed lineage helpers for human-readable summaries
@@ -105,12 +102,8 @@ try:
 except Exception:
     try:
         from taxonomy import TAXONOMY
-<<<<<<< HEAD
     except Exception as _tax_err:
         log.warning("Could not import TAXONOMY - lineage summaries will be unavailable: %s", _tax_err)
-=======
-    except Exception:
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
         TAXONOMY = []
 
 TAXONOMY_BY_NAME = {
@@ -735,11 +728,7 @@ def predict_text(
         if gram_scores:
             GW = 88
             gram_state = raw.get("gram_state", "ok")
-<<<<<<< HEAD
             state_tag = "  [VOID - L0 fallback]" if gram_state == "void" else ""
-=======
-            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
 
             # ── Natural language cluster summary ──────────────────────────
             for sl in _build_cluster_summary_lines(gram_scores, results_all, gram_winner):
@@ -747,11 +736,7 @@ def predict_text(
             lines.append("")
             # ─────────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
             lines.append(f"  GRAM-INVERSE  score = alpha * cos * NS * PC * SW{state_tag}")
-=======
-            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
             lines.append(f"  winner: {gram_winner}")
             lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
             lines.append("  " + "-" * GW)
@@ -926,11 +911,7 @@ async def predict_file_text(
         if gram_scores:
             GW = 88
             gram_state = raw.get("gram_state", "ok")
-<<<<<<< HEAD
             state_tag = "  [VOID - L0 fallback]" if gram_state == "void" else ""
-=======
-            state_tag = "  [VOID — L0 fallback]" if gram_state == "void" else ""
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
 
             # ── Natural language cluster summary ──────────────────────────
             for sl in _build_cluster_summary_lines(gram_scores, results_all, gram_winner):
@@ -938,11 +919,7 @@ async def predict_file_text(
             lines.append("")
             # ─────────────────────────────────────────────────────────────
 
-<<<<<<< HEAD
             lines.append(f"  GRAM-INVERSE  score = alpha * cos * NS * PC * SW{state_tag}")
-=======
-            lines.append(f"  GRAM-INVERSE  score = alpha * cos / sigma^0.5{state_tag}")
->>>>>>> 9a1dff93f84e81e679a4787931000e061c9316b2
             lines.append(f"  winner: {gram_winner}")
             lines.append(f"  {'NODE':<28} {'score':>9} {'cos':>7} {'sigma':>6}  {'z':>5}  {'lap':>7}  {'gau':>7}  {'man':>7}  {'MASS':>6}")
             lines.append("  " + "-" * GW)
