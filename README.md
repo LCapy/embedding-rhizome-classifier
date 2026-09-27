@@ -6,6 +6,9 @@ Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a po
 
 Full paper: [`docs/study_v5.md`](docs/study_v5.md) - *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
 
+Diagrams of the deployment topology, the offline build pipeline, the request
+flow, and the taxonomy's multi-parent structure: [`docs/architecture.md`](docs/architecture.md)
+
 ---
 
 ## What it does
