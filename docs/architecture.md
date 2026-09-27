@@ -1,16 +1,17 @@
 # Architecture
 
-Four views of the same system: how the deployment fits together, how the
-offline build pipeline turns raw text into `coredrill_hierarchical.json`,
-what happens on a single `/predict` call, and what the taxonomy graph
-itself looks like. See [`docs/study_v5.md`](study_v5.md) for the math
-behind the scoring formulas referenced here, and
-[`docs/free_deployment.md`](free_deployment.md) for the step-by-step
-deploy guide.
+Five views of the same system: how the current deployment fits together, the
+target self-hosted deployment on EKS, how the offline build pipeline turns
+raw text into `coredrill_hierarchical.json`, what happens on a single
+`/predict` call, and what the taxonomy graph itself looks like. See
+[`docs/study_v5.md`](study_v5.md) for the math behind the scoring formulas
+referenced here, [`docs/free_deployment.md`](free_deployment.md) for the
+Hugging Face deploy guide, and [`infra/README.md`](../infra/README.md) for
+the EKS deploy guide.
 
 ---
 
-## 1. Deployment topology
+## 1. Deployment topology (current: Hugging Face)
 
 Three repos, one running service. Code and docs live on GitHub; the
 running API lives on a Hugging Face Space; the large coredrill file
@@ -48,7 +49,50 @@ Notes:
 
 ---
 
-## 2. Offline build pipeline
+## 2. Deployment topology (target: self-hosted on EKS)
+
+Same container image and API, no external hosting dependency. All AWS
+resources are provisioned by [`infra/terraform`](../infra/terraform); the
+Deployment/Service/HPA live in [`infra/k8s`](../infra/k8s). Details and exact
+commands: [`infra/README.md`](../infra/README.md).
+
+```mermaid
+flowchart LR
+    Dev[Developer] -->|docker push| ECR[("ECR\ncoredrill-api")]
+    Dev -->|terraform apply| TF["Terraform\nVPC + EKS + ECR + S3 + IRSA"]
+    TF -.provisions.-> Cluster
+
+    S3[("S3 bucket\ncoredrill-data")] -->|IRSA role, no static keys\nboto3 s3.download_file| Pod
+
+    subgraph Cluster["EKS cluster (namespace: coredrill)"]
+        Pod["coredrill-api pods\nFastAPI + LaBSE, port 7860"]
+        HPA["HPA\nscale 1-3 on CPU"]
+        HPA -.-> Pod
+    end
+
+    ECR -->|image pull| Pod
+
+    NLB["Network Load Balancer\ninternet-facing, port 80"] --> Pod
+    Client["API client"] --> NLB
+
+    style Pod fill:#2d6a4f,color:#fff
+    style TF fill:#1f2937,color:#fff
+```
+
+Notes:
+- No Hugging Face dependency at runtime: the image is pulled from ECR, and
+  `coredrill_hierarchical.json` is pulled from S3 using the pod's IRSA role
+  (`COREDRILL_S3_URI`, checked before `HF_DATASET_REPO` in `start.sh`) - so
+  the same image serves both the HF Space and EKS.
+- Nodes are CPU-only (`t3.large`), matching the current HF Space's resource
+  profile; the HPA scales pods 1-3 on CPU utilization once `metrics-server`
+  is installed.
+- No TLS/custom domain or CI/CD wiring yet - the NLB is plain HTTP on port
+  80. See "Next steps" in `infra/README.md`.
+
+---
+
+## 3. Offline build pipeline
 
 This runs locally, not on the Space. Its only output that matters at
 serve time is `coredrill_hierarchical.json`.
@@ -89,7 +133,7 @@ Notes:
 
 ---
 
-## 3. Request flow (`POST /predict`)
+## 4. Request flow (`POST /predict`)
 
 ```mermaid
 sequenceDiagram
@@ -126,7 +170,7 @@ Notes:
 
 ---
 
-## 4. Taxonomy structure (illustrative subgraph)
+## 5. Taxonomy structure (illustrative subgraph)
 
 The real taxonomy has 238 nodes across 6 levels (L0-L5); this is a small
 slice showing the multi-parent shape described above - `Natural Selection`
