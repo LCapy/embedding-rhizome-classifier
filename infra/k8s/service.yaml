@@ -1,0 +1,19 @@
+# Internet-facing Network Load Balancer, plain HTTP on port 80.
+# No TLS/custom domain yet - see infra/README.md "Next steps" for adding
+# the AWS Load Balancer Controller + ACM cert for HTTPS on a real domain.
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredrill-api
+  namespace: coredrill
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+spec:
+  type: LoadBalancer
+  selector:
+    app: coredrill-api
+  ports:
+    - port: 80
+      targetPort: 7860
+      protocol: TCP

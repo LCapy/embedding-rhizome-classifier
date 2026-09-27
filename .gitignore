@@ -46,3 +46,13 @@ Thumbs.db
 # Secrets
 .env
 *.env.local
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log

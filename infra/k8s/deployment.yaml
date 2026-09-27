@@ -1,0 +1,63 @@
+# image and COREDRILL_S3_URI come from `terraform output ecr_repository_url`
+# and `terraform output s3_bucket_name`. The API_KEY secret is created
+# imperatively (see infra/README.md) - never commit it to this file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredrill-api
+  namespace: coredrill
+  labels:
+    app: coredrill-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coredrill-api
+  template:
+    metadata:
+      labels:
+        app: coredrill-api
+    spec:
+      serviceAccountName: coredrill-api
+      nodeSelector:
+        workload: coredrill-api
+      containers:
+        - name: coredrill-api
+          image: "REPLACE_WITH_ECR_REPOSITORY_URL:latest"
+          ports:
+            - containerPort: 7860
+          env:
+            - name: PORT
+              value: "7860"
+            - name: COREDRILL_PATH
+              value: "/app/coredrill/coredrill_hierarchical.json"
+            - name: MODEL_NAME
+              value: "sentence-transformers/LaBSE"
+            - name: COREDRILL_S3_URI
+              value: "s3://REPLACE_WITH_S3_BUCKET_NAME/coredrill_hierarchical.json"
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: coredrill-api-key
+                  key: api-key
+                  optional: true
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "3Gi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7860
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7860
+            initialDelaySeconds: 40
+            periodSeconds: 20
