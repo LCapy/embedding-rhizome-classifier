@@ -2,9 +2,9 @@
 
 Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy.
 
-Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a position inside a hand-built semantic taxonomy — without a trained softmax classifier and without labelled inference. Classification is a matrix-vector product against a set of stored centroids, so the same multilingual manifold serves every supported language.
+Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a position inside a hand-built semantic taxonomy - without a trained softmax classifier and without labelled inference. Classification is a matrix-vector product against a set of stored centroids, so the same multilingual manifold serves every supported language.
 
-Full paper: [`docs/study_v5.md`](docs/study_v5.md) — *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
+Full paper: [`docs/study_v5.md`](docs/study_v5.md) - *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
 
 ---
 
@@ -37,16 +37,16 @@ Winner selection uses a Gram-inverse topological score. For each candidate node 
 R_i = alpha_i * s_i * NS_i * PC_i * SW_i * sqrt(mass_i)
 ```
 
-- **alpha** — oblique projection of the query onto the centroid frame (`G⁺s`, where `G` is the Gram matrix of all centroids). This removes redundancy between correlated nodes so near-duplicate centroids don't both "win" for the same reason.
-- **s** — cosine proximity between the query and the node centroid.
-- **NS** — neighborhood support: do this node's semantic peers (same level, correlated) also score it well?
-- **PC** — path coherence: do the node's ancestors in the taxonomy agree with it, or is this an orphaned signal?
-- **SW** — specificity weight: tighter, better-calibrated centroids (lower sigma) are preferred over diffuse ones.
-- **sqrt(mass)** — damps nodes the text sits far from, even if they pass the other checks.
+- **alpha** - oblique projection of the query onto the centroid frame (`G⁺s`, where `G` is the Gram matrix of all centroids). This removes redundancy between correlated nodes so near-duplicate centroids don't both "win" for the same reason.
+- **s** - cosine proximity between the query and the node centroid.
+- **NS** - neighborhood support: do this node's semantic peers (same level, correlated) also score it well?
+- **PC** - path coherence: do the node's ancestors in the taxonomy agree with it, or is this an orphaned signal?
+- **SW** - specificity weight: tighter, better-calibrated centroids (lower sigma) are preferred over diffuse ones.
+- **sqrt(mass)** - damps nodes the text sits far from, even if they pass the other checks.
 
 The full derivation and the experiments that led to this formula are in [`docs/study_v5.md`](docs/study_v5.md).
 
-The approach originated from an earlier cross-lingual alignment study — a Spanish↔Russian literary corpus used to test whether embedding-space geometry alone is enough to align meaning across languages — described in the same paper.
+The approach originated from an earlier cross-lingual alignment study - a Spanish↔Russian literary corpus used to test whether embedding-space geometry alone is enough to align meaning across languages - described in the same paper.
 
 ---
 
@@ -198,7 +198,7 @@ Coredrill returns a rhizome profile like:
 
 ```text
 ========================================================================
-COREDRILL  —  RHIZOME PROFILE
+COREDRILL  -  RHIZOME PROFILE
 ========================================================================
   Natural selection acts on heritable variation, favoring traits that...
 
@@ -226,7 +226,7 @@ COREDRILL  —  RHIZOME PROFILE
 ========================================================================
 ```
 
-(Illustrative sample — exact scores shift as the taxonomy and scoring weights are tuned.)
+(Illustrative sample - exact scores shift as the taxonomy and scoring weights are tuned.)
 
 The summary is taxonomy-backed: the API does not merely print the top-ranked isolated nodes. It reconstructs full parent chains from `api/taxonomy.py`.
 
@@ -234,7 +234,7 @@ The summary is taxonomy-backed: the API does not merely print the top-ranked iso
 
 ## Multilingual support
 
-The same taxonomy applies across all LaBSE-supported languages. Tested languages include Portuguese, Spanish, Russian, Japanese, German, French, Korean, Hebrew, Vietnamese, Arabic, Chinese, and English — with no per-language configuration.
+The same taxonomy applies across all LaBSE-supported languages. Tested languages include Portuguese, Spanish, Russian, Japanese, German, French, Korean, Hebrew, Vietnamese, Arabic, Chinese, and English - with no per-language configuration.
 
 ---
 

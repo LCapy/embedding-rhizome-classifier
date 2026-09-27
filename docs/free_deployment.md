@@ -15,7 +15,7 @@ Everything here is open-source.
 
 ---
 
-## Step 1 — Push the code to GitHub
+## Step 1 - Push the code to GitHub
 
 1. Create a new repository at https://github.com/new
    - Name: `coredrill`
@@ -35,7 +35,7 @@ git push -u origin main
 
 ---
 
-## Step 2 — Upload the coredrill JSON to a HF Dataset repo
+## Step 2 - Upload the coredrill JSON to a HF Dataset repo
 
 The `coredrill_hierarchical.json` is ~50 MB. Git and GitHub Release assets both have size limits and rate limits that make them awkward for large binary files. HF Dataset repos have no meaningful size limit and are designed for exactly this.
 
@@ -63,11 +63,11 @@ print("Done.")
 EOF
 ```
 
-Note the dataset repo ID — you will need it in Step 3.
+Note the dataset repo ID - you will need it in Step 3.
 
 ---
 
-## Step 3 — Create the HF Space
+## Step 3 - Create the HF Space
 
 1. Go to https://huggingface.co/new-space
    - Owner: your username
@@ -112,7 +112,7 @@ and caches LaBSE inside the Docker image.
 
 ---
 
-## Step 4 — Set the Space secrets
+## Step 4 - Set the Space secrets
 
 In your Space settings (https://huggingface.co/spaces/your-username/coredrill/settings),
 add these secrets:
@@ -132,7 +132,7 @@ then start the API.
 
 ---
 
-## Step 5 — Verify it works
+## Step 5 - Verify it works
 
 ```bash
 curl https://your-username-coredrill.hf.space/health
@@ -150,7 +150,7 @@ https://your-username-coredrill.hf.space/docs
 
 ---
 
-## Step 6 — Set up the keep-alive GitHub Action
+## Step 6 - Set up the keep-alive GitHub Action
 
 The free Space sleeps after 48 hours of no requests. The keep-alive workflow pings `/health`
 every 24 hours so it never sleeps.
@@ -249,12 +249,12 @@ The keep-alive ping prevents this from ever happening in practice.
 
 | Limit | Value | Impact |
 |-------|-------|--------|
-| RAM | 16 GB | Fine — LaBSE + coredrill needs ~1.5 GB |
+| RAM | 16 GB | Fine - LaBSE + coredrill needs ~1.5 GB |
 | CPU | 2 cores | Inference is single-threaded; fine for moderate traffic |
-| Disk | 50 GB ephemeral | Fine — model + code + JSON < 2 GB |
+| Disk | 50 GB ephemeral | Fine - model + code + JSON < 2 GB |
 | Inactivity sleep | 48 hours | Solved by the keep-alive workflow |
 | Concurrent requests | No hard limit, but single worker | Each request takes ~50–200 ms on CPU; queue builds under heavy load |
 
 If you ever need to handle more concurrent requests, the only free path is to add more workers
-(`--workers 2` in the uvicorn command) — but 2 CPU cores is the ceiling on the free tier, so
+(`--workers 2` in the uvicorn command) - but 2 CPU cores is the ceiling on the free tier, so
 2 workers is also the ceiling without paying.

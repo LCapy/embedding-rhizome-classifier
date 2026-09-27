@@ -29,7 +29,7 @@ jobs:
 
           echo "Pinging $HF_SPACE_URL/health ..."
 
-          # Retry up to 5 times with 30s gaps — Space may be cold-starting
+          # Retry up to 5 times with 30s gaps - Space may be cold-starting
           for i in 1 2 3 4 5; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
                      --max-time 120 \
@@ -44,5 +44,5 @@ jobs:
           done
 
           echo "WARNING: Space did not respond with 200 after 5 attempts."
-          # Do not fail the workflow — Space may just be rebuilding
+          # Do not fail the workflow - Space may just be rebuilding
           exit 0
