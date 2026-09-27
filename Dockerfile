@@ -8,7 +8,7 @@ WORKDIR /app
 
 # Install dependencies first (cached layer)
 COPY requirements-api.txt .
-RUN pip install --no-cache-dir -r requirements-api.txt huggingface_hub
+RUN pip install --no-cache-dir -r requirements-api.txt huggingface_hub boto3
 
 # Pre-download LaBSE into the image so cold starts don't need to re-fetch it.
 # This makes the image ~1.5 GB but startup is much faster.
