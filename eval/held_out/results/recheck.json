@@ -1,0 +1,6529 @@
+[
+ {
+  "set": "suite",
+  "id": "wiki_quantum_mechanics",
+  "source": "wikipedia",
+  "accept": [
+   "Mechanics",
+   "Quantum Mechanics",
+   "Wave Function"
+  ],
+  "leak": {
+   "max_cos": 0.9333,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Quantum Mechanics",
+   "nearest_title": "Quantum mechanics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Physical Reality",
+     "Physics",
+     "Natural World",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Physical Reality",
+     "Physics",
+     "Natural World",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Physics",
+     "Quantum Mechanics",
+     "Physical Reality",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Quantum Mechanics",
+    "top5": [
+     "Quantum Mechanics",
+     "Physics",
+     "Mechanics",
+     "Thermodynamics",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Quantum Mechanics",
+    "top5": [
+     "Quantum Mechanics",
+     "Physics",
+     "Chemistry",
+     "Mechanics",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Chemistry",
+     "Quantum Mechanics",
+     "Thermodynamics",
+     "Cosmology"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 2
+   },
+   "centroid": {
+    "answer": "Mechanics",
+    "top5": [
+     "Mechanics",
+     "Physics",
+     "Quantum Mechanics",
+     "Physical Reality",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Inorganic Chemistry",
+    "top5": [
+     "Inorganic Chemistry",
+     "Inorganic Chemistry",
+     "Mechanics",
+     "Chemistry",
+     "Thermodynamics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Mechanics",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "wiki_black_hole",
+  "source": "wikipedia",
+  "accept": [
+   "Astronomy",
+   "Astrophysics",
+   "Big Bang Model",
+   "Cosmology",
+   "Universe Expansion"
+  ],
+  "leak": {
+   "max_cos": 1.0,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Astrophysics",
+   "nearest_title": "en:Black hole"
+  },
+  "systems": {
+   "june": {
+    "answer": "Astronomy",
+    "gram_winner": "Astronomy",
+    "active": [
+     "Astronomy",
+     "Earth & Cosmos",
+     "Astrophysics",
+     "Cosmology",
+     "Big Bang Model"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Astronomy",
+    "gram_winner": "Astronomy",
+    "active": [
+     "Astronomy",
+     "Earth & Cosmos",
+     "Astrophysics",
+     "Cosmology",
+     "Big Bang Model"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Astrophysics",
+    "gram_winner": "Astrophysics",
+    "active": [
+     "Astrophysics",
+     "Universe Expansion",
+     "Quantum Mechanics",
+     "Big Bang Model",
+     "Cosmology",
+     "Astronomy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Astrophysics",
+    "top5": [
+     "Astrophysics",
+     "Cosmology",
+     "Natural World",
+     "Astronomy",
+     "Big Bang Model"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Astrophysics",
+    "top5": [
+     "Astrophysics",
+     "Cosmology",
+     "Natural World",
+     "Universe Expansion",
+     "Big Bang Model"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Astrophysics",
+    "top5": [
+     "Astrophysics",
+     "Cosmology",
+     "Astronomy",
+     "Quantum Mechanics",
+     "Physics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Universe Expansion",
+    "top5": [
+     "Universe Expansion",
+     "Astrophysics",
+     "Big Bang Model",
+     "Quantum Mechanics",
+     "Cosmology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Universe Expansion",
+    "top5": [
+     "Universe Expansion",
+     "Universe Expansion",
+     "Big Bang Model",
+     "Astrophysics",
+     "Cosmology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Astronomy",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_dna",
+  "source": "wikipedia",
+  "accept": [
+   "DNA Inheritance",
+   "Evolution",
+   "Genes",
+   "Genetics"
+  ],
+  "leak": {
+   "max_cos": 0.9932,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Genetics",
+   "nearest_title": "en:DNA"
+  },
+  "systems": {
+   "june": {
+    "answer": "DNA Inheritance",
+    "gram_winner": "DNA Inheritance",
+    "active": [
+     "DNA Inheritance",
+     "Genetics",
+     "Life & Biology",
+     "Biology",
+     "Genes",
+     "Organic Chemistry",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "DNA Inheritance",
+    "gram_winner": "DNA Inheritance",
+    "active": [
+     "DNA Inheritance",
+     "Genetics",
+     "Life & Biology",
+     "Biology",
+     "Genes",
+     "Organic Chemistry",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "DNA Inheritance",
+    "gram_winner": "DNA Inheritance",
+    "active": [
+     "DNA Inheritance",
+     "Genetics",
+     "Genes",
+     "Organic Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Genetics",
+    "top5": [
+     "Genetics",
+     "DNA Inheritance",
+     "Genes",
+     "Biology",
+     "Evolution"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Genetics",
+    "top5": [
+     "Genetics",
+     "DNA Inheritance",
+     "Biology",
+     "Genes",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Genetics",
+    "top5": [
+     "Genetics",
+     "DNA Inheritance",
+     "Biology",
+     "Chemistry",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "DNA Inheritance",
+    "top5": [
+     "DNA Inheritance",
+     "Genes",
+     "Genetics",
+     "Organic Chemistry",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Genes",
+    "top5": [
+     "Genes",
+     "Genes",
+     "DNA Inheritance",
+     "Genetics",
+     "Organic Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "DNA Inheritance",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_natural_selection",
+  "source": "wikipedia",
+  "accept": [
+   "Adaptation",
+   "Evolution",
+   "Genetics",
+   "Natural Selection"
+  ],
+  "leak": {
+   "max_cos": 1.0,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Natural Selection",
+   "nearest_title": "Natural selection"
+  },
+  "systems": {
+   "june": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Evolution",
+     "Natural Selection",
+     "Life & Biology",
+     "Adaptation",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Evolution",
+     "Natural Selection",
+     "Life & Biology",
+     "Adaptation",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Natural Selection",
+    "gram_winner": "Natural Selection",
+    "active": [
+     "Natural Selection",
+     "Evolution",
+     "Adaptation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Evolution",
+     "Adaptation",
+     "Biology",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Evolution",
+     "Adaptation",
+     "Biology",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Evolution",
+    "top5": [
+     "Evolution",
+     "Biology",
+     "Natural World",
+     "Natural Selection",
+     "Genetics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Evolution",
+     "Adaptation",
+     "Life & Biology",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Adaptation",
+    "top5": [
+     "Adaptation",
+     "Adaptation",
+     "Natural Selection",
+     "Evolution",
+     "Family Discussion"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Evolution",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_thermodynamics",
+  "source": "wikipedia",
+  "accept": [
+   "Entropy",
+   "Heat Transfer",
+   "Mechanics",
+   "Thermodynamics"
+  ],
+  "leak": {
+   "max_cos": 1.0,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Thermodynamics",
+   "nearest_title": "en:Thermodynamics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Thermodynamics",
+    "gram_winner": "Thermodynamics",
+    "active": [
+     "Physical Reality",
+     "Physics",
+     "Thermodynamics",
+     "Entropy",
+     "Natural World",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Thermodynamics",
+    "gram_winner": "Thermodynamics",
+    "active": [
+     "Physical Reality",
+     "Physics",
+     "Thermodynamics",
+     "Entropy",
+     "Natural World",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Thermodynamics",
+    "gram_winner": "Thermodynamics",
+    "active": [
+     "Thermodynamics",
+     "Physics",
+     "Heat Transfer"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Physics",
+     "Heat Transfer",
+     "Entropy",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Physics",
+     "Heat Transfer",
+     "Entropy",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Physics",
+     "Chemistry",
+     "Natural World",
+     "Entropy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Physics",
+     "Heat Transfer",
+     "Entropy",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Heat Transfer",
+    "top5": [
+     "Heat Transfer",
+     "Heat Transfer",
+     "Entropy",
+     "Thermodynamics",
+     "Inorganic Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Thermodynamics",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_calculus",
+  "source": "wikipedia",
+  "accept": [
+   "Algebra",
+   "Geometry",
+   "Mathematics",
+   "Proof & Inference"
+  ],
+  "leak": {
+   "max_cos": 0.7416,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Mathematics",
+   "nearest_title": "en:Mathematics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Quantum Mechanics",
+    "gram_winner": "Quantum Mechanics",
+    "active": [
+     "Formal Systems",
+     "Quantum Mechanics",
+     "Wave Function",
+     "Mathematics",
+     "Physics",
+     "Physical Reality",
+     "Natural World",
+     "Human Mind & Knowledge",
+     "Geometry",
+     "Algebra"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v50": {
+    "answer": "Quantum Mechanics",
+    "gram_winner": "Quantum Mechanics",
+    "active": [
+     "Formal Systems",
+     "Quantum Mechanics",
+     "Wave Function",
+     "Mathematics",
+     "Physics",
+     "Physical Reality",
+     "Natural World",
+     "Human Mind & Knowledge",
+     "Geometry",
+     "Algebra"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v51": {
+    "answer": "Algebra",
+    "gram_winner": "Algebra",
+    "active": [
+     "Algebra",
+     "Mechanics",
+     "Formal Systems",
+     "Mathematics",
+     "Geometry",
+     "Statistics",
+     "Quantum Mechanics",
+     "Measurement",
+     "Thermodynamics",
+     "Probability & Inference"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Geometry",
+     "Algebra",
+     "Formal Systems",
+     "Physics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Formal Systems",
+     "Geometry",
+     "Algebra",
+     "Statistics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Algebra",
+    "top5": [
+     "Algebra",
+     "Mathematics",
+     "Geometry",
+     "Formal Systems",
+     "Physics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Formal Systems",
+    "top5": [
+     "Formal Systems",
+     "Algebra",
+     "Mathematics",
+     "Mechanics",
+     "Geometry"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 2
+   },
+   "live": {
+    "answer": "Measurement",
+    "top5": [
+     "Measurement",
+     "Measurement",
+     "Wave Function",
+     "Quantum Mechanics",
+     "Mechanics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "Quantum Mechanics",
+   "node": 1,
+   "rq": 3,
+   "total": 4
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "wiki_probability_theory",
+  "source": "wikipedia",
+  "accept": [
+   "Algebra",
+   "Mathematics",
+   "Probability & Inference",
+   "Statistics"
+  ],
+  "leak": {
+   "max_cos": 0.8161,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Statistics",
+   "nearest_title": "Statistics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Probability & Inference",
+    "gram_winner": "Probability & Inference",
+    "active": [
+     "Statistics",
+     "Probability & Inference",
+     "Proof & Inference",
+     "Logic",
+     "Formal Systems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Probability & Inference",
+    "gram_winner": "Probability & Inference",
+    "active": [
+     "Statistics",
+     "Probability & Inference",
+     "Proof & Inference",
+     "Logic",
+     "Formal Systems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Probability & Inference",
+    "gram_winner": "Probability & Inference",
+    "active": [
+     "Probability & Inference",
+     "Proof & Inference"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Probability & Inference",
+    "top5": [
+     "Probability & Inference",
+     "Mathematics",
+     "Statistics",
+     "Formal Systems",
+     "Proof & Inference"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Probability & Inference",
+    "top5": [
+     "Probability & Inference",
+     "Proof & Inference",
+     "Mathematics",
+     "Formal Systems",
+     "Statistics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Formal Systems",
+     "Probability & Inference",
+     "Geometry",
+     "Algebra"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Probability & Inference",
+    "top5": [
+     "Probability & Inference",
+     "Proof & Inference",
+     "Statistics",
+     "Formal Systems",
+     "Logic"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Probability & Inference",
+    "top5": [
+     "Probability & Inference",
+     "Utility Service Access",
+     "Measurement",
+     "Probability & Inference",
+     "Statistics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Probability & Inference",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_influenza",
+  "source": "wikipedia",
+  "accept": [
+   "Diagnosis",
+   "Medicine",
+   "Symptoms & Self-Care",
+   "Treatment"
+  ],
+  "leak": {
+   "max_cos": 0.6714,
+   "nearest_source": "medical_chatdoctor_doctor",
+   "nearest_category": "Symptoms & Self-Care",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Daily Life",
+    "gram_winner": "Daily Life",
+    "active": [
+     "Daily Life",
+     "Transportation & Travel",
+     "Human Activity & Society",
+     "Discourse Forms",
+     "Conflict & Cooperation"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 0,
+    "total": 0
+   },
+   "fixed_v50": {
+    "answer": "Daily Life",
+    "gram_winner": "Daily Life",
+    "active": [
+     "Daily Life",
+     "Transportation & Travel",
+     "Human Activity & Society",
+     "Discourse Forms",
+     "Conflict & Cooperation"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 0,
+    "total": 0
+   },
+   "fixed_v51": {
+    "answer": "Travel",
+    "gram_winner": "Travel",
+    "active": [
+     "Medicine",
+     "Appointments & Medication"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Appointments & Medication",
+     "Diagnosis",
+     "Treatment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Appointments & Medication",
+     "Diagnosis",
+     "Treatment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Diagnosis",
+     "Doctor Appointment",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Travel",
+    "top5": [
+     "Travel",
+     "Trip Planning",
+     "Diagnosis",
+     "Symptoms & Self-Care",
+     "Medicine"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Transportation & Travel",
+     "Travel",
+     "Medicine",
+     "Conversation & Dialogue"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Daily Life",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_cancer",
+  "source": "wikipedia",
+  "accept": [
+   "Appointments & Medication",
+   "Diagnosis",
+   "Medicine",
+   "Treatment"
+  ],
+  "leak": {
+   "max_cos": 0.6823,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Medicine",
+   "nearest_title": "en:Pathology"
+  },
+  "systems": {
+   "june": {
+    "answer": "Life & Biology",
+    "gram_winner": "Life & Biology",
+    "active": [
+     "Life & Biology",
+     "Daily Life",
+     "Human Activity & Society",
+     "Institutions & Governance",
+     "Shopping & Consumption",
+     "Public Policy",
+     "Natural World",
+     "Conflict & Cooperation"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 2,
+    "rq": 0,
+    "total": 2
+   },
+   "fixed_v50": {
+    "answer": "Life & Biology",
+    "gram_winner": "Life & Biology",
+    "active": [
+     "Life & Biology",
+     "Daily Life",
+     "Human Activity & Society",
+     "Institutions & Governance",
+     "Shopping & Consumption",
+     "Public Policy",
+     "Natural World",
+     "Conflict & Cooperation"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 2,
+    "rq": 0,
+    "total": 2
+   },
+   "fixed_v51": {
+    "answer": "Organic Chemistry",
+    "gram_winner": "Organic Chemistry",
+    "active": [
+     "Medicine",
+     "Organic Chemistry",
+     "Business Operations",
+     "Government",
+     "Relationship Tension",
+     "Relationship Argument",
+     "Chemistry"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Treatment",
+    "top5": [
+     "Treatment",
+     "Medicine",
+     "Diagnosis",
+     "Appointments & Medication",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Treatment",
+    "top5": [
+     "Treatment",
+     "Medicine",
+     "Diagnosis",
+     "Appointments & Medication",
+     "Organic Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Treatment",
+     "Diagnosis",
+     "Chemistry",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Organic Chemistry",
+    "top5": [
+     "Organic Chemistry",
+     "Policy Impact",
+     "Inorganic Chemistry",
+     "Business Operations",
+     "Genes"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Plan",
+    "top5": [
+     "Plan",
+     "Education & Training",
+     "Joint Planning",
+     "Plan",
+     "Daily Life"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "Life & Biology",
+   "node": 2,
+   "rq": 0,
+   "total": 2
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_epistemology",
+  "source": "wikipedia",
+  "accept": [
+   "Epistemology",
+   "Knowledge & Belief",
+   "Logic",
+   "Proof & Inference"
+  ],
+  "leak": {
+   "max_cos": 0.9979,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Epistemology",
+   "nearest_title": "en:Epistemology"
+  },
+  "systems": {
+   "june": {
+    "answer": "Epistemology",
+    "gram_winner": "Epistemology",
+    "active": [
+     "Philosophy",
+     "Epistemology",
+     "Semantics",
+     "Knowledge & Belief",
+     "Human Mind & Knowledge",
+     "Concept Clarification",
+     "Argument & Persuasion",
+     "Debate",
+     "Language Structure",
+     "Persuade"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Epistemology",
+    "gram_winner": "Epistemology",
+    "active": [
+     "Philosophy",
+     "Epistemology",
+     "Semantics",
+     "Knowledge & Belief",
+     "Human Mind & Knowledge",
+     "Concept Clarification",
+     "Argument & Persuasion",
+     "Debate",
+     "Language Structure",
+     "Persuade"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Epistemology",
+    "gram_winner": "Epistemology",
+    "active": [
+     "Epistemology",
+     "Knowledge & Belief",
+     "Human Mind & Knowledge"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Epistemology",
+    "top5": [
+     "Epistemology",
+     "Knowledge & Belief",
+     "Philosophy",
+     "Concept Clarification",
+     "Human Mind & Knowledge"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Epistemology",
+    "top5": [
+     "Epistemology",
+     "Knowledge & Belief",
+     "Philosophy",
+     "Concept Clarification",
+     "Human Mind & Knowledge"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Epistemology",
+    "top5": [
+     "Epistemology",
+     "Philosophy",
+     "Knowledge & Belief",
+     "Physics",
+     "Human Mind & Knowledge"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Epistemology",
+    "top5": [
+     "Epistemology",
+     "Knowledge & Belief",
+     "Human Mind & Knowledge",
+     "Concept Clarification",
+     "Philosophy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Criticize",
+    "top5": [
+     "Criticize",
+     "Criticize",
+     "Information Seeking",
+     "Critique & Rebuttal",
+     "Explain"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "Epistemology",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "wiki_ethics",
+  "source": "wikipedia",
+  "accept": [
+   "Epistemology",
+   "Ethics",
+   "Moral Philosophy",
+   "Philosophy"
+  ],
+  "leak": {
+   "max_cos": 1.0,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Ethics",
+   "nearest_title": "en:Ethics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Ethics",
+    "gram_winner": "Ethics",
+    "active": [
+     "Ethics",
+     "Moral Philosophy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Ethics",
+    "gram_winner": "Ethics",
+    "active": [
+     "Ethics",
+     "Moral Philosophy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Ethics",
+    "gram_winner": "Ethics",
+    "active": [
+     "Ethics",
+     "Moral Philosophy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Ethics",
+    "top5": [
+     "Ethics",
+     "Moral Philosophy",
+     "Philosophy",
+     "Emotion & Social Bonding",
+     "Empathy & Support"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Moral Philosophy",
+    "top5": [
+     "Moral Philosophy",
+     "Ethics",
+     "Philosophy",
+     "Rights & Obligations",
+     "Social Theory"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Ethics",
+    "top5": [
+     "Ethics",
+     "Philosophy",
+     "Moral Philosophy",
+     "Epistemology",
+     "Social Theory"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Moral Philosophy",
+    "top5": [
+     "Moral Philosophy",
+     "Ethics",
+     "Philosophy",
+     "Social Theory",
+     "Rights & Obligations"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Policy Impact",
+    "top5": [
+     "Policy Impact",
+     "Policy Impact",
+     "Rights & Obligations",
+     "Romance & Intimacy",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "Ethics",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_macroeconomics",
+  "source": "wikipedia",
+  "accept": [
+   "Economics",
+   "Macroeconomics",
+   "Microeconomics"
+  ],
+  "leak": {
+   "max_cos": 1.0,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Macroeconomics",
+   "nearest_title": "en:Macroeconomics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics",
+     "Economics",
+     "Social Theory"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics",
+     "Economics",
+     "Social Theory"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics",
+     "Work & Economy",
+     "Economics",
+     "Business Operations"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Economics",
+     "Microeconomics",
+     "Work & Economy",
+     "Social Theory"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Economics",
+     "Work & Economy",
+     "Microeconomics",
+     "Transactions"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Economics",
+     "Microeconomics",
+     "Work & Economy",
+     "Product Choice"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Economics",
+    "top5": [
+     "Economics",
+     "Macroeconomics",
+     "Work & Economy",
+     "Transactions",
+     "Business Operations"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Policy Proposal",
+     "Macroeconomics",
+     "Business Operations",
+     "Operations Management"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Macroeconomics",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_elections",
+  "source": "wikipedia",
+  "accept": [
+   "Campaign Messaging",
+   "Election Campaign Speech",
+   "Elections & Campaigns",
+   "Government",
+   "Political Institutions",
+   "Politics",
+   "Voting Instructions",
+   "Voting Process"
+  ],
+  "leak": {
+   "max_cos": 0.9853,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Elections & Campaigns",
+   "nearest_title": "Elections"
+  },
+  "systems": {
+   "june": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Institutions & Governance",
+     "Collaboration",
+     "Human Activity & Society",
+     "Elections & Campaigns",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Law & Regulation",
+     "Government"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v50": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Institutions & Governance",
+     "Collaboration",
+     "Human Activity & Society",
+     "Elections & Campaigns",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Law & Regulation",
+     "Government"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v51": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Elections & Campaigns",
+     "Government",
+     "Vote",
+     "Voting Process",
+     "Voting Instructions"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Vote",
+     "Voting Process",
+     "Voting Instructions",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Elections & Campaigns",
+     "Government",
+     "Institutions & Governance",
+     "Biology"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "centroid": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Vote",
+     "Voting Instructions",
+     "Voting Process",
+     "Political Institutions"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Vote",
+    "top5": [
+     "Vote",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Elections & Campaigns"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Vote",
+   "node": 1,
+   "rq": 3,
+   "total": 4
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_poetry",
+  "source": "wikipedia",
+  "accept": [
+   "Fiction",
+   "Literature",
+   "Lyric Expression",
+   "Poetry"
+  ],
+  "leak": {
+   "max_cos": 0.9519,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Poetry",
+   "nearest_title": "en:Poetry"
+  },
+  "systems": {
+   "june": {
+    "answer": "Music",
+    "gram_winner": "Music",
+    "active": [
+     "Creative Expression",
+     "Communication & Expression",
+     "Music",
+     "Poetry",
+     "Song",
+     "Narrative & Reportage",
+     "Language Structure",
+     "Literature",
+     "Discourse Forms",
+     "Lyric Expression"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v50": {
+    "answer": "Music",
+    "gram_winner": "Music",
+    "active": [
+     "Creative Expression",
+     "Communication & Expression",
+     "Music",
+     "Poetry",
+     "Song",
+     "Narrative & Reportage",
+     "Language Structure",
+     "Literature",
+     "Discourse Forms",
+     "Lyric Expression"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v51": {
+    "answer": "Music",
+    "gram_winner": "Music",
+    "active": [
+     "Music",
+     "Song",
+     "Poetry",
+     "Narrative & Reportage",
+     "Event Narrative",
+     "Lyric Expression",
+     "Communication & Expression",
+     "Creative Expression",
+     "Language Structure",
+     "Stage Interaction"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Poetry",
+    "top5": [
+     "Poetry",
+     "Music",
+     "Creative Expression",
+     "Song",
+     "Image-making"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Poetry",
+    "top5": [
+     "Poetry",
+     "Music",
+     "Literature",
+     "Song",
+     "Creative Expression"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Poetry",
+    "top5": [
+     "Poetry",
+     "Music",
+     "Literature",
+     "Communication & Expression",
+     "Syntax"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Song",
+    "top5": [
+     "Song",
+     "Poetry",
+     "Music",
+     "Communication & Expression",
+     "Narrative & Reportage"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "live": {
+    "answer": "Lyric Expression",
+    "top5": [
+     "Lyric Expression",
+     "Song",
+     "Lyric Expression",
+     "Music",
+     "Describe"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Music",
+   "node": 1,
+   "rq": 3,
+   "total": 4
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_jazz",
+  "source": "wikipedia",
+  "accept": [
+   "Creative Expression",
+   "Music",
+   "Performance",
+   "Song"
+  ],
+  "leak": {
+   "max_cos": 0.8525,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Music",
+   "nearest_title": "en:Music"
+  },
+  "systems": {
+   "june": {
+    "answer": "Music",
+    "gram_winner": "Music",
+    "active": [
+     "Creative Expression",
+     "Music",
+     "Performance",
+     "Song",
+     "Discourse Forms",
+     "Communication & Expression",
+     "Human Activity & Society",
+     "Narrative & Reportage",
+     "Factual Report",
+     "Stage Interaction"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Music",
+    "gram_winner": "Music",
+    "active": [
+     "Creative Expression",
+     "Music",
+     "Performance",
+     "Song",
+     "Discourse Forms",
+     "Communication & Expression",
+     "Human Activity & Society",
+     "Narrative & Reportage",
+     "Factual Report",
+     "Stage Interaction"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Performance",
+    "gram_winner": "Performance",
+    "active": [
+     "Performance",
+     "Music"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Performance",
+    "top5": [
+     "Performance",
+     "Music",
+     "Stage Interaction",
+     "Image-making",
+     "Poetry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Music",
+    "top5": [
+     "Music",
+     "Performance",
+     "Image-making",
+     "Song",
+     "Poetry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Music",
+    "top5": [
+     "Music",
+     "Poetry",
+     "Communication & Expression",
+     "Performance",
+     "Creative Expression"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Music",
+    "top5": [
+     "Music",
+     "Performance",
+     "Song",
+     "Poetry",
+     "Dramatic Scene"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Dramatic Scene",
+    "top5": [
+     "Dramatic Scene",
+     "Transportation & Travel",
+     "Performance",
+     "Song",
+     "Stage Interaction"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Music",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_climate_change",
+  "source": "wikipedia",
+  "accept": [
+   "Climate & Weather",
+   "Climate Change",
+   "Ecology",
+   "Ecosystems",
+   "Meteorology"
+  ],
+  "leak": {
+   "max_cos": 0.9878,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Climate Change",
+   "nearest_title": "Climate change"
+  },
+  "systems": {
+   "june": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Natural World",
+     "Climate & Weather",
+     "Thermodynamics",
+     "Ecology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Natural World",
+     "Climate & Weather",
+     "Ecosystems",
+     "Ecology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Natural World",
+     "Macroeconomics",
+     "Ecology",
+     "Evolution"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Ecosystems",
+     "Climate & Weather",
+     "Cook",
+     "Meal Preparation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Climate Change",
+     "Cook",
+     "Climate & Weather",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Climate Change",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_ecosystem",
+  "source": "wikipedia",
+  "accept": [
+   "Biology",
+   "Climate & Weather",
+   "Ecology",
+   "Ecosystems"
+  ],
+  "leak": {
+   "max_cos": 0.9539,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Ecology",
+   "nearest_title": "en:Ecosystem"
+  },
+  "systems": {
+   "june": {
+    "answer": "Ecology",
+    "gram_winner": "Ecology",
+    "active": [
+     "Ecology",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Ecology",
+    "gram_winner": "Ecology",
+    "active": [
+     "Ecology",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Ecology",
+    "gram_winner": "Ecology",
+    "active": [
+     "Ecology",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Chemistry",
+     "Family Discussion"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Chemistry",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Natural World",
+     "Chemistry",
+     "Biology",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Chemistry",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Ecosystems",
+    "top5": [
+     "Ecosystems",
+     "Ecosystems",
+     "Ecology",
+     "Organic Chemistry",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Ecology",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "wiki_french_cuisine",
+  "source": "wikipedia",
+  "accept": [
+   "Food & Cooking",
+   "Meal Preparation",
+   "Restaurant & Ordering"
+  ],
+  "leak": {
+   "max_cos": 0.6882,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Poetry",
+   "nearest_title": "de:Lyrik"
+  },
+  "systems": {
+   "june": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Food & Cooking",
+     "Daily Life"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Food & Cooking",
+     "Daily Life"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Ordering at a Restaurant",
+    "gram_winner": "Ordering at a Restaurant",
+    "active": [
+     "Restaurant & Ordering",
+     "Ordering at a Restaurant",
+     "Food & Cooking",
+     "Meal Preparation",
+     "Cook"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Food & Cooking",
+    "top5": [
+     "Food & Cooking",
+     "Ordering at a Restaurant",
+     "Restaurant & Ordering",
+     "Cook",
+     "Meal Preparation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Cook",
+    "top5": [
+     "Cook",
+     "Meal Preparation",
+     "Food & Cooking",
+     "Ordering at a Restaurant",
+     "Restaurant & Ordering"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "trained": {
+    "answer": "Fiction",
+    "top5": [
+     "Fiction",
+     "Poetry",
+     "Natural World",
+     "Macroeconomics",
+     "Literature"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "centroid": {
+    "answer": "Ordering at a Restaurant",
+    "top5": [
+     "Ordering at a Restaurant",
+     "Restaurant & Ordering",
+     "Food & Cooking",
+     "Cook",
+     "Meal Preparation"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "live": {
+    "answer": "Food & Cooking",
+    "top5": [
+     "Food & Cooking",
+     "Food & Cooking",
+     "Travel",
+     "Transportation & Travel",
+     "Performance"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Food & Cooking",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_photosynthesis",
+  "source": "wikipedia",
+  "accept": [
+   "Biology",
+   "Chemistry",
+   "Ecology",
+   "Ecosystems",
+   "Organic Chemistry"
+  ],
+  "leak": {
+   "max_cos": 0.8589,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Biology",
+   "nearest_title": "pt:Biologia"
+  },
+  "systems": {
+   "june": {
+    "answer": "Ecology",
+    "gram_winner": "Ecology",
+    "active": [
+     "Ecology",
+     "Ecosystems",
+     "Life & Biology",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Ecology",
+    "gram_winner": "Ecology",
+    "active": [
+     "Ecology",
+     "Ecosystems",
+     "Life & Biology",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Ecosystems",
+    "gram_winner": "Ecosystems",
+    "active": [
+     "Ecosystems",
+     "Food & Cooking",
+     "Meal Preparation",
+     "Cook",
+     "Ecology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Biology",
+    "top5": [
+     "Biology",
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Life & Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Biology",
+    "top5": [
+     "Biology",
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Earth & Cosmos"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Biology",
+     "Natural World",
+     "Chemistry",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Ecosystems",
+    "top5": [
+     "Ecosystems",
+     "Ecology",
+     "Cook",
+     "Food & Cooking",
+     "Meal Preparation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Cook",
+    "top5": [
+     "Cook",
+     "Cook",
+     "Ecosystems",
+     "Ecology",
+     "Climate Change"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Ecology",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "wiki_roman_law",
+  "source": "wikipedia",
+  "accept": [
+   "Government",
+   "Law & Regulation",
+   "Legal Obligation",
+   "Rights & Obligations",
+   "Rules & Enforcement"
+  ],
+  "leak": {
+   "max_cos": 0.62,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Law & Regulation",
+   "nearest_title": "Law"
+  },
+  "systems": {
+   "june": {
+    "answer": "Law & Regulation",
+    "gram_winner": "Law & Regulation",
+    "active": [
+     "Law & Regulation",
+     "Institutions & Governance",
+     "Human Activity & Society",
+     "Government",
+     "Daily Life",
+     "Policy Proposal",
+     "Discourse Forms",
+     "Work & Economy",
+     "Public Policy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Law & Regulation",
+    "gram_winner": "Law & Regulation",
+    "active": [
+     "Law & Regulation",
+     "Institutions & Governance",
+     "Human Activity & Society",
+     "Government",
+     "Daily Life",
+     "Policy Proposal",
+     "Discourse Forms",
+     "Work & Economy",
+     "Public Policy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Government",
+    "gram_winner": "Government",
+    "active": [
+     "Law & Regulation",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Public Policy",
+     "Natural World",
+     "Government",
+     "Health Routine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Public Policy",
+     "Medicine",
+     "Government",
+     "Politics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Medicine",
+     "Literature",
+     "Public Policy",
+     "Syntax"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Government",
+     "Political Institutions",
+     "Institutions & Governance",
+     "Grammar Explanation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Rules & Enforcement",
+    "top5": [
+     "Rules & Enforcement",
+     "Rules & Enforcement",
+     "Travel",
+     "Performance",
+     "Stage Interaction"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Law & Regulation",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": true
+ },
+ {
+  "set": "suite",
+  "id": "bbc_science",
+  "source": "bbc_rss",
+  "accept": [
+   "Astronomy",
+   "Astrophysics",
+   "Biology",
+   "Chemistry",
+   "Climate & Weather",
+   "Climate Change",
+   "Cosmology",
+   "Ecology",
+   "Ecosystems",
+   "Evolution",
+   "Genetics",
+   "Geology",
+   "Mechanics",
+   "Medicine",
+   "Meteorology",
+   "Physics",
+   "Quantum Mechanics",
+   "Tectonics",
+   "Thermodynamics"
+  ],
+  "leak": {
+   "max_cos": 0.3824,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Climate & Weather",
+   "nearest_title": "Meteorology"
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Conversation & Dialogue",
+     "Customer Service",
+     "Work & Economy",
+     "Discourse Forms",
+     "Collaboration",
+     "Human Activity & Society",
+     "Law & Regulation",
+     "Institutions & Governance",
+     "Romance & Intimacy",
+     "Wave Function"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 2,
+    "total": 2
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Conversation & Dialogue",
+     "Customer Service",
+     "Work & Economy",
+     "Discourse Forms",
+     "Collaboration",
+     "Human Activity & Society",
+     "Law & Regulation",
+     "Institutions & Governance",
+     "Romance & Intimacy",
+     "Wave Function"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 2,
+    "total": 2
+   },
+   "fixed_v51": {
+    "answer": "Meteorology",
+    "gram_winner": "Meteorology",
+    "active": [
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Public Policy",
+    "top5": [
+     "Public Policy",
+     "Meteorology",
+     "Climate & Weather",
+     "Climate Change",
+     "Complaint Handling"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "logreg": {
+    "answer": "Public Policy",
+    "top5": [
+     "Public Policy",
+     "Meteorology",
+     "Thermodynamics",
+     "Climate & Weather",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "trained": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Public Policy",
+     "Cosmology",
+     "Thermodynamics",
+     "Climate & Weather"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "centroid": {
+    "answer": "Meteorology",
+    "top5": [
+     "Meteorology",
+     "Climate & Weather",
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Conversation & Dialogue",
+     "Health Routine",
+     "Customer Service"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "Climate & Weather",
+   "node": 3,
+   "rq": 3,
+   "total": 6
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "bbc_technology",
+  "source": "bbc_rss",
+  "accept": [
+   "Business Operations",
+   "Economics",
+   "Education & Training",
+   "Logic",
+   "Macroeconomics",
+   "Mathematics",
+   "Mechanics",
+   "Physics",
+   "Politics",
+   "Statistics"
+  ],
+  "leak": {
+   "max_cos": 0.4168,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Medicine",
+   "nearest_title": "en:Human body"
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Customer Service",
+     "Work & Economy",
+     "Business Operations",
+     "Daily Life",
+     "Discourse Forms",
+     "Collaboration",
+     "Grocery Purchase",
+     "Human Activity & Society",
+     "Conversation & Dialogue",
+     "Shopping & Consumption"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Customer Service",
+     "Work & Economy",
+     "Business Operations",
+     "Daily Life",
+     "Discourse Forms",
+     "Collaboration",
+     "Grocery Purchase",
+     "Human Activity & Society",
+     "Conversation & Dialogue",
+     "Shopping & Consumption"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Collaboration",
+     "Billing & Refunds",
+     "Business Operations",
+     "Question–Answer",
+     "Operations Management",
+     "Work & Economy",
+     "Government"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Visual Arts",
+    "top5": [
+     "Visual Arts",
+     "Image-making",
+     "Business Operations",
+     "Operations Management",
+     "News Report"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "logreg": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Visual Arts",
+     "Work & Economy",
+     "Business Operations",
+     "Macroeconomics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Medicine",
+     "Billing & Refunds",
+     "Fiction",
+     "Physics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Education & Training",
+    "top5": [
+     "Education & Training",
+     "Visual Arts",
+     "Customer Service",
+     "Image-making",
+     "Business Operations"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Customer Service",
+    "top5": [
+     "Customer Service",
+     "Customer Service",
+     "Conversation & Dialogue",
+     "Education & Training",
+     "Operations Management"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Customer Service",
+   "node": 1,
+   "rq": 2,
+   "total": 3
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "bbc_business",
+  "source": "bbc_rss",
+  "accept": [
+   "Business Operations",
+   "Customer Service",
+   "Economics",
+   "Government",
+   "Macroeconomics",
+   "Microeconomics",
+   "Operations Management",
+   "Politics",
+   "Public Policy",
+   "Transactions",
+   "Workplace Coordination"
+  ],
+  "leak": {
+   "max_cos": 0.4045,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Ecology",
+   "nearest_title": "fr:Écologie"
+  },
+  "systems": {
+   "june": {
+    "answer": "Grocery Purchase",
+    "gram_winner": "Grocery Purchase",
+    "active": [
+     "Grocery Purchase",
+     "Business Operations",
+     "Daily Life",
+     "Shopping & Consumption",
+     "Customer Service",
+     "Purchase & Payment",
+     "Troubleshooting Support",
+     "Collaboration",
+     "Work & Economy",
+     "Human Activity & Society"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v50": {
+    "answer": "Grocery Purchase",
+    "gram_winner": "Grocery Purchase",
+    "active": [
+     "Grocery Purchase",
+     "Business Operations",
+     "Daily Life",
+     "Shopping & Consumption",
+     "Customer Service",
+     "Purchase & Payment",
+     "Troubleshooting Support",
+     "Collaboration",
+     "Work & Economy",
+     "Human Activity & Society"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "fixed_v51": {
+    "answer": "Operations Management",
+    "gram_winner": "Operations Management",
+    "active": [
+     "Collaboration",
+     "Operations Management",
+     "Medicine",
+     "Question–Answer",
+     "Government",
+     "Law & Regulation",
+     "Public Policy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Grocery Purchase",
+     "Climate & Weather",
+     "Buy",
+     "Complaint Handling"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "logreg": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Climate & Weather",
+     "Thermodynamics",
+     "Tectonics",
+     "Entropy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "trained": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Ecology",
+     "Astrophysics",
+     "Astronomy",
+     "Technical Setup Help"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "centroid": {
+    "answer": "Troubleshooting Support",
+    "top5": [
+     "Troubleshooting Support",
+     "Operations Management",
+     "Home Repair Request",
+     "Climate Change",
+     "Buy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Operations Management",
+     "Climate Change",
+     "Climate & Weather",
+     "Tectonics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Food & Cooking",
+   "node": 1,
+   "rq": 3,
+   "total": 4
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "bbc_politics",
+  "source": "bbc_rss",
+  "accept": [
+   "Campaign Messaging",
+   "Conflict & Cooperation",
+   "Election Campaign Speech",
+   "Elections & Campaigns",
+   "Government",
+   "Policy Impact",
+   "Policy Proposal",
+   "Political Institutions",
+   "Politics",
+   "Public Administration",
+   "Public Ideology",
+   "Public Policy",
+   "Voting Process"
+  ],
+  "leak": {
+   "max_cos": 0.4332,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Economics",
+   "nearest_title": "en:Economics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Policy Proposal",
+    "gram_winner": "Policy Proposal",
+    "active": [
+     "Policy Proposal",
+     "Work & Economy",
+     "Government",
+     "Daily Life",
+     "Public Policy",
+     "Grocery Purchase",
+     "Institutions & Governance",
+     "Human Activity & Society"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Policy Proposal",
+    "gram_winner": "Policy Proposal",
+    "active": [
+     "Policy Proposal",
+     "Work & Economy",
+     "Government",
+     "Daily Life",
+     "Public Policy",
+     "Grocery Purchase",
+     "Institutions & Governance",
+     "Human Activity & Society"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Government",
+    "gram_winner": "Government",
+    "active": [
+     "Government",
+     "Law & Regulation",
+     "Billing & Refunds",
+     "Macroeconomics",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Business Operations",
+     "Operations Management",
+     "Law & Regulation",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "logreg": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Climate Change",
+     "Microeconomics",
+     "Government",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Economics",
+     "Microeconomics",
+     "Billing & Refunds",
+     "Ordering & Delivery"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "centroid": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Policy Reform Proposal",
+     "Household Maintenance",
+     "Domestic Planning",
+     "Economics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Customer Service",
+    "top5": [
+     "Customer Service",
+     "Policy Proposal",
+     "Macroeconomics",
+     "Request",
+     "Operations Management"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Debate",
+   "node": 1,
+   "rq": 3,
+   "total": 4
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "bbc_health",
+  "source": "bbc_rss",
+  "accept": [
+   "Appointments & Medication",
+   "Biology",
+   "Diagnosis",
+   "Doctor Appointment",
+   "Ecology",
+   "Genetics",
+   "Health Routine",
+   "Medicine",
+   "Symptoms & Self-Care",
+   "Treatment"
+  ],
+  "leak": {
+   "max_cos": 0.4974,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Genetics",
+   "nearest_title": "nl:Genetica"
+  },
+  "systems": {
+   "june": {
+    "answer": "Debate",
+    "gram_winner": "Debate",
+    "active": [
+     "Daily Life",
+     "Debate",
+     "Life & Biology",
+     "Human Activity & Society",
+     "Product Choice",
+     "Argument & Persuasion",
+     "Shopping & Consumption",
+     "Institutions & Governance",
+     "Collaboration",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1,
+    "rq": 0,
+    "total": 1
+   },
+   "fixed_v50": {
+    "answer": "Debate",
+    "gram_winner": "Debate",
+    "active": [
+     "Daily Life",
+     "Debate",
+     "Life & Biology",
+     "Human Activity & Society",
+     "Product Choice",
+     "Argument & Persuasion",
+     "Shopping & Consumption",
+     "Institutions & Governance",
+     "Collaboration",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1,
+    "rq": 0,
+    "total": 1
+   },
+   "fixed_v51": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Medicine",
+     "Relationship Tension",
+     "Relationship Argument",
+     "Persuade",
+     "Choose",
+     "Evolution",
+     "Collaboration"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Evolution",
+     "Appointments & Medication",
+     "Doctor Appointment",
+     "Natural Selection"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Appointments & Medication",
+    "top5": [
+     "Appointments & Medication",
+     "Evolution",
+     "Medicine",
+     "Climate Change",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Diagnosis",
+     "Genetics",
+     "Treatment",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Campaign Messaging",
+    "top5": [
+     "Campaign Messaging",
+     "Campaign",
+     "Relationship Argument",
+     "Relationship Tension",
+     "Choose"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Choose",
+    "top5": [
+     "Choose",
+     "Choose",
+     "Product Choice",
+     "Medicine",
+     "Education & Training"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "Customer Service",
+   "node": 1,
+   "rq": 0,
+   "total": 1
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "reddit_science",
+  "source": "reddit",
+  "accept": [
+   "Astronomy",
+   "Astrophysics",
+   "Biology",
+   "Chemistry",
+   "Climate & Weather",
+   "Climate Change",
+   "Cosmology",
+   "Ecology",
+   "Ecosystems",
+   "Evolution",
+   "Genetics",
+   "Geology",
+   "Mathematics",
+   "Medicine",
+   "Physics",
+   "Quantum Mechanics",
+   "Statistics",
+   "Thermodynamics"
+  ],
+  "leak": {
+   "max_cos": 0.539,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Macroeconomics",
+   "nearest_title": "de:Makroökonomie"
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Daily Life",
+     "Work & Economy",
+     "Human Activity & Society",
+     "Customer Service",
+     "Shopping & Consumption",
+     "Grocery Purchase",
+     "Purchase & Payment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 0,
+    "total": 0
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Daily Life",
+     "Work & Economy",
+     "Human Activity & Society",
+     "Customer Service",
+     "Shopping & Consumption",
+     "Grocery Purchase",
+     "Purchase & Payment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 0,
+    "total": 0
+   },
+   "fixed_v51": {
+    "answer": "Ordering at a Restaurant",
+    "gram_winner": "Ordering at a Restaurant",
+    "active": [
+     "Medicine",
+     "Billing & Refunds",
+     "Government",
+     "Restaurant & Ordering",
+     "Ordering at a Restaurant"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Health Routine",
+    "top5": [
+     "Health Routine",
+     "Symptoms & Self-Care",
+     "Macroeconomics",
+     "Ordering at a Restaurant",
+     "Restaurant & Ordering"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "logreg": {
+    "answer": "Conversation & Dialogue",
+    "top5": [
+     "Conversation & Dialogue",
+     "Astrophysics",
+     "Restaurant & Ordering",
+     "Ordering at a Restaurant",
+     "Health Routine"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "trained": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Medicine",
+     "Health Routine",
+     "Technical Setup Help",
+     "Macroeconomics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "centroid": {
+    "answer": "Status Update",
+    "top5": [
+     "Status Update",
+     "Ordering at a Restaurant",
+     "Restaurant & Ordering",
+     "Billing & Refunds",
+     "Medicine"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Workplace Coordination",
+     "Status Update",
+     "Food & Cooking"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   }
+  },
+  "june_report": {
+   "gram_winner": "",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "reddit_philosophy",
+  "source": "reddit",
+  "accept": [
+   "Argument & Persuasion",
+   "Debate",
+   "Epistemology",
+   "Ethics",
+   "Knowledge & Belief",
+   "Logic",
+   "Moral Philosophy",
+   "Philosophy",
+   "Proof & Inference",
+   "Social Theory"
+  ],
+  "leak": {
+   "max_cos": 0.6513,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Creative Expression",
+   "nearest_title": "Art"
+  },
+  "systems": {
+   "june": {
+    "answer": "Creative Expression",
+    "gram_winner": "Creative Expression",
+    "active": [
+     "Narrative & Reportage",
+     "Personal Story",
+     "Event Narrative",
+     "Creative Expression",
+     "Communication & Expression",
+     "Discourse Forms",
+     "Fiction"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 1,
+    "total": 1
+   },
+   "fixed_v50": {
+    "answer": "Creative Expression",
+    "gram_winner": "Creative Expression",
+    "active": [
+     "Narrative & Reportage",
+     "Personal Story",
+     "Event Narrative",
+     "Creative Expression",
+     "Communication & Expression",
+     "Discourse Forms",
+     "Fiction"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0,
+    "rq": 1,
+    "total": 1
+   },
+   "fixed_v51": {
+    "answer": "Creative Expression",
+    "gram_winner": "Creative Expression",
+    "active": [
+     "Creative Expression",
+     "Narrative & Reportage",
+     "Event Narrative",
+     "Narrate",
+     "Stage Interaction",
+     "Fiction",
+     "Collaboration",
+     "Personal Story",
+     "Image-making",
+     "Human Mind & Knowledge"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1,
+    "rq": 1,
+    "total": 2
+   },
+   "td_trained": {
+    "answer": "Fiction",
+    "top5": [
+     "Fiction",
+     "Literature",
+     "Poetry",
+     "Creative Expression",
+     "Stage Interaction"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "logreg": {
+    "answer": "Fiction",
+    "top5": [
+     "Fiction",
+     "Literature",
+     "Creative Expression",
+     "Poetry",
+     "Narrative & Reportage"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "trained": {
+    "answer": "Fiction",
+    "top5": [
+     "Fiction",
+     "Literature",
+     "Poetry",
+     "Creative Expression",
+     "Philosophy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   },
+   "centroid": {
+    "answer": "Narrative & Reportage",
+    "top5": [
+     "Narrative & Reportage",
+     "Event Narrative",
+     "Creative Expression",
+     "Narrate",
+     "Image-making"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Narrate",
+    "top5": [
+     "Narrate",
+     "Image-making",
+     "Narrate",
+     "Transportation & Travel",
+     "Personal Story"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "reddit_cooking",
+  "source": "reddit",
+  "accept": [
+   "Cook",
+   "Food & Cooking",
+   "Grocery Purchase",
+   "Meal Preparation",
+   "Restaurant & Ordering"
+  ],
+  "leak": {
+   "max_cos": 0.6322,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Food & Cooking",
+   "nearest_title": "Cooking"
+  },
+  "systems": {
+   "june": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Food & Cooking",
+     "Cook",
+     "Daily Life",
+     "Human Activity & Society"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Food & Cooking",
+     "Cook",
+     "Daily Life",
+     "Human Activity & Society"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Cook",
+    "gram_winner": "Cook",
+    "active": [
+     "Food & Cooking",
+     "Meal Preparation",
+     "Cook",
+     "Medicine",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "td_trained": {
+    "answer": "Food & Cooking",
+    "top5": [
+     "Food & Cooking",
+     "Cook",
+     "Meal Preparation",
+     "Health Routine",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Meal Preparation",
+    "top5": [
+     "Meal Preparation",
+     "Cook",
+     "Food & Cooking",
+     "Health Routine",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "trained": {
+    "answer": "Appointments & Medication",
+    "top5": [
+     "Appointments & Medication",
+     "Health Routine",
+     "Doctor Appointment",
+     "Treatment",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "centroid": {
+    "answer": "Cook",
+    "top5": [
+     "Cook",
+     "Food & Cooking",
+     "Meal Preparation",
+     "Appointments & Medication",
+     "Treatment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Food & Cooking",
+     "Cook",
+     "Medicine",
+     "Daily Life"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "reddit_worldnews",
+  "source": "reddit",
+  "accept": [
+   "Competition",
+   "Conflict & Cooperation",
+   "Disagreement & Argument",
+   "Economics",
+   "Elections & Campaigns",
+   "Government",
+   "Macroeconomics",
+   "Negotiation",
+   "Politics",
+   "Public Policy"
+  ],
+  "leak": {
+   "max_cos": 0.3075,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Ethics",
+   "nearest_title": "de:Ethics"
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Work & Economy",
+     "Customer Service"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1,
+    "rq": 2,
+    "total": 3
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Work & Economy",
+     "Customer Service"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1,
+    "rq": 2,
+    "total": 3
+   },
+   "fixed_v51": {
+    "answer": "Astronomy",
+    "gram_winner": "Astronomy",
+    "active": [
+     "Billing & Refunds",
+     "Medicine",
+     "Complaint Handling",
+     "Government",
+     "Collaboration",
+     "Public Policy",
+     "Question–Answer",
+     "Law & Regulation",
+     "Astronomy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Astronomy",
+     "Complaint Handling",
+     "Technical Setup Help",
+     "Billing & Refunds"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "logreg": {
+    "answer": "Astronomy",
+    "top5": [
+     "Astronomy",
+     "News Report",
+     "Ordering & Delivery",
+     "Billing & Refunds",
+     "Complaint Handling"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "trained": {
+    "answer": "Astronomy",
+    "top5": [
+     "Astronomy",
+     "Astrophysics",
+     "Ordering & Delivery",
+     "Cosmology",
+     "Billing & Refunds"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "centroid": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Astronomy",
+     "Astrophysics",
+     "Complaint Handling",
+     "Refund Processing"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Customer Service",
+    "top5": [
+     "Customer Service",
+     "Work & Economy",
+     "Customer Service",
+     "Complaint Handling",
+     "Tectonics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 1
+   }
+  },
+  "june_report": {
+   "gram_winner": "",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "suite",
+  "id": "reddit_personalfinance",
+  "source": "reddit",
+  "accept": [
+   "Billing & Refunds",
+   "Business Operations",
+   "Customer Service",
+   "Economics",
+   "Macroeconomics",
+   "Microeconomics",
+   "Purchase & Payment",
+   "Shopping & Consumption",
+   "Transactions"
+  ],
+  "leak": {
+   "max_cos": 0.582,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Medicine",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Human Activity & Society",
+     "Daily Life",
+     "Shopping & Consumption",
+     "Customer Service",
+     "Institutions & Governance",
+     "Work & Economy",
+     "Government",
+     "Double Charge Complaint",
+     "Complain",
+     "Discourse Forms"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Human Activity & Society",
+     "Daily Life",
+     "Shopping & Consumption",
+     "Customer Service",
+     "Institutions & Governance",
+     "Work & Economy",
+     "Government",
+     "Double Charge Complaint",
+     "Complain",
+     "Discourse Forms"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3,
+    "rq": 3,
+    "total": 6
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Question–Answer",
+     "Billing & Refunds",
+     "Public Policy",
+     "Law & Regulation",
+     "Government",
+     "Double Charge Complaint",
+     "Complain"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 1,
+    "rq": 3,
+    "total": 4
+   },
+   "td_trained": {
+    "answer": "Microeconomics",
+    "top5": [
+     "Microeconomics",
+     "Billing & Refunds",
+     "Technical Setup Help",
+     "Macroeconomics",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "logreg": {
+    "answer": "Conversation & Dialogue",
+    "top5": [
+     "Conversation & Dialogue",
+     "Technical Setup Help",
+     "Ethics",
+     "Question–Answer",
+     "Parent Guidance"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "trained": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Technical Setup Help",
+     "Conversation & Dialogue",
+     "Public Policy",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true,
+    "node": 3
+   },
+   "centroid": {
+    "answer": "Technical Setup Help",
+    "top5": [
+     "Technical Setup Help",
+     "Conversation & Dialogue",
+     "Parent–Child Interaction",
+     "Parent Guidance",
+     "Status Update"
+    ],
+    "answer_ok": false,
+    "profile_ok": false,
+    "node": 0
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Workplace Coordination",
+     "Conversation & Dialogue",
+     "Status Update",
+     "Medicine"
+    ],
+    "answer_ok": false,
+    "profile_ok": true,
+    "node": 0
+   }
+  },
+  "june_report": {
+   "gram_winner": "",
+   "node": 0,
+   "rq": 0,
+   "total": 0
+  },
+  "same_text_as_june": false
+ },
+ {
+  "set": "probes",
+  "id": "01_riemann_en_math",
+  "source": "probe",
+  "accept": [
+   "Mathematics"
+  ],
+  "leak": {
+   "max_cos": 0.7655,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Algebra",
+   "nearest_title": "en:Abstract algebra"
+  },
+  "systems": {
+   "june": {
+    "answer": "Quantum Mechanics",
+    "gram_winner": "Quantum Mechanics",
+    "active": [
+     "Quantum Mechanics",
+     "Formal Systems",
+     "Wave Function",
+     "Earth & Cosmos",
+     "Physics",
+     "Mathematics",
+     "Human Mind & Knowledge",
+     "Natural World",
+     "Proof & Inference",
+     "Physical Reality"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Quantum Mechanics",
+    "gram_winner": "Quantum Mechanics",
+    "active": [
+     "Quantum Mechanics",
+     "Formal Systems",
+     "Wave Function",
+     "Earth & Cosmos",
+     "Physics",
+     "Mathematics",
+     "Human Mind & Knowledge",
+     "Natural World",
+     "Proof & Inference",
+     "Physical Reality"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Quantum Mechanics",
+    "gram_winner": "Quantum Mechanics",
+    "active": [
+     "Quantum Mechanics",
+     "Proof & Inference",
+     "Probability & Inference",
+     "Formal Systems",
+     "Mathematics",
+     "Wave Function",
+     "Mechanics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Geometry",
+     "Algebra",
+     "Probability & Inference",
+     "Statistics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Geometry",
+     "Formal Systems",
+     "Probability & Inference",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Mathematics",
+    "top5": [
+     "Mathematics",
+     "Geometry",
+     "Algebra",
+     "Formal Systems",
+     "Quantum Mechanics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Quantum Mechanics",
+    "top5": [
+     "Quantum Mechanics",
+     "Formal Systems",
+     "Wave Function",
+     "Mathematics",
+     "Big Bang Model"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Measurement",
+    "top5": [
+     "Measurement",
+     "Measurement",
+     "Wave Function",
+     "Quantum Mechanics",
+     "Big Bang Model"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Quantum Mechanics",
+   "live_v4": "Measurement"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "02_complaint_es_customer",
+  "source": "probe",
+  "accept": [
+   "Billing & Refunds",
+   "Complain",
+   "Complaint Handling",
+   "Customer Service",
+   "Refund Processing"
+  ],
+  "leak": {
+   "max_cos": 0.6194,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Appointments & Medication",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Customer Service",
+     "Work & Economy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Customer Service",
+     "Work & Economy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Appointments & Medication",
+     "Symptoms & Self-Care",
+     "Complaint Handling",
+     "Double Charge Complaint",
+     "Complain",
+     "Public Policy",
+     "Treatment",
+     "Law & Regulation"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Complaint Handling",
+     "Technical Setup Help",
+     "Symptoms & Self-Care",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Complaint Handling",
+     "Technical Setup Help",
+     "Appointments & Medication",
+     "Diagnosis"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Complaint Handling",
+    "top5": [
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Technical Setup Help",
+     "Symptoms & Self-Care",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Appointments & Medication",
+     "Medicine",
+     "Treatment",
+     "Technical Setup Help"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Customer Service",
+    "top5": [
+     "Customer Service",
+     "Medicine",
+     "Customer Service",
+     "Symptoms & Self-Care",
+     "Health Routine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Customer Service",
+   "live_v4": "Customer Service"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "03_physicist_grief_ru_mixed",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.5953,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Thermodynamics",
+   "nearest_title": "no:Termodynamikk"
+  },
+  "systems": {
+   "june": {
+    "answer": "Physics",
+    "gram_winner": "Physics",
+    "active": [
+     "Human Activity & Society",
+     "Natural World",
+     "Daily Life",
+     "Life & Biology",
+     "Technical Setup Help",
+     "Physics",
+     "Troubleshooting Support",
+     "Work & Economy",
+     "Physical Reality",
+     "Business Operations"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Physics",
+    "gram_winner": "Physics",
+    "active": [
+     "Human Activity & Society",
+     "Natural World",
+     "Daily Life",
+     "Life & Biology",
+     "Technical Setup Help",
+     "Physics",
+     "Troubleshooting Support",
+     "Work & Economy",
+     "Physical Reality",
+     "Business Operations"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Biology",
+     "Genetics",
+     "Natural Selection",
+     "Ecology"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Medicine",
+     "Physics",
+     "Music",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Thermodynamics",
+    "top5": [
+     "Thermodynamics",
+     "Medicine",
+     "Symptoms & Self-Care",
+     "Music",
+     "Physics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Thermodynamics",
+     "Symptoms & Self-Care",
+     "Natural World",
+     "Physics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Heat Transfer",
+    "top5": [
+     "Heat Transfer",
+     "Medicine",
+     "Heat Transfer",
+     "Entropy",
+     "Thermodynamics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Physics",
+   "live_v4": "Heat Transfer"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "04_ai_fairness_ptbr_en_mixed",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.6361,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Philosophy",
+   "nearest_title": "nl:Filosofie"
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Argument & Persuasion",
+     "Troubleshooting Support",
+     "Debate",
+     "Discourse Forms",
+     "Customer Service",
+     "Human Activity & Society",
+     "Technical Setup Help",
+     "Conflict & Cooperation",
+     "Question–Answer",
+     "Semantics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Argument & Persuasion",
+     "Troubleshooting Support",
+     "Debate",
+     "Discourse Forms",
+     "Customer Service",
+     "Human Activity & Society",
+     "Technical Setup Help",
+     "Conflict & Cooperation",
+     "Question–Answer",
+     "Semantics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Question–Answer",
+    "gram_winner": "Question–Answer",
+    "active": [
+     "Question–Answer",
+     "Proof & Inference",
+     "Law & Regulation",
+     "Medicine",
+     "Persuade",
+     "Government"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Geometry",
+    "top5": [
+     "Geometry",
+     "Technical Setup Help",
+     "Semantics",
+     "Billing & Refunds",
+     "Complaint Handling"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Semantics",
+    "top5": [
+     "Semantics",
+     "Geometry",
+     "Mathematics",
+     "Ethics",
+     "Technical Setup Help"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Semantics",
+    "top5": [
+     "Semantics",
+     "Mathematics",
+     "Philosophy",
+     "Microeconomics",
+     "Ethics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Philosophy",
+    "top5": [
+     "Philosophy",
+     "Mathematics",
+     "Proof & Inference",
+     "Argument & Persuasion",
+     "Household Argument"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Utility Service Access",
+    "top5": [
+     "Utility Service Access",
+     "Utility Service Access",
+     "Technical Setup Help",
+     "Troubleshooting Support",
+     "Public Services"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Customer Service",
+   "live_v4": "Utility Service Access"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "05_cardiology_fr_clinical",
+  "source": "probe",
+  "accept": [
+   "Diagnosis",
+   "Medicine",
+   "Treatment"
+  ],
+  "leak": {
+   "max_cos": 0.5792,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Treatment",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Daily Life",
+     "Customer Service",
+     "Human Activity & Society",
+     "Work & Economy",
+     "Conversation & Dialogue",
+     "Discourse Forms",
+     "Business Operations",
+     "Shopping & Consumption",
+     "Troubleshooting Support",
+     "Grocery Purchase"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Daily Life",
+     "Customer Service",
+     "Human Activity & Society",
+     "Work & Economy",
+     "Conversation & Dialogue",
+     "Discourse Forms",
+     "Business Operations",
+     "Shopping & Consumption",
+     "Troubleshooting Support",
+     "Grocery Purchase"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Treatment",
+     "Appointments & Medication",
+     "Health Routine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Diagnosis",
+    "top5": [
+     "Diagnosis",
+     "Treatment",
+     "Appointments & Medication",
+     "Medicine",
+     "Doctor Appointment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Diagnosis",
+    "top5": [
+     "Diagnosis",
+     "Treatment",
+     "Doctor Appointment",
+     "Appointments & Medication",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Treatment",
+    "top5": [
+     "Treatment",
+     "Diagnosis",
+     "Appointments & Medication",
+     "Medicine",
+     "Doctor Appointment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Treatment",
+    "top5": [
+     "Treatment",
+     "Diagnosis",
+     "Appointments & Medication",
+     "Health Routine",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Health Routine",
+     "Appointments & Medication",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Customer Service",
+   "live_v4": "Medicine"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "06_recipe_love_letter_ko_ambiguous",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.5807,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Appointments & Medication",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Daily Life",
+     "Human Activity & Society",
+     "Food & Cooking",
+     "Work & Economy",
+     "Shopping & Consumption",
+     "Conflict & Cooperation",
+     "Grocery Purchase",
+     "Discourse Forms"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Food & Cooking",
+    "gram_winner": "Food & Cooking",
+    "active": [
+     "Daily Life",
+     "Human Activity & Society",
+     "Food & Cooking",
+     "Work & Economy",
+     "Shopping & Consumption",
+     "Conflict & Cooperation",
+     "Grocery Purchase",
+     "Discourse Forms"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Appointments & Medication",
+    "gram_winner": "Appointments & Medication",
+    "active": [
+     "Medicine",
+     "Appointments & Medication",
+     "Health Routine",
+     "Symptoms & Self-Care",
+     "Treatment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Appointments & Medication",
+    "top5": [
+     "Appointments & Medication",
+     "Health Routine",
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Doctor Appointment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Appointments & Medication",
+     "Medicine",
+     "Health Routine",
+     "Doctor Appointment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Appointments & Medication",
+     "Health Routine",
+     "Medicine",
+     "Treatment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Appointments & Medication",
+    "top5": [
+     "Appointments & Medication",
+     "Symptoms & Self-Care",
+     "Health Routine",
+     "Treatment",
+     "Medicine"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Health Routine",
+     "Appointments & Medication",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Food & Cooking",
+   "live_v4": "Medicine"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "07_amazon_ecology_en_science",
+  "source": "probe",
+  "accept": [
+   "Climate Change",
+   "Ecology",
+   "Ecosystems"
+  ],
+  "leak": {
+   "max_cos": 0.7651,
+   "nearest_source": "wikipedia",
+   "nearest_category": "Climate Change",
+   "nearest_title": "Climate change"
+  },
+  "systems": {
+   "june": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Climate Change",
+    "gram_winner": "Climate Change",
+    "active": [
+     "Climate Change"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Ecology",
+    "top5": [
+     "Ecology",
+     "Ecosystems",
+     "Climate Change",
+     "Natural World",
+     "Evolution"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Ecology",
+     "Ecosystems",
+     "Natural World",
+     "Climate & Weather"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Ecology",
+     "Natural World",
+     "Evolution",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Ecosystems",
+     "Adaptation",
+     "Climate & Weather",
+     "Natural Selection"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Climate Change",
+    "top5": [
+     "Climate Change",
+     "Climate Change",
+     "Climate & Weather",
+     "Cook",
+     "Ecosystems"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Climate Change",
+   "live_v4": "Climate Change"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "08_soldier_refusal_he_ambiguous",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.5135,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Medicine",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Work & Economy",
+    "gram_winner": "Work & Economy",
+    "active": [
+     "Human Activity & Society",
+     "Law & Regulation",
+     "Work & Economy",
+     "Institutions & Governance",
+     "Daily Life",
+     "Government",
+     "Debate",
+     "Shopping & Consumption",
+     "Discourse Forms",
+     "Customer Service"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Work & Economy",
+    "gram_winner": "Work & Economy",
+    "active": [
+     "Human Activity & Society",
+     "Law & Regulation",
+     "Work & Economy",
+     "Institutions & Governance",
+     "Daily Life",
+     "Government",
+     "Debate",
+     "Shopping & Consumption",
+     "Discourse Forms",
+     "Customer Service"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Law & Regulation",
+     "Government"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Literature",
+     "Billing & Refunds",
+     "Public Policy",
+     "Ordering & Delivery"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Epistemology",
+     "Literature",
+     "Medicine",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Public Policy",
+     "Health Routine",
+     "Appointments & Medication",
+     "Symptoms & Self-Care"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Law & Regulation",
+    "top5": [
+     "Law & Regulation",
+     "Medicine",
+     "Health Routine",
+     "Symptoms & Self-Care",
+     "Appointments & Medication"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Conversation & Dialogue",
+     "Medicine",
+     "Legal Obligation",
+     "Rights & Obligations"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Work & Economy",
+   "live_v4": "Medicine"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "09_inflation_vi_economics",
+  "source": "probe",
+  "accept": [
+   "Economics",
+   "Macroeconomics"
+  ],
+  "leak": {
+   "max_cos": 0.8114,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Macroeconomics",
+   "nearest_title": "sv:Inflation"
+  },
+  "systems": {
+   "june": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics",
+     "Economics",
+     "Social Theory",
+     "Daily Life"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics",
+     "Economics",
+     "Social Theory",
+     "Daily Life"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Macroeconomics",
+    "gram_winner": "Macroeconomics",
+    "active": [
+     "Macroeconomics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Fiction",
+     "Economics",
+     "Microeconomics",
+     "Music"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Economics",
+     "Microeconomics",
+     "Fiction",
+     "Appointments & Medication"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Microeconomics",
+     "Economics",
+     "Appointments & Medication",
+     "Music"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Macroeconomics",
+    "top5": [
+     "Macroeconomics",
+     "Microeconomics",
+     "Economics",
+     "Work & Economy",
+     "Shopping & Consumption"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Pay",
+    "top5": [
+     "Pay",
+     "Pay",
+     "Macroeconomics",
+     "Purchase & Payment",
+     "Grocery Purchase"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Macroeconomics",
+   "live_v4": "Pay"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "10_therapist_burnout_de_ambiguous",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.6225,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Symptoms & Self-Care",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Human Activity & Society",
+     "Customer Service",
+     "Work & Economy",
+     "Conflict & Cooperation",
+     "Daily Life",
+     "Troubleshooting Support",
+     "Discourse Forms",
+     "Technical Setup Help",
+     "Debate",
+     "Argument & Persuasion"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Human Activity & Society",
+     "Customer Service",
+     "Work & Economy",
+     "Conflict & Cooperation",
+     "Daily Life",
+     "Troubleshooting Support",
+     "Discourse Forms",
+     "Technical Setup Help",
+     "Debate",
+     "Argument & Persuasion"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Symptoms & Self-Care",
+     "Appointments & Medication"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Diagnosis",
+     "Symptoms & Self-Care",
+     "Music",
+     "Semantics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Diagnosis",
+     "Music",
+     "Semantics"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Symptoms & Self-Care",
+    "top5": [
+     "Symptoms & Self-Care",
+     "Medicine",
+     "Diagnosis",
+     "Treatment",
+     "Music"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Symptoms & Self-Care",
+     "Appointments & Medication",
+     "Diagnosis",
+     "Treatment"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Health Routine",
+     "Symptoms & Self-Care",
+     "Collaboration"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Customer Service",
+   "live_v4": "Medicine"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_en_1",
+  "source": "probe",
+  "accept": [
+   "Billing & Refunds",
+   "Complain",
+   "Complaint Handling",
+   "Refund Processing"
+  ],
+  "leak": {
+   "max_cos": 0.6353,
+   "nearest_source": "bitext",
+   "nearest_category": "Ordering & Delivery",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Complaint Handling",
+    "gram_winner": "Complaint Handling",
+    "active": [
+     "Work & Economy",
+     "Customer Service",
+     "Complaint Handling"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Complaint Handling",
+    "gram_winner": "Complaint Handling",
+    "active": [
+     "Work & Economy",
+     "Customer Service",
+     "Complaint Handling"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Billing & Refunds",
+    "gram_winner": "Billing & Refunds",
+    "active": [
+     "Billing & Refunds",
+     "Complaint Handling"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Refund Processing",
+     "Billing & Refunds",
+     "Conversation & Dialogue",
+     "Complain"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Billing & Refunds",
+     "Refund Processing",
+     "Technical Setup Help",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Refund Processing",
+     "Billing & Refunds",
+     "Complaint Handling",
+     "Technical Setup Help"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Refund Processing",
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Technical Setup Help"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Work & Economy",
+    "top5": [
+     "Work & Economy",
+     "Work & Economy",
+     "Customer Service",
+     "Complaint Handling",
+     "Double Charge Complaint"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Complaint Handling",
+   "live_v4": "Work & Economy"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_en_2",
+  "source": "probe",
+  "accept": [],
+  "leak": {
+   "max_cos": 0.4836,
+   "nearest_source": "cfpb",
+   "nearest_category": "Public Policy",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Complaint Handling",
+    "gram_winner": "Complaint Handling",
+    "active": [
+     "Customer Service",
+     "Complaint Handling",
+     "Work & Economy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Complaint Handling",
+    "gram_winner": "Complaint Handling",
+    "active": [
+     "Customer Service",
+     "Complaint Handling",
+     "Work & Economy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Complaint Handling",
+    "gram_winner": "Complaint Handling",
+    "active": [
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Public Policy",
+     "Conversation & Dialogue"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "td_trained": {
+    "answer": "Billing & Refunds",
+    "top5": [
+     "Billing & Refunds",
+     "Conversation & Dialogue",
+     "Complaint Handling",
+     "Technical Setup Help",
+     "Ordering & Delivery"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "logreg": {
+    "answer": "Conversation & Dialogue",
+    "top5": [
+     "Conversation & Dialogue",
+     "Billing & Refunds",
+     "Complaint Handling",
+     "Technical Setup Help",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "trained": {
+    "answer": "Complaint Handling",
+    "top5": [
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Conversation & Dialogue",
+     "Technical Setup Help",
+     "Public Policy"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "centroid": {
+    "answer": "Complaint Handling",
+    "top5": [
+     "Complaint Handling",
+     "Conversation & Dialogue",
+     "Public Policy",
+     "Technical Setup Help",
+     "Billing & Refunds"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Customer Service",
+    "top5": [
+     "Customer Service",
+     "Customer Service",
+     "Complaint Handling",
+     "Double Charge Complaint",
+     "Complain"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Complaint Handling",
+   "live_v4": "Customer Service"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_en_3",
+  "source": "probe",
+  "accept": [
+   "Evolution",
+   "Natural Selection"
+  ],
+  "leak": {
+   "max_cos": 0.5719,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Biology",
+   "nearest_title": "sv:Evolution"
+  },
+  "systems": {
+   "june": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Life & Biology",
+     "Evolution",
+     "Collaboration",
+     "Policy Proposal",
+     "Product Choice",
+     "Biology",
+     "Institutions & Governance",
+     "Public Services",
+     "Human Activity & Society",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Life & Biology",
+     "Evolution",
+     "Collaboration",
+     "Policy Proposal",
+     "Product Choice",
+     "Biology",
+     "Institutions & Governance",
+     "Public Services",
+     "Human Activity & Society",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Evolution",
+    "gram_winner": "Evolution",
+    "active": [
+     "Evolution",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Evolution",
+     "Adaptation",
+     "Parent Guidance",
+     "Parent–Child Interaction"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Evolution",
+     "Biology",
+     "Genetics",
+     "Adaptation"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Biology",
+    "top5": [
+     "Biology",
+     "Genetics",
+     "Evolution",
+     "Natural Selection",
+     "Natural World"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Natural Selection",
+    "top5": [
+     "Natural Selection",
+     "Biology",
+     "Evolution",
+     "Adaptation",
+     "Genetics"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Adaptation",
+    "top5": [
+     "Adaptation",
+     "Collaboration",
+     "Joint Planning",
+     "Plan",
+     "Adaptation"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   }
+  },
+  "previous": {
+   "local_deployed": "Evolution",
+   "live_v4": "Adaptation"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_en_4",
+  "source": "probe",
+  "accept": [
+   "Appointments & Medication",
+   "Medicine",
+   "Treatment"
+  ],
+  "leak": {
+   "max_cos": 0.469,
+   "nearest_source": "medical_chatdoctor_patient",
+   "nearest_category": "Treatment",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Work & Economy",
+     "Customer Service",
+     "Daily Life",
+     "Human Activity & Society"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "Customer Service",
+    "gram_winner": "Customer Service",
+    "active": [
+     "Work & Economy",
+     "Customer Service",
+     "Daily Life",
+     "Human Activity & Society"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Doctor Appointment",
+     "Appointments & Medication",
+     "Treatment",
+     "Diagnosis"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Appointments & Medication",
+    "top5": [
+     "Appointments & Medication",
+     "Medicine",
+     "Doctor Appointment",
+     "Diagnosis",
+     "Treatment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Appointments & Medication",
+     "Doctor Appointment",
+     "Diagnosis",
+     "Treatment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Appointments & Medication",
+     "Treatment",
+     "Diagnosis",
+     "Doctor Appointment"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Medicine",
+     "Health Routine",
+     "Work & Economy",
+     "Customer Service"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Customer Service",
+   "live_v4": "Medicine"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_en_5",
+  "source": "probe",
+  "accept": [
+   "Diagnosis",
+   "Medicine",
+   "Symptoms & Self-Care"
+  ],
+  "leak": {
+   "max_cos": 0.4709,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Medicine",
+   "nearest_title": "en:Human body"
+  },
+  "systems": {
+   "june": {
+    "answer": "News Report",
+    "gram_winner": "News Report",
+    "active": [
+     "Policy Proposal",
+     "Discourse Forms",
+     "Factual Report",
+     "News Report",
+     "Law & Regulation",
+     "Collaboration",
+     "Human Activity & Society",
+     "Institutions & Governance",
+     "Customer Service",
+     "Daily Life"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v50": {
+    "answer": "News Report",
+    "gram_winner": "News Report",
+    "active": [
+     "Policy Proposal",
+     "Discourse Forms",
+     "Factual Report",
+     "News Report",
+     "Law & Regulation",
+     "Collaboration",
+     "Human Activity & Society",
+     "Institutions & Governance",
+     "Customer Service",
+     "Daily Life"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "fixed_v51": {
+    "answer": "Medicine",
+    "gram_winner": "Medicine",
+    "active": [
+     "Medicine",
+     "Government",
+     "Question–Answer"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Symptoms & Self-Care",
+     "Health Routine",
+     "News Report",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Heat Transfer",
+     "Climate & Weather",
+     "Symptoms & Self-Care",
+     "Conversation & Dialogue"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Medicine",
+    "top5": [
+     "Medicine",
+     "Fiction",
+     "Symptoms & Self-Care",
+     "Literature",
+     "Diagnosis"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Heat Transfer",
+    "top5": [
+     "Heat Transfer",
+     "Literature",
+     "Client Communication",
+     "Biology",
+     "Meteorology"
+    ],
+    "answer_ok": false,
+    "profile_ok": false
+   },
+   "live": {
+    "answer": "Describe",
+    "top5": [
+     "Describe",
+     "Describe",
+     "News Report",
+     "Conversation & Dialogue",
+     "Factual Report"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "News Report",
+   "live_v4": "Describe"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_fr_6",
+  "source": "probe",
+  "accept": [
+   "Elections & Campaigns",
+   "Political Institutions",
+   "Politics",
+   "Vote"
+  ],
+  "leak": {
+   "max_cos": 0.478,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Microeconomics",
+   "nearest_title": "fr:Microéconomie"
+  },
+  "systems": {
+   "june": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Institutions & Governance",
+     "Elections & Campaigns",
+     "Policy Proposal",
+     "Human Activity & Society",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Institutions & Governance",
+     "Elections & Campaigns",
+     "Policy Proposal",
+     "Human Activity & Society",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Government"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Vote",
+    "gram_winner": "Vote",
+    "active": [
+     "Elections & Campaigns",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Government",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Biology",
+     "Vote",
+     "Voting Process",
+     "Voting Instructions"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Chemistry",
+    "top5": [
+     "Chemistry",
+     "Biology",
+     "Music",
+     "Microeconomics",
+     "Elections & Campaigns"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Elections & Campaigns",
+    "top5": [
+     "Elections & Campaigns",
+     "Vote",
+     "Voting Instructions",
+     "Voting Process",
+     "Campaign"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Vote",
+    "top5": [
+     "Vote",
+     "Voting Process",
+     "Voting Instructions",
+     "Vote",
+     "Elections & Campaigns"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Vote",
+   "live_v4": "Vote"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_ru_7",
+  "source": "probe",
+  "accept": [
+   "Ordering & Delivery",
+   "Purchase & Payment"
+  ],
+  "leak": {
+   "max_cos": 0.8682,
+   "nearest_source": "bitext",
+   "nearest_category": "Ordering & Delivery",
+   "nearest_title": null
+  },
+  "systems": {
+   "june": {
+    "answer": "Ordering & Delivery",
+    "gram_winner": "Ordering & Delivery",
+    "active": [
+     "Ordering & Delivery",
+     "Work & Economy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Ordering & Delivery",
+    "gram_winner": "Ordering & Delivery",
+    "active": [
+     "Ordering & Delivery",
+     "Work & Economy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Ordering & Delivery",
+    "gram_winner": "Ordering & Delivery",
+    "active": [
+     "Ordering & Delivery"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Medicine",
+     "Complaint Handling",
+     "Literature",
+     "Chemistry"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Chemistry",
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Complaint Handling",
+     "Billing & Refunds",
+     "Music",
+     "Natural World"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Complaint Handling",
+     "Refund Processing",
+     "Billing & Refunds",
+     "Medicine"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Ordering & Delivery",
+    "top5": [
+     "Ordering & Delivery",
+     "Ordering & Delivery",
+     "Work & Economy",
+     "Customer Service",
+     "Complaint Handling"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Ordering & Delivery",
+   "live_v4": "Ordering & Delivery"
+  }
+ },
+ {
+  "set": "probes",
+  "id": "probe_ja_8",
+  "source": "probe",
+  "accept": [
+   "Physics",
+   "Quantum Mechanics"
+  ],
+  "leak": {
+   "max_cos": 0.7269,
+   "nearest_source": "wikipedia_main_article",
+   "nearest_category": "Physics",
+   "nearest_title": "es:Física"
+  },
+  "systems": {
+   "june": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Physical Reality",
+     "Physics",
+     "Natural World"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "fixed_v50": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Physical Reality",
+     "Physics",
+     "Natural World"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "fixed_v51": {
+    "answer": "Mechanics",
+    "gram_winner": "Mechanics",
+    "active": [
+     "Mechanics",
+     "Chemistry",
+     "Physics",
+     "Thermodynamics"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   },
+   "td_trained": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Thermodynamics",
+     "Chemistry",
+     "Mechanics",
+     "Philosophy"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "logreg": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Thermodynamics",
+     "Chemistry",
+     "Mechanics",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "trained": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Chemistry",
+     "Thermodynamics",
+     "Cosmology",
+     "Biology"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "centroid": {
+    "answer": "Physics",
+    "top5": [
+     "Physics",
+     "Chemistry",
+     "Mechanics",
+     "Thermodynamics",
+     "Physical Reality"
+    ],
+    "answer_ok": true,
+    "profile_ok": true
+   },
+   "live": {
+    "answer": "Organic Chemistry",
+    "top5": [
+     "Organic Chemistry",
+     "Organic Chemistry",
+     "Inorganic Chemistry",
+     "Chemistry",
+     "Heat Transfer"
+    ],
+    "answer_ok": false,
+    "profile_ok": true
+   }
+  },
+  "previous": {
+   "local_deployed": "Mechanics",
+   "live_v4": "Organic Chemistry"
+  }
+ }
+]

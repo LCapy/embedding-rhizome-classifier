@@ -1,0 +1,263 @@
+{
+  "chosen": {
+    "tau": {
+      "False": 0.02,
+      "True": 0.1
+    },
+    "C": 10.0
+  },
+  "n_test": 6746,
+  "skip_label_test_records": 121,
+  "results": {
+    "flat_centroid": {
+      "strict": 0.5123035873109991,
+      "near_miss": 0.7554106136970057,
+      "main_class": 0.8673287874295879,
+      "skip_labels_strict": 0.4214876033057851,
+      "top4_answer_share": 0.11340053364957012,
+      "top4_answers": [
+        [
+          "Technical Setup Help",
+          289
+        ],
+        [
+          "Symptoms & Self-Care",
+          176
+        ],
+        [
+          "Doctor Appointment",
+          163
+        ],
+        [
+          "Ordering & Delivery",
+          137
+        ]
+      ]
+    },
+    "flat_centroid_skip26": {
+      "strict": 0.5068188556181441,
+      "near_miss": 0.7493329380373555,
+      "main_class": 0.8655499555292024,
+      "skip_labels_strict": 0.0,
+      "top4_answer_share": 0.11340053364957012,
+      "top4_answers": [
+        [
+          "Technical Setup Help",
+          289
+        ],
+        [
+          "Symptoms & Self-Care",
+          176
+        ],
+        [
+          "Doctor Appointment",
+          163
+        ],
+        [
+          "Ordering & Delivery",
+          137
+        ]
+      ]
+    },
+    "td_centroid": {
+      "strict": 0.37637118292321375,
+      "near_miss": 0.5988734064630893,
+      "main_class": 0.7499258820041506,
+      "skip_labels_strict": 0.03305785123966942,
+      "top4_answer_share": 0.187073821523866,
+      "top4_answers": [
+        [
+          "Technical Setup Help",
+          384
+        ],
+        [
+          "Natural World",
+          365
+        ],
+        [
+          "Human Mind & Knowledge",
+          267
+        ],
+        [
+          "Refund Processing",
+          246
+        ]
+      ]
+    },
+    "td_centroid_centered": {
+      "strict": 0.3642158316039134,
+      "near_miss": 0.6033204862140528,
+      "main_class": 0.7748295286095463,
+      "skip_labels_strict": 0.09090909090909091,
+      "top4_answer_share": 0.19329973317521496,
+      "top4_answers": [
+        [
+          "Technical Setup Help",
+          498
+        ],
+        [
+          "Refund Processing",
+          282
+        ],
+        [
+          "Natural World",
+          270
+        ],
+        [
+          "Symptoms & Self-Care",
+          254
+        ]
+      ]
+    },
+    "td_centroid_path": {
+      "strict": 0.38926771420100803,
+      "near_miss": 0.6236288170767862,
+      "main_class": 0.7603024014230655,
+      "skip_labels_strict": 0.03305785123966942,
+      "top4_answer_share": 0.2195375037058998,
+      "top4_answers": [
+        [
+          "Natural World",
+          436
+        ],
+        [
+          "Human Mind & Knowledge",
+          385
+        ],
+        [
+          "Technical Setup Help",
+          378
+        ],
+        [
+          "Communication & Expression",
+          282
+        ]
+      ]
+    },
+    "td_centroid_centered_path": {
+      "strict": 0.38986065816780313,
+      "near_miss": 0.6544619033501334,
+      "main_class": 0.7939519715386896,
+      "skip_labels_strict": 0.08264462809917356,
+      "top4_answer_share": 0.22087162763118887,
+      "top4_answers": [
+        [
+          "Technical Setup Help",
+          485
+        ],
+        [
+          "Natural World",
+          350
+        ],
+        [
+          "Human Mind & Knowledge",
+          347
+        ],
+        [
+          "Communication & Expression",
+          308
+        ]
+      ]
+    },
+    "td_trained": {
+      "strict": 0.5619626445300919,
+      "near_miss": 0.7779424844352208,
+      "main_class": 0.8701452712718648,
+      "skip_labels_strict": 0.35537190082644626,
+      "top4_answer_share": 0.12733471686925585,
+      "top4_answers": [
+        [
+          "Complaint Handling",
+          283
+        ],
+        [
+          "Billing & Refunds",
+          252
+        ],
+        [
+          "Technical Setup Help",
+          166
+        ],
+        [
+          "Genetics",
+          158
+        ]
+      ]
+    },
+    "td_trained_path": {
+      "strict": 0.5850874592351023,
+      "near_miss": 0.7989919952564483,
+      "main_class": 0.8842276904832493,
+      "skip_labels_strict": 0.38016528925619836,
+      "top4_answer_share": 0.12318410910168989,
+      "top4_answers": [
+        [
+          "Billing & Refunds",
+          262
+        ],
+        [
+          "Complaint Handling",
+          260
+        ],
+        [
+          "Genetics",
+          156
+        ],
+        [
+          "Philosophy",
+          153
+        ]
+      ]
+    },
+    "flat_trained": {
+      "strict": 0.5566261488289357,
+      "near_miss": 0.7395493625852357,
+      "main_class": 0.8450933886747702,
+      "skip_labels_strict": 0.19834710743801653,
+      "top4_answer_share": 0.15105247554106138,
+      "top4_answers": [
+        [
+          "Complaint Handling",
+          304
+        ],
+        [
+          "Billing & Refunds",
+          274
+        ],
+        [
+          "Philosophy",
+          228
+        ],
+        [
+          "Medicine",
+          213
+        ]
+      ]
+    },
+    "flat_logreg": {
+      "strict": 0.6131040616661726,
+      "near_miss": 0.8354580492143493,
+      "main_class": 0.9075007411799585,
+      "skip_labels_strict": 0.4214876033057851,
+      "top4_answer_share": 0.12377705306848504,
+      "top4_answers": [
+        [
+          "Complaint Handling",
+          273
+        ],
+        [
+          "Billing & Refunds",
+          238
+        ],
+        [
+          "Genetics",
+          169
+        ],
+        [
+          "Medicine",
+          155
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "skip_nodes": [
+    "Dialogue Scene",
+    "Request\u2013Response Dialogue"
+  ],
+  "n_skip_test_examples": 10,
+  "results": {
+    "cosine_argmax": 0.5120071153276016,
+    "production_argmax": 0.4746516454195079,
+    "recommended": 0.4510821227394011
+  }
+}

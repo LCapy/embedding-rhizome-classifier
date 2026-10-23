@@ -1,0 +1,317 @@
+{
+  "info": {
+    "taxonomy_nodes": 238,
+    "taxonomy_levels": {
+      "0": 4,
+      "1": 14,
+      "2": 49,
+      "3": 85,
+      "4": 54,
+      "5": 32
+    },
+    "embedding_model": "sentence-transformers/LaBSE",
+    "coredrill_version": "4.0",
+    "skip_nodes": [
+      "Agree",
+      "Agreement Formation",
+      "Clarify",
+      "Commuting",
+      "Dialogue Scene",
+      "Domestic Planning",
+      "Emotion & Social Bonding",
+      "Empathy & Support",
+      "Home Life",
+      "Home Repair Request",
+      "Household Maintenance",
+      "Instruction & Procedure",
+      "Jobs & Professions",
+      "Meal Preparation",
+      "Meaning Relations",
+      "Move",
+      "Ordering at a Restaurant",
+      "Project Agreement",
+      "Repair",
+      "Report",
+      "Request–Response Dialogue",
+      "Restaurant & Ordering",
+      "Task Assignment",
+      "Transactions",
+      "Trip Planning",
+      "Visual Arts"
+    ]
+  },
+  "rows": [
+    {
+      "name": "01_riemann_en_math",
+      "live": "Measurement",
+      "live_lineage": [
+        "Natural World",
+        "Physical Reality",
+        "Physics",
+        "Quantum Mechanics",
+        "Wave Function",
+        "Measurement"
+      ],
+      "live_confidence": 0.049,
+      "live_latency_ms": 4606.9,
+      "local_deployed": "Quantum Mechanics",
+      "trained": "Mathematics",
+      "centroid": "Quantum Mechanics"
+    },
+    {
+      "name": "02_complaint_es_customer",
+      "live": "Customer Service",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Work & Economy",
+        "Customer Service"
+      ],
+      "live_confidence": 0.155,
+      "live_latency_ms": 5922.2,
+      "local_deployed": "Customer Service",
+      "trained": "Complaint Handling",
+      "centroid": "Symptoms & Self-Care"
+    },
+    {
+      "name": "03_physicist_grief_ru_mixed",
+      "live": "Heat Transfer",
+      "live_lineage": [
+        "Natural World",
+        "Physical Reality",
+        "Physics",
+        "Thermodynamics",
+        "Entropy",
+        "Heat Transfer"
+      ],
+      "live_confidence": 0.0268,
+      "live_latency_ms": 4914.6,
+      "local_deployed": "Physics",
+      "trained": "Thermodynamics",
+      "centroid": "Medicine"
+    },
+    {
+      "name": "04_ai_fairness_ptbr_en_mixed",
+      "live": "Utility Service Access",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Institutions & Governance",
+        "Government",
+        "Public Services",
+        "Utility Service Access"
+      ],
+      "live_confidence": 0.0309,
+      "live_latency_ms": 3531.2,
+      "local_deployed": "Customer Service",
+      "trained": "Semantics",
+      "centroid": "Philosophy"
+    },
+    {
+      "name": "05_cardiology_fr_clinical",
+      "live": "Medicine",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Medicine"
+      ],
+      "live_confidence": 0.2975,
+      "live_latency_ms": 4684.8,
+      "local_deployed": "Customer Service",
+      "trained": "Treatment",
+      "centroid": "Treatment"
+    },
+    {
+      "name": "06_recipe_love_letter_ko_ambiguous",
+      "live": "Medicine",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Medicine"
+      ],
+      "live_confidence": 0.243,
+      "live_latency_ms": 3389.6,
+      "local_deployed": "Food & Cooking",
+      "trained": "Symptoms & Self-Care",
+      "centroid": "Appointments & Medication"
+    },
+    {
+      "name": "07_amazon_ecology_en_science",
+      "live": "Climate Change",
+      "live_lineage": [
+        "Natural World",
+        "Earth & Cosmos",
+        "Climate & Weather",
+        "Climate Change"
+      ],
+      "live_confidence": 0.5285,
+      "live_latency_ms": 5188.0,
+      "local_deployed": "Climate Change",
+      "trained": "Climate Change",
+      "centroid": "Climate Change"
+    },
+    {
+      "name": "08_soldier_refusal_he_ambiguous",
+      "live": "Medicine",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Medicine"
+      ],
+      "live_confidence": 0.0399,
+      "live_latency_ms": 2957.4,
+      "local_deployed": "Work & Economy",
+      "trained": "Medicine",
+      "centroid": "Law & Regulation"
+    },
+    {
+      "name": "09_inflation_vi_economics",
+      "live": "Pay",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Daily Life",
+        "Shopping & Consumption",
+        "Purchase & Payment",
+        "Pay"
+      ],
+      "live_confidence": 0.1812,
+      "live_latency_ms": 3845.6,
+      "local_deployed": "Macroeconomics",
+      "trained": "Macroeconomics",
+      "centroid": "Macroeconomics"
+    },
+    {
+      "name": "10_therapist_burnout_de_ambiguous",
+      "live": "Medicine",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Medicine"
+      ],
+      "live_confidence": 0.1458,
+      "live_latency_ms": 4031.5,
+      "local_deployed": "Customer Service",
+      "trained": "Symptoms & Self-Care",
+      "centroid": "Medicine"
+    },
+    {
+      "name": "probe_en_1",
+      "live": "Work & Economy",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Work & Economy"
+      ],
+      "live_confidence": 0.538,
+      "live_latency_ms": 132.0,
+      "local_deployed": "Complaint Handling",
+      "trained": "Ordering & Delivery",
+      "centroid": "Ordering & Delivery"
+    },
+    {
+      "name": "probe_en_2",
+      "live": "Customer Service",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Work & Economy",
+        "Customer Service"
+      ],
+      "live_confidence": 0.5848,
+      "live_latency_ms": 115.5,
+      "local_deployed": "Complaint Handling",
+      "trained": "Complaint Handling",
+      "centroid": "Complaint Handling"
+    },
+    {
+      "name": "probe_en_3",
+      "live": "Adaptation",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Biology",
+        "Evolution",
+        "Natural Selection",
+        "Adaptation"
+      ],
+      "live_confidence": 0.0275,
+      "live_latency_ms": 154.3,
+      "local_deployed": "Evolution",
+      "trained": "Biology",
+      "centroid": "Natural Selection"
+    },
+    {
+      "name": "probe_en_4",
+      "live": "Medicine",
+      "live_lineage": [
+        "Natural World",
+        "Life & Biology",
+        "Medicine"
+      ],
+      "live_confidence": 0.385,
+      "live_latency_ms": 99.2,
+      "local_deployed": "Customer Service",
+      "trained": "Medicine",
+      "centroid": "Medicine"
+    },
+    {
+      "name": "probe_en_5",
+      "live": "Describe",
+      "live_lineage": [
+        "Communication & Expression",
+        "Discourse Forms",
+        "Narrative & Reportage",
+        "Factual Report",
+        "News Report",
+        "Describe"
+      ],
+      "live_confidence": 0.0648,
+      "live_latency_ms": 120.0,
+      "local_deployed": "News Report",
+      "trained": "Medicine",
+      "centroid": "Heat Transfer"
+    },
+    {
+      "name": "probe_fr_6",
+      "live": "Vote",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Institutions & Governance",
+        "Elections & Campaigns",
+        "Voting Process",
+        "Voting Instructions",
+        "Vote"
+      ],
+      "live_confidence": 0.1367,
+      "live_latency_ms": 115.9,
+      "local_deployed": "Vote",
+      "trained": "Chemistry",
+      "centroid": "Elections & Campaigns"
+    },
+    {
+      "name": "probe_ru_7",
+      "live": "Ordering & Delivery",
+      "live_lineage": [
+        "Human Activity & Society",
+        "Work & Economy",
+        "Ordering & Delivery"
+      ],
+      "live_confidence": 0.7389,
+      "live_latency_ms": 89.3,
+      "local_deployed": "Ordering & Delivery",
+      "trained": "Ordering & Delivery",
+      "centroid": "Ordering & Delivery"
+    },
+    {
+      "name": "probe_ja_8",
+      "live": "Organic Chemistry",
+      "live_lineage": [
+        "Natural World",
+        "Physical Reality",
+        "Chemistry",
+        "Organic Chemistry"
+      ],
+      "live_confidence": 0.0903,
+      "live_latency_ms": 103.1,
+      "local_deployed": "Mechanics",
+      "trained": "Physics",
+      "centroid": "Physics"
+    }
+  ]
+}

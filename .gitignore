@@ -3,6 +3,10 @@ latest_output.txt
 
 # Eval reports (generated at runtime)
 tests/reports/*.md
+eval/held_out/artifacts/
+
+# Evaluation inputs (large; see eval/held_out/README.md)
+/data/
 
 # Python
 __pycache__/

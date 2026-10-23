@@ -1,0 +1,51 @@
+{
+  "validation": {
+    "stored_n_source_records": 30287,
+    "rebuilt_n_source_records": 33787,
+    "stored_flat_prototype_accuracy": 0.8627,
+    "rebuilt_flat_prototype_accuracy": 0.8543,
+    "centroid_cosine_min": 0.8960946339504955,
+    "centroid_cosine_mean": 0.9973119976559872,
+    "n_nodes_compared": 215
+  },
+  "n_test": 6746,
+  "metrics": {
+    "deployed": {
+      "strict": 0.2614882893566558,
+      "near_miss": 0.640972428105544,
+      "outside_label_set": 0.0002964719833975689
+    },
+    "gram_winner": {
+      "strict": 0.2614882893566558,
+      "near_miss": 0.640972428105544,
+      "outside_label_set": 0.0002964719833975689
+    },
+    "recommended": {
+      "strict": 0.13785947227986955,
+      "near_miss": 0.6280758968277498,
+      "outside_label_set": 0.021938926771420102
+    },
+    "production_top": {
+      "strict": 0.17328787429587905,
+      "near_miss": 0.6609842869848799,
+      "outside_label_set": 0.03083308627334717
+    },
+    "cosine_top": {
+      "strict": 0.3224132819448562,
+      "near_miss": 0.6734361102875778,
+      "outside_label_set": 0.0563296768455381
+    },
+    "predict_best": {
+      "strict": 0.020456566854432257,
+      "near_miss": 0.19893270085976875,
+      "outside_label_set": 0.006522383634746516
+    }
+  },
+  "gram_state_counts": {
+    "ok": 6184,
+    "void": 562
+  },
+  "predict_best_level_counts": {
+    "5": 6746
+  }
+}

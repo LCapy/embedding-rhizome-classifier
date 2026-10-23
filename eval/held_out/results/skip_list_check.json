@@ -1,0 +1,56 @@
+{
+  "skip_26": {
+    "skip_nodes": 26,
+    "strict": 0.4779128372368811,
+    "near_miss": 0.7177586718055143,
+    "top4_answer_share": 0.10361695819745034,
+    "top4_answers": [
+      [
+        "Technical Setup Help",
+        180
+      ],
+      [
+        "Astronomy",
+        175
+      ],
+      [
+        "Medicine",
+        172
+      ],
+      [
+        "Complain",
+        172
+      ]
+    ],
+    "test_labels_unwinnable": 0.017936554995552922,
+    "answers_on_listed_nodes": 0.0,
+    "strict_on_listed_labels": 0.0
+  },
+  "no_skip": {
+    "skip_nodes": 0,
+    "strict": 0.4838422769048325,
+    "near_miss": 0.7284316632078268,
+    "top4_answer_share": 0.10243107026386007,
+    "top4_answers": [
+      [
+        "Technical Setup Help",
+        180
+      ],
+      [
+        "Astronomy",
+        178
+      ],
+      [
+        "Appointments & Medication",
+        169
+      ],
+      [
+        "Medicine",
+        164
+      ]
+    ],
+    "test_labels_unwinnable": 0.0,
+    "answers_on_listed_nodes": 0.02416246664690187,
+    "strict_on_listed_labels": 0.45454545454545453
+  }
+}
