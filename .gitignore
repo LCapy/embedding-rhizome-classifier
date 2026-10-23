@@ -1,6 +1,9 @@
 # Output artifacts
 latest_output.txt
 
+# Eval reports (generated at runtime)
+tests/reports/*.md
+
 # Python
 __pycache__/
 *.py[cod]

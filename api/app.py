@@ -438,6 +438,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------------------------------------------------------------------
+# Text-alignment webpage - Gradio UI mounted at /align, public (no API key).
+# Reuses _get_model() so LaBSE is loaded once for both the classifier and
+# the alignment demo. See api/align_ui.py and api/alignment_engine.py.
+# ---------------------------------------------------------------------------
+try:
+    import gradio as gr
+    from api.align_ui import build_align_demo
+except Exception:
+    try:
+        from align_ui import build_align_demo
+        import gradio as gr
+    except Exception as _align_err:
+        gr = None
+        log.warning(f"Alignment UI unavailable: {_align_err}")
+
+if gr is not None:
+    app = gr.mount_gradio_app(app, build_align_demo(_get_model), path="/align")
+
 security = HTTPBearer(auto_error=False)
 
 
@@ -599,7 +618,10 @@ def _build_response(raw: dict, full: bool = False) -> PredictionResponse:
 
 @app.get("/", include_in_schema=False)
 def root():
-    return {"message": "Coredrill API. See /docs for the interactive interface."}
+    return {
+        "message": "Coredrill API. See /docs for the interactive interface.",
+        "alignment_demo": "/align",
+    }
 
 
 @app.get("/health", response_model=HealthResponse, tags=["meta"])

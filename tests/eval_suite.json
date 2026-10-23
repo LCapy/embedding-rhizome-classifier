@@ -1,0 +1,419 @@
+{
+  "version": "1.0",
+  "description": "Coredrill evaluation suite - real internet data with pre-defined ground truth",
+  "items": [
+
+    {
+      "id": "wiki_quantum_mechanics",
+      "label": "Quantum Mechanics (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Quantum mechanics"},
+      "expected": {
+        "node": "Quantum Mechanics",
+        "accept_nodes": ["Quantum Mechanics", "Wave Function", "Mechanics"],
+        "partial_nodes": ["Physics", "Physical Reality", "Natural World"]
+      },
+      "tags": ["physics", "science", "l3"]
+    },
+
+    {
+      "id": "wiki_black_hole",
+      "label": "Black Hole (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Black hole"},
+      "expected": {
+        "node": "Astrophysics",
+        "accept_nodes": ["Astrophysics", "Cosmology", "Big Bang Model", "Universe Expansion", "Astronomy"],
+        "partial_nodes": ["Earth & Cosmos", "Physical Reality", "Natural World"]
+      },
+      "tags": ["astronomy", "science", "l3"]
+    },
+
+    {
+      "id": "wiki_dna",
+      "label": "DNA (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "DNA"},
+      "expected": {
+        "node": "Genetics",
+        "accept_nodes": ["Genetics", "DNA Inheritance", "Genes", "Evolution"],
+        "partial_nodes": ["Biology", "Life & Biology", "Natural World"]
+      },
+      "tags": ["biology", "science", "l3"]
+    },
+
+    {
+      "id": "wiki_natural_selection",
+      "label": "Natural Selection (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Natural selection"},
+      "expected": {
+        "node": "Evolution",
+        "accept_nodes": ["Evolution", "Natural Selection", "Adaptation", "Genetics"],
+        "partial_nodes": ["Biology", "Life & Biology", "Natural World"]
+      },
+      "tags": ["biology", "science", "l3", "l4"]
+    },
+
+    {
+      "id": "wiki_thermodynamics",
+      "label": "Thermodynamics (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Thermodynamics"},
+      "expected": {
+        "node": "Thermodynamics",
+        "accept_nodes": ["Thermodynamics", "Entropy", "Heat Transfer", "Mechanics"],
+        "partial_nodes": ["Physics", "Physical Reality", "Natural World"]
+      },
+      "tags": ["physics", "science", "l3"]
+    },
+
+    {
+      "id": "wiki_calculus",
+      "label": "Calculus (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Calculus"},
+      "expected": {
+        "node": "Mathematics",
+        "accept_nodes": ["Mathematics", "Algebra", "Geometry", "Proof & Inference"],
+        "partial_nodes": ["Formal Systems", "Human Mind & Knowledge"]
+      },
+      "tags": ["math", "science", "l2"]
+    },
+
+    {
+      "id": "wiki_probability_theory",
+      "label": "Probability Theory (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Probability theory"},
+      "expected": {
+        "node": "Probability & Inference",
+        "accept_nodes": ["Probability & Inference", "Statistics", "Mathematics", "Algebra"],
+        "partial_nodes": ["Formal Systems", "Human Mind & Knowledge"]
+      },
+      "tags": ["math", "science", "l3"]
+    },
+
+    {
+      "id": "wiki_influenza",
+      "label": "Influenza (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Influenza"},
+      "expected": {
+        "node": "Diagnosis",
+        "accept_nodes": ["Diagnosis", "Medicine", "Symptoms & Self-Care", "Treatment"],
+        "partial_nodes": ["Life & Biology", "Natural World"]
+      },
+      "tags": ["medicine", "health", "l3"]
+    },
+
+    {
+      "id": "wiki_cancer",
+      "label": "Cancer treatment (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Cancer treatment"},
+      "expected": {
+        "node": "Treatment",
+        "accept_nodes": ["Treatment", "Diagnosis", "Medicine", "Appointments & Medication"],
+        "partial_nodes": ["Life & Biology", "Natural World"]
+      },
+      "tags": ["medicine", "health", "l3"]
+    },
+
+    {
+      "id": "wiki_epistemology",
+      "label": "Epistemology (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Epistemology"},
+      "expected": {
+        "node": "Epistemology",
+        "accept_nodes": ["Epistemology", "Knowledge & Belief", "Logic", "Proof & Inference"],
+        "partial_nodes": ["Philosophy", "Human Mind & Knowledge"]
+      },
+      "tags": ["philosophy", "l2"]
+    },
+
+    {
+      "id": "wiki_ethics",
+      "label": "Ethics (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Ethics"},
+      "expected": {
+        "node": "Ethics",
+        "accept_nodes": ["Ethics", "Moral Philosophy", "Epistemology", "Philosophy"],
+        "partial_nodes": ["Human Mind & Knowledge"]
+      },
+      "tags": ["philosophy", "l2", "l3"]
+    },
+
+    {
+      "id": "wiki_macroeconomics",
+      "label": "Macroeconomics (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Macroeconomics"},
+      "expected": {
+        "node": "Macroeconomics",
+        "accept_nodes": ["Macroeconomics", "Economics", "Microeconomics"],
+        "partial_nodes": ["Work & Economy", "Human Activity & Society"]
+      },
+      "tags": ["economics", "l3"]
+    },
+
+    {
+      "id": "wiki_elections",
+      "label": "Elections (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Election"},
+      "expected": {
+        "node": "Elections & Campaigns",
+        "accept_nodes": ["Elections & Campaigns", "Voting Process", "Campaign Messaging", "Election Campaign Speech", "Voting Instructions", "Political Institutions", "Politics", "Government"],
+        "partial_nodes": ["Institutions & Governance", "Human Activity & Society"]
+      },
+      "tags": ["politics", "l3"]
+    },
+
+    {
+      "id": "wiki_poetry",
+      "label": "Poetry (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Poetry"},
+      "expected": {
+        "node": "Poetry",
+        "accept_nodes": ["Poetry", "Literature", "Lyric Expression", "Fiction"],
+        "partial_nodes": ["Creative Expression", "Communication & Expression"]
+      },
+      "tags": ["literature", "arts", "l3"]
+    },
+
+    {
+      "id": "wiki_jazz",
+      "label": "Jazz (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Jazz"},
+      "expected": {
+        "node": "Music",
+        "accept_nodes": ["Music", "Song", "Performance", "Creative Expression"],
+        "partial_nodes": ["Communication & Expression"]
+      },
+      "tags": ["music", "arts", "l2"]
+    },
+
+    {
+      "id": "wiki_climate_change",
+      "label": "Climate Change (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Climate change"},
+      "expected": {
+        "node": "Climate Change",
+        "accept_nodes": ["Climate Change", "Climate & Weather", "Meteorology", "Ecology", "Ecosystems"],
+        "partial_nodes": ["Earth & Cosmos", "Natural World"]
+      },
+      "tags": ["environment", "science", "l4"]
+    },
+
+    {
+      "id": "wiki_ecosystem",
+      "label": "Ecosystem (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Ecosystem"},
+      "expected": {
+        "node": "Ecosystems",
+        "accept_nodes": ["Ecosystems", "Ecology", "Biology", "Climate & Weather"],
+        "partial_nodes": ["Earth & Cosmos", "Life & Biology", "Natural World"]
+      },
+      "tags": ["environment", "biology", "l3"]
+    },
+
+    {
+      "id": "wiki_french_cuisine",
+      "label": "French Cuisine (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "French cuisine"},
+      "expected": {
+        "node": "Food & Cooking",
+        "accept_nodes": ["Food & Cooking", "Meal Preparation", "Restaurant & Ordering"],
+        "partial_nodes": ["Daily Life", "Human Activity & Society"]
+      },
+      "tags": ["food", "daily-life", "l2"]
+    },
+
+    {
+      "id": "wiki_photosynthesis",
+      "label": "Photosynthesis (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Photosynthesis"},
+      "expected": {
+        "node": "Biology",
+        "accept_nodes": ["Biology", "Ecology", "Ecosystems", "Chemistry", "Organic Chemistry"],
+        "partial_nodes": ["Life & Biology", "Earth & Cosmos", "Natural World"]
+      },
+      "tags": ["biology", "science", "l2"]
+    },
+
+    {
+      "id": "wiki_roman_law",
+      "label": "Roman Law (Wikipedia)",
+      "source": "wikipedia",
+      "fetch": {"type": "wikipedia_intro", "title": "Roman law"},
+      "expected": {
+        "node": "Law & Regulation",
+        "accept_nodes": ["Law & Regulation", "Rights & Obligations", "Rules & Enforcement", "Legal Obligation", "Government"],
+        "partial_nodes": ["Institutions & Governance", "Human Activity & Society"]
+      },
+      "tags": ["law", "history", "l2"]
+    },
+
+    {
+      "id": "bbc_science",
+      "label": "BBC Science & Environment (RSS - dynamic)",
+      "source": "bbc_rss",
+      "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml", "index": 0},
+      "expected": {
+        "node": "Biology",
+        "accept_nodes": ["Physics", "Biology", "Chemistry", "Medicine", "Astronomy", "Ecology",
+                         "Quantum Mechanics", "Genetics", "Evolution", "Astrophysics", "Cosmology",
+                         "Climate Change", "Climate & Weather", "Meteorology", "Ecosystems",
+                         "Thermodynamics", "Mechanics", "Geology", "Tectonics"],
+        "partial_nodes": ["Physical Reality", "Life & Biology", "Earth & Cosmos", "Natural World"]
+      },
+      "tags": ["science", "dynamic", "l2-l3"]
+    },
+
+    {
+      "id": "bbc_technology",
+      "label": "BBC Technology (RSS - dynamic)",
+      "source": "bbc_rss",
+      "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/technology/rss.xml", "index": 0},
+      "expected": {
+        "node": "Physics",
+        "accept_nodes": ["Physics", "Mathematics", "Statistics", "Logic", "Mechanics",
+                         "Economics", "Business Operations", "Macroeconomics", "Politics",
+                         "Education & Training"],
+        "partial_nodes": ["Physical Reality", "Formal Systems", "Work & Economy", "Human Mind & Knowledge", "Human Activity & Society"]
+      },
+      "tags": ["tech", "dynamic", "l2"]
+    },
+
+    {
+      "id": "bbc_business",
+      "label": "BBC Business (RSS - dynamic)",
+      "source": "bbc_rss",
+      "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/business/rss.xml", "index": 0},
+      "expected": {
+        "node": "Economics",
+        "accept_nodes": ["Economics", "Macroeconomics", "Microeconomics", "Business Operations",
+                         "Transactions", "Customer Service", "Politics", "Government",
+                         "Public Policy", "Workplace Coordination", "Operations Management"],
+        "partial_nodes": ["Work & Economy", "Institutions & Governance", "Human Activity & Society"]
+      },
+      "tags": ["economics", "dynamic", "l2-l3"]
+    },
+
+    {
+      "id": "bbc_politics",
+      "label": "BBC Politics (RSS - dynamic)",
+      "source": "bbc_rss",
+      "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/politics/rss.xml", "index": 0},
+      "expected": {
+        "node": "Politics",
+        "accept_nodes": ["Politics", "Elections & Campaigns", "Government", "Public Policy",
+                         "Public Administration", "Political Institutions", "Public Ideology",
+                         "Policy Proposal", "Policy Impact", "Campaign Messaging", "Voting Process",
+                         "Election Campaign Speech", "Conflict & Cooperation"],
+        "partial_nodes": ["Institutions & Governance", "Human Activity & Society"]
+      },
+      "tags": ["politics", "dynamic", "l2-l3"]
+    },
+
+    {
+      "id": "bbc_health",
+      "label": "BBC Health (RSS - dynamic)",
+      "source": "bbc_rss",
+      "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/health/rss.xml", "index": 0},
+      "expected": {
+        "node": "Medicine",
+        "accept_nodes": ["Medicine", "Diagnosis", "Treatment", "Health Routine",
+                         "Symptoms & Self-Care", "Appointments & Medication", "Doctor Appointment",
+                         "Biology", "Genetics", "Ecology"],
+        "partial_nodes": ["Life & Biology", "Natural World", "Daily Life"]
+      },
+      "tags": ["health", "medicine", "dynamic", "l2-l3"]
+    },
+
+    {
+      "id": "reddit_science",
+      "label": "r/science top post (dynamic)",
+      "source": "reddit",
+      "fetch": {"type": "reddit_post", "subreddit": "science", "sort": "top", "time": "week", "index": 0},
+      "expected": {
+        "node": "Biology",
+        "accept_nodes": ["Physics", "Biology", "Chemistry", "Medicine", "Astronomy", "Ecology",
+                         "Genetics", "Evolution", "Astrophysics", "Cosmology", "Climate Change",
+                         "Climate & Weather", "Ecosystems", "Quantum Mechanics", "Thermodynamics",
+                         "Geology", "Mathematics", "Statistics"],
+        "partial_nodes": ["Physical Reality", "Life & Biology", "Earth & Cosmos", "Formal Systems", "Natural World"]
+      },
+      "tags": ["science", "dynamic", "reddit"]
+    },
+
+    {
+      "id": "reddit_philosophy",
+      "label": "r/philosophy top post (dynamic)",
+      "source": "reddit",
+      "fetch": {"type": "reddit_post", "subreddit": "philosophy", "sort": "top", "time": "week", "index": 0},
+      "expected": {
+        "node": "Philosophy",
+        "accept_nodes": ["Philosophy", "Ethics", "Epistemology", "Logic", "Moral Philosophy",
+                         "Knowledge & Belief", "Proof & Inference", "Argument & Persuasion",
+                         "Debate", "Social Theory"],
+        "partial_nodes": ["Human Mind & Knowledge"]
+      },
+      "tags": ["philosophy", "dynamic", "reddit"]
+    },
+
+    {
+      "id": "reddit_cooking",
+      "label": "r/Cooking top post (dynamic)",
+      "source": "reddit",
+      "fetch": {"type": "reddit_post", "subreddit": "Cooking", "sort": "top", "time": "week", "index": 0},
+      "expected": {
+        "node": "Food & Cooking",
+        "accept_nodes": ["Food & Cooking", "Meal Preparation", "Restaurant & Ordering",
+                         "Grocery Purchase", "Cook"],
+        "partial_nodes": ["Daily Life", "Human Activity & Society"]
+      },
+      "tags": ["food", "dynamic", "reddit"]
+    },
+
+    {
+      "id": "reddit_worldnews",
+      "label": "r/worldnews top post (dynamic)",
+      "source": "reddit",
+      "fetch": {"type": "reddit_post", "subreddit": "worldnews", "sort": "top", "time": "week", "index": 0},
+      "expected": {
+        "node": "Politics",
+        "accept_nodes": ["Politics", "Elections & Campaigns", "Government", "Conflict & Cooperation",
+                         "Public Policy", "Economics", "Macroeconomics", "Negotiation",
+                         "Disagreement & Argument", "Competition"],
+        "partial_nodes": ["Institutions & Governance", "Work & Economy", "Human Activity & Society"]
+      },
+      "tags": ["politics", "world", "dynamic", "reddit"]
+    },
+
+    {
+      "id": "reddit_personalfinance",
+      "label": "r/personalfinance top post (dynamic)",
+      "source": "reddit",
+      "fetch": {"type": "reddit_post", "subreddit": "personalfinance", "sort": "top", "time": "week", "index": 0},
+      "expected": {
+        "node": "Economics",
+        "accept_nodes": ["Economics", "Macroeconomics", "Microeconomics", "Shopping & Consumption",
+                         "Transactions", "Business Operations", "Purchase & Payment",
+                         "Customer Service", "Billing & Refunds"],
+        "partial_nodes": ["Work & Economy", "Daily Life", "Human Activity & Society"]
+      },
+      "tags": ["economics", "finance", "dynamic", "reddit"]
+    }
+
+  ]
+}

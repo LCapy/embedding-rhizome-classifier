@@ -3254,11 +3254,20 @@ def gram_inverse_scores(results: list, tree: dict,
     # Normalize SW so it doesn't dominate - scale to mean=1
     SW = SW / SW.mean()
 
+    # ── Mass penalty: damp nodes far from their centroid ─────────────────
+    # Without this, tight leaf nodes (low sigma -> high SW) win via SW even
+    # when their mass is <5% (meaning the text sits far from their centroid).
+    # sqrt(mass/100) softens the penalty so 50%-mass nodes are not halved
+    # but 1%-mass nodes are scaled to ~0.1, preventing false wins like
+    # Entropy (0.7% mass) beating Climate Change (100% mass).
+    masses = np.array([float(r.get("mass", 0.0)) for r in candidates], dtype=np.float64)
+    mass_weight = np.sqrt(np.maximum(masses / 100.0, 1e-6))
+
     # ── Final score ──────────────────────────────────────────────────────
     # Only nodes with positive alpha are meaningful frame contributors.
     # Negative alpha means the node actively contradicts x's position.
-    # Full formula: R_i = alpha_i * s_i * NS_i * PC_i * SW_i
-    R = alpha * s * NS * PC * SW
+    # Full formula: R_i = alpha_i * s_i * NS_i * PC_i * SW_i * sqrt(mass_i)
+    R = alpha * s * NS * PC * SW * mass_weight
 
     return {names[i]: float(R[i]) for i in range(len(names))}
 

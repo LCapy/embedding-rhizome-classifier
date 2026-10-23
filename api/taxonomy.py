@@ -256,6 +256,124 @@ TAXONOMY: List[dict] = [
         ]
     },
     {
+        "name": "Technology",
+        "level": 1,
+        "parent": "Human Activity & Society",
+        "en_category": "Technology",
+        "description": "Devices, software, computing systems, and digital infrastructure",
+        "lang_categories": {
+            "ru": "Технологии",
+            "es": "Tecnología",
+            "fr": "Technologie",
+            "pt": "Tecnologia",
+            "zh": "技术",
+            "de": "Technologie",
+            "ja": "技術"
+        },
+        "related": [
+            "Work & Economy",
+            "Physics",
+            "Mathematics"
+        ]
+    },
+    {
+        "name": "Computing & Software",
+        "level": 2,
+        "parent": "Technology",
+        "en_category": "Computing",
+        "description": "Programs, algorithms, operating systems, and computational systems",
+        "lang_categories": {},
+        "related": [
+            "Mathematics",
+            "Artificial Intelligence"
+        ]
+    },
+    {
+        "name": "Artificial Intelligence",
+        "level": 3,
+        "parent": "Computing & Software",
+        "en_category": "AI",
+        "description": "Machine learning, neural networks, large language models, and automated reasoning",
+        "lang_categories": {},
+        "related": [
+            "Mathematics",
+            "Computing & Software",
+            "Statistics"
+        ]
+    },
+    {
+        "name": "Cybersecurity",
+        "level": 3,
+        "parent": "Computing & Software",
+        "en_category": "Security",
+        "description": "Digital security, privacy protection, hacking, and system vulnerabilities",
+        "lang_categories": {},
+        "related": [
+            "Computing & Software",
+            "Law & Regulation"
+        ]
+    },
+    {
+        "name": "Consumer Electronics",
+        "level": 2,
+        "parent": "Technology",
+        "en_category": "Electronics",
+        "description": "Personal devices, gadgets, hardware products, and consumer technology",
+        "lang_categories": {},
+        "related": [
+            "Technology",
+            "Shopping & Consumption"
+        ]
+    },
+    {
+        "name": "Wearable Technology",
+        "level": 3,
+        "parent": "Consumer Electronics",
+        "en_category": "Wearables",
+        "description": "Smartwatches, augmented reality glasses, fitness trackers, and body-worn devices",
+        "lang_categories": {},
+        "related": [
+            "Consumer Electronics",
+            "Health Routine"
+        ]
+    },
+    {
+        "name": "Internet & Digital Media",
+        "level": 2,
+        "parent": "Technology",
+        "en_category": "Internet",
+        "description": "Web, online platforms, digital content distribution, and networked information",
+        "lang_categories": {},
+        "related": [
+            "Social Media",
+            "Communication & Expression"
+        ]
+    },
+    {
+        "name": "Social Media",
+        "level": 3,
+        "parent": "Internet & Digital Media",
+        "en_category": "Social Media",
+        "description": "Platforms for sharing content, social interaction, and online communities",
+        "lang_categories": {},
+        "related": [
+            "Communication & Expression",
+            "Internet & Digital Media"
+        ]
+    },
+    {
+        "name": "Online Commerce",
+        "level": 3,
+        "parent": "Internet & Digital Media",
+        "en_category": "E-commerce",
+        "description": "Online marketplaces, e-commerce platforms, digital payments, and retail websites",
+        "lang_categories": {},
+        "related": [
+            "Shopping & Consumption",
+            "Work & Economy"
+        ]
+    },
+    {
         "name": "Institutions & Governance",
         "level": 1,
         "parent": "Human Activity & Society",
@@ -1456,7 +1574,47 @@ TAXONOMY: List[dict] = [
         "description": "Care, intervention, medication, and recovery",
         "lang_categories": {},
         "related": [
-            "Diagnosis"
+            "Diagnosis",
+            "Pharmacology"
+        ]
+    },
+    {
+        "name": "Epidemiology",
+        "level": 3,
+        "parent": "Medicine",
+        "en_category": "Epidemiology",
+        "description": "Disease spread, outbreaks, infection rates, contagion, and population health data",
+        "lang_categories": {},
+        "related": [
+            "Biology",
+            "Public Health",
+            "Genetics"
+        ]
+    },
+    {
+        "name": "Public Health",
+        "level": 3,
+        "parent": "Medicine",
+        "en_category": "Public Health",
+        "description": "Population-level health systems, vaccination campaigns, prevention policy, and health equity",
+        "lang_categories": {},
+        "related": [
+            "Epidemiology",
+            "Government",
+            "Ecology"
+        ]
+    },
+    {
+        "name": "Pharmacology",
+        "level": 3,
+        "parent": "Medicine",
+        "en_category": "Pharmacology",
+        "description": "Drugs, medications, dosage, biochemical effects, and pharmaceutical development",
+        "lang_categories": {},
+        "related": [
+            "Chemistry",
+            "Treatment",
+            "Organic Chemistry"
         ]
     },
     {
@@ -2495,6 +2653,20 @@ TAXONOMY: List[dict] = [
         "description": "What a person or institution must do under a rule",
         "lang_categories": {},
         "related": []
+    },
+    {
+        "name": "Jurisprudence",
+        "level": 3,
+        "parent": "Law & Regulation",
+        "en_category": "Legal Theory",
+        "description": "Legal theory, philosophy of law, history of legal systems, and the foundations of jurisprudence",
+        "lang_categories": {},
+        "related": [
+            "Philosophy",
+            "Law & Regulation",
+            "Ethics",
+            "Government"
+        ]
     },
     {
         "name": "Policy Reform Proposal",
