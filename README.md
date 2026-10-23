@@ -75,9 +75,9 @@ The API runs on a private Hugging Face Space. To request access, contact the aut
 **Base URL:** `https://lcapy-coredrill.hf.space`
 **Interactive docs:** `https://lcapy-coredrill.hf.space/docs`
 
-Work is underway to self-host this on EKS instead of relying on Hugging
-Face - see [`infra/README.md`](infra/README.md) for the Terraform + Kubernetes
-setup.
+Work is underway to self-host this on a single EC2 instance instead of
+relying on Hugging Face - see [`infra/README.md`](infra/README.md) for the
+Terraform setup.
 
 ---
 

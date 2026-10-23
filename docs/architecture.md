@@ -1,13 +1,13 @@
 # Architecture
 
 Five views of the same system: how the current deployment fits together, the
-target self-hosted deployment on EKS, how the offline build pipeline turns
+target self-hosted deployment on EC2, how the offline build pipeline turns
 raw text into `coredrill_hierarchical.json`, what happens on a single
 `/predict` call, and what the taxonomy graph itself looks like. See
 [`docs/study_v5.md`](study_v5.md) for the math behind the scoring formulas
 referenced here, [`docs/free_deployment.md`](free_deployment.md) for the
 Hugging Face deploy guide, and [`infra/README.md`](../infra/README.md) for
-the EKS deploy guide.
+the self-hosted deploy guide.
 
 ---
 
@@ -49,45 +49,50 @@ Notes:
 
 ---
 
-## 2. Deployment topology (target: self-hosted on EKS)
+## 2. Deployment topology (target: self-hosted on EC2)
 
-Same container image and API, no external hosting dependency. All AWS
-resources are provisioned by [`infra/terraform`](../infra/terraform); the
-Deployment/Service/HPA live in [`infra/k8s`](../infra/k8s). Details and exact
-commands: [`infra/README.md`](../infra/README.md).
+Same container image and API, no external hosting dependency. Considered EKS
+first; dropped it purely on cost - the EKS control plane alone is a fixed
+~$73/mo regardless of node size, on top of everything else. A single EC2
+instance running the container directly gets the same "off Hugging Face"
+outcome for ~$35-40/mo total. All resources are provisioned by
+[`infra/terraform`](../infra/terraform). Details and exact commands:
+[`infra/README.md`](../infra/README.md).
 
 ```mermaid
 flowchart LR
     Dev[Developer] -->|docker push| ECR[("ECR\ncoredrill-api")]
-    Dev -->|terraform apply| TF["Terraform\nVPC + EKS + ECR + S3 + IRSA"]
-    TF -.provisions.-> Cluster
+    Dev -->|terraform apply| TF["Terraform\nVPC + EC2 + ECR + S3 + IAM"]
+    TF -.provisions.-> EC2
 
-    S3[("S3 bucket\ncoredrill-data")] -->|IRSA role, no static keys\nboto3 s3.download_file| Pod
+    S3[("S3 bucket\ncoredrill-data")] -->|instance IAM role,\nno static keys| EC2
+    SSM[("SSM Parameter Store\nAPI key, SecureString")] -->|fetched at boot| EC2
 
-    subgraph Cluster["EKS cluster (namespace: coredrill)"]
-        Pod["coredrill-api pods\nFastAPI + LaBSE, port 7860"]
-        HPA["HPA\nscale 1-3 on CPU"]
-        HPA -.-> Pod
+    subgraph EC2["EC2 instance, t3.medium"]
+        Docker["Docker\ncoredrill-api container\n--restart unless-stopped, port 7860"]
     end
 
-    ECR -->|image pull| Pod
+    ECR -->|docker pull, on boot| Docker
+    EIP["Elastic IP : 80"] --> Docker
+    Client["API client"] --> EIP
 
-    NLB["Network Load Balancer\ninternet-facing, port 80"] --> Pod
-    Client["API client"] --> NLB
+    Dev -.SSM Session Manager\nno SSH, no key pair.-> EC2
 
-    style Pod fill:#2d6a4f,color:#fff
+    style EC2 fill:#2d6a4f,color:#fff
     style TF fill:#1f2937,color:#fff
 ```
 
 Notes:
 - No Hugging Face dependency at runtime: the image is pulled from ECR, and
-  `coredrill_hierarchical.json` is pulled from S3 using the pod's IRSA role
-  (`COREDRILL_S3_URI`, checked before `HF_DATASET_REPO` in `start.sh`) - so
-  the same image serves both the HF Space and EKS.
-- Nodes are CPU-only (`t3.large`), matching the current HF Space's resource
-  profile; the HPA scales pods 1-3 on CPU utilization once `metrics-server`
-  is installed.
-- No TLS/custom domain or CI/CD wiring yet - the NLB is plain HTTP on port
+  `coredrill_hierarchical.json` is pulled from S3 using the instance's IAM
+  role (`COREDRILL_S3_URI`, checked before `HF_DATASET_REPO` in `start.sh`) -
+  so the same image serves both the HF Space and this instance.
+- `docker run --restart unless-stopped` handles an app crash; a CloudWatch
+  alarm on `StatusCheckFailed_System` handles the underlying host by
+  triggering `ec2:recover`.
+- No SSH: administration goes through SSM Session Manager, authenticated by
+  IAM rather than a key pair, with no inbound port 22 on the security group.
+- No TLS/custom domain or CI/CD wiring yet - the app is plain HTTP on port
   80. See "Next steps" in `infra/README.md`.
 
 ---

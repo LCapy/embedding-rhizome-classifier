@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "eu-central-1"
 }
 
+variable "aws_profile" {
+  description = "Named AWS CLI profile to use (see ~/.aws/credentials). Kept as its own variable so this stays a dedicated profile, never the shared default."
+  type        = string
+  default     = "rhizome-classifier"
+}
+
 variable "project" {
   description = "Short name used to prefix/tag all resources."
   type        = string
@@ -16,44 +22,31 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "cluster_version" {
-  description = "Kubernetes version for the EKS control plane."
-  type        = string
-  default     = "1.31"
-}
-
 variable "vpc_cidr" {
   description = "CIDR block for the VPC."
   type        = string
   default     = "10.42.0.0/16"
 }
 
-variable "node_instance_types" {
-  description = "EC2 instance types for the CPU node group. LaBSE + coredrill needs ~1.5-2GB RSS; t3.large (2 vCPU / 8GB) gives headroom for 2-3 pods per node."
-  type        = list(string)
-  default     = ["t3.large"]
-}
-
-variable "node_min_size" {
-  description = "Minimum nodes in the managed node group."
-  type        = number
-  default     = 1
-}
-
-variable "node_max_size" {
-  description = "Maximum nodes in the managed node group."
-  type        = number
-  default     = 3
-}
-
-variable "node_desired_size" {
-  description = "Starting node count."
-  type        = number
-  default     = 1
-}
-
-variable "node_capacity_type" {
-  description = "ON_DEMAND or SPOT. SPOT is cheaper but nodes can be reclaimed with 2 minutes notice."
+variable "instance_type" {
+  description = "EC2 instance type for the coredrill-api box. LaBSE + coredrill needs ~1.5-2GB RSS; t3.medium (2 vCPU / 4GB) covers that with headroom."
   type        = string
-  default     = "ON_DEMAND"
+  default     = "t3.medium"
+}
+
+variable "root_volume_gb" {
+  description = "Root EBS volume size in GB (Docker image + LaBSE weights baked in are ~2-3GB)."
+  type        = number
+  default     = 30
+}
+
+variable "budget_notification_email" {
+  description = "Email address for AWS Budgets cost alerts. Set it in terraform.tfvars (gitignored); see terraform.tfvars.example."
+  type        = string
+}
+
+variable "monthly_budget_limit_usd" {
+  description = "Monthly cost budget in USD for this project's resources (see infra/README.md cost estimate)."
+  type        = number
+  default     = 60
 }

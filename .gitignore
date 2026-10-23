@@ -56,3 +56,7 @@ Thumbs.db
 !*.tfvars.example
 crash.log
 crash.*.log
+# Saved plans (`terraform plan -out=...`) can embed sensitive values in
+# plaintext - never commit them.
+tfplan*
+*.tfplan
