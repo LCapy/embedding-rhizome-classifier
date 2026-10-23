@@ -1,13 +1,13 @@
 # Architecture
 
-Five views of the same system: how the current deployment fits together, the
-target self-hosted deployment on EC2, how the offline build pipeline turns
+Five views of the same system: how the current deployment fits together, a
+self-hosted option on EC2 that has not been applied, how the offline build pipeline turns
 raw text into `coredrill_hierarchical.json`, what happens on a single
 `/predict` call, and what the taxonomy graph itself looks like. See
 [`docs/study_v5.md`](study_v5.md) for the math behind the scoring formulas
 referenced here, [`docs/free_deployment.md`](free_deployment.md) for the
 Hugging Face deploy guide, and [`infra/README.md`](../infra/README.md) for
-the self-hosted deploy guide.
+the EC2 option's Terraform.
 
 ---
 
@@ -41,7 +41,7 @@ Notes:
 - The Docker image bakes in the LaBSE model weights at build time (`RUN python -c
   "...SentenceTransformer('sentence-transformers/LaBSE')"`) so cold starts don't
   re-download ~1.5 GB of weights.
-- `coredrill_hierarchical.json` (the taxonomy centroids, tens of MB) stays out of
+- `coredrill_hierarchical.json` (the taxonomy centroids, about 9 MB) stays out of
   git entirely and is pulled at container start from an HF Dataset repo, keyed by
   the `HF_DATASET_REPO` / `HF_DATASET_FILE` / `HF_TOKEN` Space secrets.
 - The free HF Space tier sleeps after 48h idle; `keep_alive.yml` pings `/health`
@@ -49,7 +49,10 @@ Notes:
 
 ---
 
-## 2. Deployment topology (target: self-hosted on EC2)
+## 2. Deployment topology (option, not applied: self-hosted on EC2)
+
+Not applied: hosting stays on the Hugging Face Space for now, for budget
+reasons. This design is kept as a ready option.
 
 Same container image and API, no external hosting dependency. Considered EKS
 first; dropped it purely on cost - the EKS control plane alone is a fixed
@@ -116,10 +119,10 @@ flowchart TD
     Embed --> Emb[("embeddings.npz")]
 
     Tax[("taxonomy_legal.yaml /\ntaxonomy definition, 238 nodes, 6 levels")] --> Build
-    Emb --> Build["build_coredrill()\nbottom-up centroids, L5 -> L0"]
+    Emb --> Build["build_coredrill()\ncentroids from each node's own records"]
 
-    Build --> Leaf["Leaf nodes L5:\ncentroid = mean of direct-labeled embeddings"]
-    Leaf --> Parent["Parent nodes L4 -> L0:\ncentroid = weighted blend of\nchild centroids + own direct data\n(multi-parent: a leaf can feed >1 branch)"]
+    Build --> Leaf["Leaf nodes:\ncentroid = mean of direct-labeled embeddings"]
+    Leaf --> Parent["Parent nodes:\nown records if at least 5,\nelse weighted mean of child centroids\n(multi-parent: a leaf can feed >1 branch)"]
     Parent --> Sigma["Per-node sigma (dispersion),\nvMF kappa, PCA basis for 3D projection"]
 
     Sigma --> Out[("coredrill_hierarchical.json")]
@@ -127,10 +130,12 @@ flowchart TD
 ```
 
 Notes:
-- `build_coredrill()` walks the taxonomy from the deepest level (L5) up to the
-  root (L0). Leaf centroids come directly from labeled embeddings; every
-  internal node's centroid is a source-balanced blend of its children plus
-  whatever direct data it has.
+- `build_coredrill()` gives every node with at least 5 records of its own a
+  centroid from those records only; a parent with fewer falls back to the
+  weighted mean of its children's centroids. Builds before 5.1 blended every
+  parent mostly from its children, which cut held-out accuracy on
+  parent-labeled texts from 46.5% to 19.0% (see
+  [`evaluation.md`](evaluation.md)).
 - "Rhizome" refers to the multi-parent step: a single sentence's embedding can
   contribute to more than one branch of the taxonomy (e.g. a sentence can
   support both a biology node and a daily-life node), so the graph is a DAG,
@@ -152,8 +157,8 @@ sequenceDiagram
     API->>API: _check_key() - bearer token if API_KEY set
     API->>Eng: analyze_text_rhizome_v2(coredrill, text, model)
     Eng->>M: encode(text) -> 768-dim unit vector
-    Eng->>CD: cosine score vs every node centroid, per level
-    Eng->>Eng: predict() - best node per level,\nsigma-distance, confidence, margin
+    Eng->>CD: cosine score vs every node centroid
+    Eng->>Eng: predict() - walk down from the roots through\nthe winner's children; stop at the first\nfailed gate (sigma-distance, confidence, margin)
     Eng->>Eng: gram_inverse_scores()\nR_i = alpha_i * s_i * NS_i * PC_i * SW_i * sqrt(mass_i)
     Eng->>Eng: _deleuzian_flow()\nclassify flow topology from active set
     Eng-->>API: raw result dict

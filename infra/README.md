@@ -1,9 +1,12 @@
-# Self-hosted deployment on EC2
+# Self-hosted deployment on EC2 (option, not applied)
 
-Moves `coredrill-api` off Hugging Face and onto a single EC2 instance in
-your own AWS account. Terraform provisions everything: network, the
-instance, ECR, S3, IAM, and monitoring. See the diagram in
-[`docs/architecture.md`](../docs/architecture.md#2-deployment-topology-target-self-hosted-on-ec2).
+**Status:** not applied. Hosting stays on the Hugging Face Space for now,
+for budget reasons; this design is kept as a ready option.
+
+It would move `coredrill-api` off Hugging Face and onto a single EC2
+instance in your own AWS account. Terraform provisions everything: network,
+the instance, ECR, S3, IAM, and monitoring. See the diagram in
+[`docs/architecture.md`](../docs/architecture.md#2-deployment-topology-option-not-applied-self-hosted-on-ec2).
 
 This started as an EKS design; dropped for cost - the EKS control plane
 alone is a fixed ~$73/mo no matter how small the rest is. A single EC2

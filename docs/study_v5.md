@@ -14,7 +14,11 @@
 > text) contains the true label 84% of the time; the logistic regression's
 > top 4 does so 92% of the time. On Wikipedia articles neither has seen, all
 > of these drop by about 20 points. The finding that subtree propagation
-> hurts holds, and the build now follows it.
+> hurts holds, and the build now follows it. The Phase I alignment figure
+> (99.84% recall) comes from a different setup; ranking each sentence
+> against every sentence on the other side of 16 public parallel corpora
+> (Tatoeba and full OPUS books), LaBSE cosine recall@1 ranges from 80.5-82.6%
+> (Spanish-Russian books, by direction) to 99.4%.
 
 ---
 
