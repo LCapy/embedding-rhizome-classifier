@@ -18,6 +18,7 @@ Results and conclusions: [`../../docs/evaluation.md`](../../docs/evaluation.md).
 | `09_skip_list_check.py` | The deployed answer with the 26-node skip list vs no skip list |
 | `10_top_down.py` | Top-down classification (main class first, then children), geometric and trained, vs flat centroid, a flat linear head, and flat logistic regression |
 | `11_recheck.py` | Re-scores the texts behind earlier reported scores (the June `tests/eval_suite.json` report and the `06`/`07` texts) with the June engine, the fixed engine, a rebuilt 5.1 coredrill, the classifiers above, and the live Space; also finds each suite text's nearest stored record (leak check) |
+| `12_by_article.py` | The same methods on a split by article (all language versions of a Wikipedia article on one side), against the record split on the same classes |
 
 ## Data
 
@@ -47,6 +48,7 @@ python 08_profile_eval.py           # part B needs HF_TOKEN
 python 09_skip_list_check.py        # after 05
 python 10_top_down.py
 python 11_recheck.py --live         # after 06, 07, 10; fetches the suite texts once and caches them
+python 12_by_article.py             # after 10
 ```
 
 Outputs go to `artifacts/` (gitignored). The summary JSONs from the run

@@ -19,10 +19,11 @@ table are in [`eval/held_out/results/`](../eval/held_out/results/).
   `analyze_text_rhizome_v2()`; the final answer is chosen exactly as
   `api/app.py` chooses it.
 
-**Limitation.** The split is by record, not by source article: 4,863 of the
-4,867 Wikipedia-sourced test records come from an article that also has
-training records. Every number below is therefore an upper bound for text
-from unseen articles. A split by article is the next measurement.
+**Limitation.** This split is by record, not by source article: every one of
+its 4,867 Wikipedia-sourced test records comes from an article that also has
+training records, so the numbers below are upper bounds. [Split by
+article](#split-by-article) measures how much: about 20 points on Wikipedia
+text, for every method.
 
 ## Single answer
 
@@ -93,6 +94,38 @@ main class is right 75-79% of the time against 86.7% for flat nearest
 centroid. With a trained classifier at each parent, top-down reaches 58.5%,
 below a single flat logistic regression (61.3%).
 
+## Split by article
+
+`12_by_article.py` groups every Wikipedia record by its concept (all language
+versions of an article plus its Simple English version) and sends whole
+concepts to train or test; no test record shares a concept with training
+(0 of 3,532, against 4,867 of 4,867 in the record split). A concept goes to
+test only if every class it feeds keeps at least 5 training records, so only
+the 58 classes fed by several concepts, or by records with no article, can be
+tested. Most of the 199 nodes are built from a single article, so how they do
+on a new article cannot be measured with this data.
+
+Both splits on the same 58 classes, strict / near-miss:
+
+| Method | Wikipedia, record split | **Wikipedia, article split** | Other sources, record split | Other sources, article split |
+|---|---:|---:|---:|---:|
+| Deployed pipeline | 47.9% / 76.4% | **26.5% / 61.4%** | 55.8% / 65.5% | 56.0% / 63.8% |
+| Nearest centroid | 51.0% / 79.8% | **28.7% / 65.8%** | 55.6% / 64.2% | 58.2% / 65.0% |
+| Linear head (untuned) | 69.7% / 87.3% | **46.0% / 74.6%** | 63.0% / 70.8% | 64.9% / 71.0% |
+| Logistic regression | 69.5% / 90.5% | **45.1% / 76.2%** | 65.2% / 72.5% | 68.6% / 74.4% |
+
+| Profile of the same size (Wikipedia) | Record split | **Article split** |
+|---|---:|---:|
+| Rhizome active set | 83.5% | **62.1%** |
+| Logistic regression top-k | 93.6% | **75.7%** |
+| Linear head top-k | 92.2% | **77.9%** |
+
+Records with no article (bitext, CFPB, ChatDoctor) are split by record in
+both runs and serve as a control: their numbers barely move. On Wikipedia
+text from unseen articles every method loses about 20 points, and the trained
+models stay 17-19 points ahead of the geometric ones. The leak inflated all
+methods; it did not favor training.
+
 ## Re-check of earlier reported scores
 
 `11_recheck.py` re-ran the texts behind earlier scores on today's code.
@@ -129,13 +162,17 @@ topic, in 6 languages, with accept lists written before scoring:
 | Subtree propagation hurts | Holds; the 5.1 build follows it |
 | June suite 122/150 | Reproduces exactly, but 9 of its 20 Wikipedia texts are in the build data |
 | The profile is competitive with training | Only against an untuned linear head; a tuned logistic regression's top-k covers the label more often at every size measured |
+| Held-out accuracy (this report, record split) | An upper bound: on Wikipedia text from unseen articles every method loses about 20 points |
 
 ## Conclusions
 
 - With no training step, the geometric classifier gives a usable single
-  answer (48% strict, 73% near-miss over 199 classes) and an interpretable
-  multi-territory profile that contains the label 84% of the time.
-- A logistic regression on the same embeddings is better on every measure
-  here, at the cost of a one-minute training step.
-- Both numbers are upper bounds until the evaluation is repeated with a split
-  by article.
+  answer and an interpretable multi-territory profile: 48% strict, 73%
+  near-miss and an 84% profile hit rate over 199 classes on the record split;
+  on Wikipedia articles it has never seen (the 58 classes that split allows),
+  27% strict, 61% near-miss and 62%.
+- A logistic regression on the same embeddings is better on every measure,
+  on both splits, at the cost of a one-minute training step.
+- Most nodes are built from a single Wikipedia article. More articles per
+  node is what would let both approaches generalize, and what would let the
+  evaluation cover all 199 classes on unseen articles.

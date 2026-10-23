@@ -1,0 +1,290 @@
+{
+  "by_record": {
+    "n_train": 27032,
+    "n_test": 6746,
+    "wiki_test_sharing_concept_with_train": [
+      4867,
+      4867
+    ],
+    "results": {
+      "all classes": {
+        "n": 6746,
+        "classes": 199,
+        "deployed": {
+          "strict": 0.48310109694633857,
+          "near_miss": 0.7288763711829233
+        },
+        "centroid": {
+          "strict": 0.5123035873109991,
+          "near_miss": 0.7554106136970057
+        },
+        "linear_head": {
+          "strict": 0.5566261488289357,
+          "near_miss": 0.7395493625852357
+        },
+        "logreg": {
+          "strict": 0.6131040616661726,
+          "near_miss": 0.8354580492143493
+        },
+        "profile": {
+          "mean_size": 4.432404387785354,
+          "rhizome": 0.8384227690483249,
+          "logreg_same_size": 0.9233619922917284,
+          "linear_head_same_size": 0.8169285502520012
+        }
+      },
+      "same classes": {
+        "n": 5082,
+        "classes": 58,
+        "deployed": {
+          "strict": 0.5082644628099173,
+          "near_miss": 0.7239275875639511
+        },
+        "centroid": {
+          "strict": 0.5271546635182999,
+          "near_miss": 0.7402597402597403
+        },
+        "linear_head": {
+          "strict": 0.6723730814639906,
+          "near_miss": 0.8116883116883117
+        },
+        "logreg": {
+          "strict": 0.6792601338055884,
+          "near_miss": 0.8384494293585203
+        },
+        "profile": {
+          "mean_size": 4.374262101534828,
+          "rhizome": 0.8484848484848485,
+          "logreg_same_size": 0.9366391184573003,
+          "linear_head_same_size": 0.9234553325462417
+        }
+      },
+      "same classes, Wikipedia": {
+        "n": 3203,
+        "classes": 52,
+        "deployed": {
+          "strict": 0.4792382141742117,
+          "near_miss": 0.7642834842335311
+        },
+        "centroid": {
+          "strict": 0.5101467374336559,
+          "near_miss": 0.7976896659381829
+        },
+        "linear_head": {
+          "strict": 0.6971589135185763,
+          "near_miss": 0.8726194192944114
+        },
+        "logreg": {
+          "strict": 0.6952856696846706,
+          "near_miss": 0.9050889790821105
+        },
+        "profile": {
+          "mean_size": 4.941929441148923,
+          "rhizome": 0.8348423353106462,
+          "logreg_same_size": 0.9356852950359038,
+          "linear_head_same_size": 0.921635966281611
+        }
+      },
+      "same classes, other sources": {
+        "n": 1879,
+        "classes": 20,
+        "deployed": {
+          "strict": 0.5577434805747739,
+          "near_miss": 0.6551357104843002
+        },
+        "centroid": {
+          "strict": 0.5561468866418308,
+          "near_miss": 0.6423629590207557
+        },
+        "linear_head": {
+          "strict": 0.630122405534859,
+          "near_miss": 0.707823310271421
+        },
+        "logreg": {
+          "strict": 0.651942522618414,
+          "near_miss": 0.7248536455561468
+        },
+        "profile": {
+          "mean_size": 3.406599254922831,
+          "rhizome": 0.8717402873869079,
+          "logreg_same_size": 0.9382650345928686,
+          "linear_head_same_size": 0.9265566790846195
+        }
+      }
+    }
+  },
+  "by_article": {
+    "n_train": 28713,
+    "n_test": 5065,
+    "wiki_test_sharing_concept_with_train": [
+      0,
+      3532
+    ],
+    "results": {
+      "all classes": {
+        "n": 5065,
+        "classes": 58,
+        "deployed": {
+          "strict": 0.3545903257650543,
+          "near_miss": 0.6213228035538005
+        },
+        "centroid": {
+          "strict": 0.3761105626850938,
+          "near_miss": 0.6552813425468904
+        },
+        "linear_head": {
+          "strict": 0.5174728529121422,
+          "near_miss": 0.7348469891411649
+        },
+        "logreg": {
+          "strict": 0.5222112537018756,
+          "near_miss": 0.7563672260612043
+        },
+        "profile": {
+          "mean_size": 4.974531095755182,
+          "rhizome": 0.6843040473840079,
+          "logreg_same_size": 0.8005923000987167,
+          "linear_head_same_size": 0.8153998025666338
+        }
+      },
+      "same classes": {
+        "n": 5065,
+        "classes": 58,
+        "deployed": {
+          "strict": 0.3545903257650543,
+          "near_miss": 0.6213228035538005
+        },
+        "centroid": {
+          "strict": 0.3761105626850938,
+          "near_miss": 0.6552813425468904
+        },
+        "linear_head": {
+          "strict": 0.5174728529121422,
+          "near_miss": 0.7348469891411649
+        },
+        "logreg": {
+          "strict": 0.5222112537018756,
+          "near_miss": 0.7563672260612043
+        },
+        "profile": {
+          "mean_size": 4.974531095755182,
+          "rhizome": 0.6843040473840079,
+          "logreg_same_size": 0.8005923000987167,
+          "linear_head_same_size": 0.8153998025666338
+        }
+      },
+      "same classes, Wikipedia": {
+        "n": 3532,
+        "classes": 50,
+        "deployed": {
+          "strict": 0.26528878822197055,
+          "near_miss": 0.6140996602491506
+        },
+        "centroid": {
+          "strict": 0.28680634201585503,
+          "near_miss": 0.6577010192525481
+        },
+        "linear_head": {
+          "strict": 0.4603624009060023,
+          "near_miss": 0.7457531143827859
+        },
+        "logreg": {
+          "strict": 0.45101925254813136,
+          "near_miss": 0.7618912797281994
+        },
+        "profile": {
+          "mean_size": 5.873159682899208,
+          "rhizome": 0.6211778029445073,
+          "logreg_same_size": 0.757361268403171,
+          "linear_head_same_size": 0.779445073612684
+        }
+      },
+      "same classes, other sources": {
+        "n": 1533,
+        "classes": 18,
+        "deployed": {
+          "strict": 0.5603392041748206,
+          "near_miss": 0.6379647749510763
+        },
+        "centroid": {
+          "strict": 0.5818656229615133,
+          "near_miss": 0.649706457925636
+        },
+        "linear_head": {
+          "strict": 0.6490541422048272,
+          "near_miss": 0.7097195042400521
+        },
+        "logreg": {
+          "strict": 0.6862361382909328,
+          "near_miss": 0.7436399217221135
+        },
+        "profile": {
+          "mean_size": 2.904109589041096,
+          "rhizome": 0.8297455968688845,
+          "logreg_same_size": 0.9001956947162426,
+          "linear_head_same_size": 0.898238747553816
+        }
+      }
+    }
+  },
+  "classes_tested_by_article": [
+    "Algebra",
+    "Appointments & Medication",
+    "Astronomy",
+    "Astrophysics",
+    "Bargaining",
+    "Billing & Refunds",
+    "Biology",
+    "Chemistry",
+    "Climate & Weather",
+    "Complain",
+    "Complaint Handling",
+    "Conversation & Dialogue",
+    "Cosmology",
+    "Creative Expression",
+    "DNA Inheritance",
+    "Diagnosis",
+    "Doctor Appointment",
+    "Earth & Cosmos",
+    "Ecology",
+    "Economics",
+    "Epistemology",
+    "Ethics",
+    "Fiction",
+    "Geometry",
+    "Government",
+    "Health Routine",
+    "Human Activity & Society",
+    "Institutions & Governance",
+    "Law & Regulation",
+    "Life & Biology",
+    "Literature",
+    "Macroeconomics",
+    "Mathematics",
+    "Mechanics",
+    "Medicine",
+    "Microeconomics",
+    "Music",
+    "Natural World",
+    "Ordering & Delivery",
+    "Philosophy",
+    "Physical Reality",
+    "Physics",
+    "Poetry",
+    "Politics",
+    "Public Policy",
+    "Purchase & Payment",
+    "Question\u2013Answer",
+    "Refund Processing",
+    "Request",
+    "Semantics",
+    "Social Relations",
+    "Social Theory",
+    "Song",
+    "Symptoms & Self-Care",
+    "Syntax",
+    "Technical Setup Help",
+    "Thermodynamics",
+    "Treatment"
+  ]
+}

@@ -12,8 +12,9 @@
 > 48-51% for the geometric classifier and 61% for a trained logistic
 > regression on the same embeddings. The rhizome profile (about 4 nodes per
 > text) contains the true label 84% of the time; the logistic regression's
-> top 4 does so 92% of the time. The finding that subtree propagation hurts
-> holds, and the build now follows it.
+> top 4 does so 92% of the time. On Wikipedia articles neither has seen, all
+> of these drop by about 20 points. The finding that subtree propagation
+> hurts holds, and the build now follows it.
 
 ---
 

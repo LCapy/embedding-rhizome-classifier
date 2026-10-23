@@ -6,7 +6,7 @@ Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a po
 
 Full paper: [`docs/study_v5.md`](docs/study_v5.md) - *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
 
-Held-out evaluation, including which of the paper's numbers hold up: [`docs/evaluation.md`](docs/evaluation.md). In short, over 199 classes the deployed pipeline gets 48% of unseen texts exactly right and 73% right or one taxonomy step away; a logistic regression on the same embeddings gets 61% and 84%.
+Held-out evaluation, including which of the paper's numbers hold up: [`docs/evaluation.md`](docs/evaluation.md). In short, over 199 classes the deployed pipeline gets 48% of held-out texts exactly right and 73% right or one taxonomy step away; a logistic regression on the same embeddings gets 61% and 84%. On Wikipedia articles neither has seen, both lose about 20 points.
 
 Diagrams of the deployment topology, the offline build pipeline, the request
 flow, and the taxonomy's multi-parent structure: [`docs/architecture.md`](docs/architecture.md)
