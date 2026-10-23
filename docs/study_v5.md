@@ -4,6 +4,17 @@
 
 **Lucas - Independent Researcher, 2026**
 
+> **Status (October 2026).** This paper's numbers were measured on the
+> build's own records. Re-measured on held-out text, some do not stand as
+> stated; see [`evaluation.md`](evaluation.md). In short: "flat prototype
+> accuracy 91.3%" is sibling recall (choosing among a node's 2-5 siblings),
+> not accuracy across all nodes; held-out top-1 accuracy over 199 classes is
+> 48-51% for the geometric classifier and 61% for a trained logistic
+> regression on the same embeddings. The rhizome profile (about 4 nodes per
+> text) contains the true label 84% of the time; the logistic regression's
+> top 4 does so 92% of the time. The finding that subtree propagation hurts
+> holds, and the build now follows it.
+
 ---
 
 ## Abstract

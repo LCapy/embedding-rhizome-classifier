@@ -6,6 +6,8 @@ Coredrill maps any text, in any of the 109 languages supported by LaBSE, to a po
 
 Full paper: [`docs/study_v5.md`](docs/study_v5.md) - *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis*
 
+Held-out evaluation, including which of the paper's numbers hold up: [`docs/evaluation.md`](docs/evaluation.md). In short, over 199 classes the deployed pipeline gets 48% of unseen texts exactly right and 73% right or one taxonomy step away; a logistic regression on the same embeddings gets 61% and 84%.
+
 Diagrams of the deployment topology, the offline build pipeline, the request
 flow, and the taxonomy's multi-parent structure: [`docs/architecture.md`](docs/architecture.md)
 
@@ -75,9 +77,8 @@ The API runs on a private Hugging Face Space. To request access, contact the aut
 **Base URL:** `https://lcapy-coredrill.hf.space`
 **Interactive docs:** `https://lcapy-coredrill.hf.space/docs`
 
-Work is underway to self-host this on a single EC2 instance instead of
-relying on Hugging Face - see [`infra/README.md`](infra/README.md) for the
-Terraform setup.
+Hosting stays on the Hugging Face Space for now. [`infra/`](infra/README.md)
+holds a Terraform design for a single EC2 instance; it has not been applied.
 
 ---
 
