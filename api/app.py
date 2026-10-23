@@ -59,6 +59,12 @@ def _get_coredrill() -> dict:
             raise RuntimeError(f"Failed to parse coredrill JSON at {p}: {e}") from e
         if "skip_nodes" in _coredrill:
             SKIP_NODES = set(_coredrill["skip_nodes"])
+            # The engine's scoring reads rhizome_engine.SKIP_NODES, so update
+            # that set in place too. Before this, only the API's own filtering
+            # used the coredrill's list and skipped nodes could still win
+            # inside the engine.
+            _engine.SKIP_NODES.clear()
+            _engine.SKIP_NODES.update(SKIP_NODES)
             log.info(f"SKIP_NODES loaded from coredrill: {len(SKIP_NODES)} nodes")
         log.info(f"Coredrill loaded. Nodes: {len(_coredrill.get('tree', {}))}")
     return _coredrill
@@ -80,6 +86,7 @@ def _get_model():
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 
+import rhizome_engine as _engine  # type: ignore
 from rhizome_engine import (  # type: ignore
     predict,
     analyze_text_rhizome,
@@ -911,8 +918,6 @@ async def predict_file_text(
             return "ERROR: File is empty."
         if len(text) > 8000:
             text = text[:8000]
-        # Reuse the predict/text logic by calling _run_predict directly
-        from fastapi import Request
         raw = _run_predict(text, tau)
         resp = _build_response(raw, full=False)
         active = raw.get("active_overlap_set", [])

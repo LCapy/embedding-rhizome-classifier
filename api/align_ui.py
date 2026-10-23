@@ -54,8 +54,8 @@ def build_align_demo(get_model):
 
         rows = [
             {
-                "Source": a or "—",
-                "Target": b or "—",
+                "Source": a or "-",
+                "Target": b or "-",
                 "Similarity": round(sim, 4),
                 "Merged (src/tgt)": f"{ac}/{bc}",
                 "Status": "OK" if sim >= THRESHOLDS["similarity_threshold"] else "below threshold",

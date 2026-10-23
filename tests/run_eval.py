@@ -20,11 +20,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import logging
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -79,24 +81,46 @@ def fetch_rss_item(url: str, index: int = 0) -> str:
         return ""
 
 
+def _get_with_backoff(req: urllib.request.Request, attempts: int = 5) -> bytes:
+    """GET with retries on HTTP 429, honoring Retry-After when present."""
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code != 429 or attempt == attempts - 1:
+                raise
+            retry_after = e.headers.get("Retry-After")
+            wait = int(retry_after) if retry_after and retry_after.isdigit() else 5 * 2 ** attempt
+            log.info("HTTP 429 from %s, retrying in %ds", req.full_url, wait)
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
+
+
 def fetch_reddit_post(subreddit: str, sort: str = "top",
                       time_filter: str = "week", index: int = 0) -> str:
-    url = f"https://www.reddit.com/r/{subreddit}/{sort}.json?limit=25&t={time_filter}"
+    # Reddit's JSON API now returns 403 to unauthenticated clients; the Atom
+    # feed still works. Text posts carry their body in <content> ahead of
+    # the "submitted by" footer; link posts only have a title.
+    url = f"https://www.reddit.com/r/{subreddit}/{sort}/.rss?limit=25&t={time_filter}"
     req = urllib.request.Request(url, headers=HEADERS)
+    ns = {"a": "http://www.w3.org/2005/Atom"}
     try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            data = json.loads(r.read().decode())
-        posts = [p["data"] for p in data["data"]["children"] if p["kind"] == "t3"]
-        text_posts = [
-            p for p in posts
-            if p.get("selftext", "").strip() not in ("", "[removed]", "[deleted]")
-        ]
+        tree = ET.fromstring(_get_with_backoff(req))
+        posts = []
+        for entry in tree.findall("a:entry", ns):
+            title = (entry.findtext("a:title", default="", namespaces=ns) or "").strip()
+            content = entry.findtext("a:content", default="", namespaces=ns) or ""
+            body = html.unescape(re.sub(r"<[^>]+>", " ", content))
+            body = re.sub(r"\s+", " ", body.split("submitted by")[0]).strip()
+            if body in ("[removed]", "[deleted]"):
+                body = ""
+            posts.append((title, body))
+        text_posts = [p for p in posts if p[1]]
         pool = text_posts if text_posts else posts
         if not pool:
             return ""
-        p = pool[min(index, len(pool) - 1)]
-        title = p.get("title", "")
-        body  = p.get("selftext", "")
+        title, body = pool[min(index, len(pool) - 1)]
         return (f"{title}\n\n{body}".strip() if body else title)[:2500]
     except Exception as e:
         log.warning("Reddit fetch failed for r/%s: %s", subreddit, e)

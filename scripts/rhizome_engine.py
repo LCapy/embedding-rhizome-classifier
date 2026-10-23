@@ -1758,7 +1758,30 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                     per_source_cap: int = 400,
                     parent_child_cap: int = 400,
                     rhizome_top_k: int = 6,
-                    rhizome_min_sim: float = 0.45) -> dict:
+                    rhizome_min_sim: float = 0.45,
+                    min_direct: int = 5,
+                    skip_nodes: Optional[Set[str]] = None) -> dict:
+    """Build the coredrill.
+
+    Every node with at least `min_direct` records of its own gets a centroid
+    from those records only. A parent falls back to the weighted mean of its
+    children's centroids only when it has fewer than `min_direct` records.
+
+    Earlier builds blended every parent's centroid mostly from its children
+    (alpha 0.04-0.40 own data). That is the subtree propagation study_v5.md
+    reports as harmful, and on a held-out split it cut accuracy on
+    parent-labeled texts from 46.5% to 19.0% (eval/held_out/05_full_pipeline.py).
+
+    `skip_nodes` is written into the coredrill and is what the API excludes.
+    It defaults to none: with direct centroids the 26 nodes in SKIP_NODES no
+    longer act as hubs, and skipping them cost 0.6 points of held-out accuracy
+    while making 14 labels unwinnable (eval/held_out/09_skip_list_check.py).
+    SKIP_NODES stays the fallback for older coredrills that carry no list.
+
+    `parent_direct_min` only fed the removed blend; it is kept so existing
+    CLI calls still work.
+    """
+    skip_nodes = set(skip_nodes or ())
     nrm = np.linalg.norm(embeddings, axis=1, keepdims=True)
     embeddings = (embeddings / (nrm + 1e-12)).astype(np.float32)
     d = embeddings.shape[1]
@@ -1770,15 +1793,8 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
     children_map = taxonomy_children_map(taxonomy)
     levels = taxonomy_levels_map(taxonomy)
     roots = taxonomy_root_nodes(taxonomy)
-    max_level = max(levels.keys()) if levels else 0
 
-    def _direct_alpha(level: int) -> float:
-        if level >= max_level:
-            return 1.0
-        table = {0: 0.04, 1: 0.08, 2: 0.14, 3: 0.24, 4: 0.40}
-        return table.get(level, 0.55)
-
-    print("  Computing centroids bottom-up (LN -> L0) with multi-parent rhizome ...")
+    print("  Computing centroids (own records; children only for sparse parents) ...")
 
     direct_indices: Dict[str, np.ndarray] = {}
     direct_support_indices: Dict[str, np.ndarray] = {}
@@ -1857,27 +1873,18 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                 child_mu = (C * W[:, None]).sum(axis=0)
                 child_mu /= np.linalg.norm(child_mu) + 1e-12
 
-            if child_mu is None and direct_mu is None:
-                continue
-            if child_mu is None:
+            if direct_mu is not None and direct_n >= min_direct:
                 final_centroids[n] = direct_mu
                 support_indices[n] = direct_idx
-                centroid_mode[n] = "parent_direct_only"
-                continue
-            if direct_mu is None:
+                centroid_mode[n] = "parent_direct"
+            elif child_mu is not None:
                 final_centroids[n] = child_mu
                 support_indices[n] = child_support
                 centroid_mode[n] = "child_only"
-                continue
-
-            alpha = _direct_alpha(level)
-            if direct_n < parent_direct_min:
-                alpha *= 0.5
-            mu = alpha * direct_mu + (1.0 - alpha) * child_mu
-            mu /= np.linalg.norm(mu) + 1e-12
-            final_centroids[n] = mu
-            support_indices[n] = _unique_concat([child_support, _clip_indices(direct_idx, per_source_cap)])
-            centroid_mode[n] = f"bottom_up_blend_a={alpha:.2f}"
+            elif direct_mu is not None:
+                final_centroids[n] = direct_mu
+                support_indices[n] = direct_idx
+                centroid_mode[n] = "parent_direct_sparse"
 
     lineage_memo: Dict[str, List[List[str]]] = {}
     lineage_paths = {n["name"]: taxonomy_lineage_paths(n["name"], parents_map, lineage_memo) for n in taxonomy}
@@ -1959,7 +1966,7 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                    "lineage_paths": lineage_paths.get(n, []), "top_branches": top_branch_map.get(n, [])}
         print(f"    {n:<38} n={tree[n]['n']:>6,}  direct={direct_counts.get(n,0):>5,}  support={len(idx):>5,}  sigma={sigma:.4f}  recall={recall:.1%}  mode={centroid_mode.get(n,'direct')}")
 
-    populated = [n for n in tree if tree[n].get("centroid") is not None and n not in SKIP_NODES]
+    populated = [n for n in tree if tree[n].get("centroid") is not None and n not in skip_nodes]
     rhizome_overlay: Dict[str, List[dict]] = {n: [] for n in tree}
     if len(populated) > 1:
         C = np.array([tree[n]["centroid"] for n in populated], dtype=np.float64)
@@ -2004,10 +2011,14 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
         if stats.get("centroid"):
             stats["pca_xyz"] = ((np.array(stats["centroid"]) - pmn) @ pcp).tolist()
 
+    # "flat_prototype_accuracy" (key kept for compatibility) is sibling recall
+    # on the build's own records: how often a node's support records are
+    # nearer its centroid than its siblings' (usually 2-5 candidates). It is
+    # not held-out accuracy across all nodes; see eval/held_out/ for that.
     nc = sum(tree[n]["recall_vs_siblings"] * tree[n]["support_n"] for n in tree if tree[n].get("support_n", 0) > 0)
     nt = sum(tree[n].get("support_n", 0) for n in tree)
 
-    return {"version": "5.0", "type": "rhizomatic_cladistic", "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    return {"version": "5.1", "type": "rhizomatic_cladistic", "created": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "labse_model": "sentence-transformers/LaBSE", "embedding_dim": d,
             "n_nodes": len(taxonomy), "n_nodes_with_data": sum(1 for n in tree if not tree[n].get("no_data")),
             "n_levels": max(n["level"] for n in taxonomy) + 1, "n_source_records": len(records),
@@ -2016,7 +2027,7 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
             "tau": tau, "flat_prototype_accuracy": round(nc / nt if nt > 0 else 0, 4),
             "build_direction": "bottom_up", "levels": {str(lv): names for lv, names in levels.items()},
             "hierarchy": children_map, "tree": tree,
-            "skip_nodes": sorted(SKIP_NODES),
+            "skip_nodes": sorted(skip_nodes),
             "taxonomy_backbone": {"roots": roots, "parents_map": parents_map, "primary_parent_map": primary_parent_map,
                                   "lineage_paths": lineage_paths, "top_branches": top_branch_map},
             "rhizome": {"overlay": rhizome_overlay, "top_k": int(rhizome_top_k), "min_sim": float(rhizome_min_sim)},
@@ -2058,22 +2069,27 @@ def predict(text_or_emb, coredrill: dict, tau: Optional[float] = None) -> dict:
         x /= np.linalg.norm(x) + 1e-12
 
     _rff_p = _get_rff(coredrill)
+    vec_key = "rmc" if _rff_p is not None else "centroid"
+    q = _rff_p.transform_one(x) if _rff_p is not None else x
+
+    # Top-down walk: score the roots, then only the children of each
+    # confident winner. Stop at the first winner that fails a gate
+    # (deep_space, ambiguous, weak) and return the deepest confident node,
+    # or the root winner if even that one isn't confident. (Earlier versions
+    # scored every level independently and always returned the deepest
+    # level's winner, so the gates never stopped anything.)
     per_level = []
     best_overall = None
-    for level in sorted(levels):
-        if _rff_p is not None:
-            valid = [n for n in levels[level] if n in tree and tree[n].get("rmc") is not None]
-        else:
-            valid = [n for n in levels[level] if n in tree and tree[n].get("centroid") is not None]
+    stop_reason = None
+    candidates = list(levels.get(min(levels), [])) if levels else []
+    while candidates:
+        valid = [n for n in candidates
+                 if n in tree and tree[n].get(vec_key) is not None and n not in SKIP_NODES]
         if not valid:
-            continue
-        if _rff_p is not None:
-            phi_x_ = _rff_p.transform_one(x)
-            cents  = np.array([tree[n]["rmc"] for n in valid], dtype=np.float32)
-            sims   = phi_x_ @ cents.T
-        else:
-            cents = np.array([tree[n]["centroid"] for n in valid], dtype=np.float32)
-            sims = x @ cents.T
+            stop_reason = "no_data_below" if per_level else "no_data"
+            break
+        cents = np.array([tree[n][vec_key] for n in valid], dtype=np.float32)
+        sims = q @ cents.T
         dists = 1 - sims
         logits = sims / tau
         logits -= logits.max()
@@ -2081,6 +2097,7 @@ def predict(text_or_emb, coredrill: dict, tau: Optional[float] = None) -> dict:
         order = np.argsort(dists)
         best_idx = int(order[0])
         best = valid[best_idx]
+        level = int(tree[best].get("level", len(per_level)))
         conf = float(probs[best_idx])
         margin = float(dists[order[1]] - dists[order[0]]) if len(order) > 1 else 1.0
         sigma = tree[best].get("sigma") or 0.4
@@ -2096,8 +2113,15 @@ def predict(text_or_emb, coredrill: dict, tau: Optional[float] = None) -> dict:
                 "sigma_dist": round(sdist, 3), "inside_cloud": sdist < 1.0, "state": state,
                 "candidates": [{"name": valid[i], "sim": round(float(sims[i]), 4), "conf": round(float(probs[i]), 4)} for i in order[:5]]}
         per_level.append(step)
-        if best_overall is None or level >= best_overall["level"]:
-            best_overall = step
+        if state != "confident":
+            stop_reason = state
+            if best_overall is None:
+                best_overall = step
+            break
+        best_overall = step
+        candidates = list(tree[best].get("children") or [])
+        if not candidates:
+            stop_reason = "leaf"
 
     _rff_p = _get_rff(coredrill)
     if _rff_p is not None:
@@ -2136,7 +2160,7 @@ def predict(text_or_emb, coredrill: dict, tau: Optional[float] = None) -> dict:
             "top_level_prediction": best_node,
             "top_level_confidence": float(best_overall.get("confidence", 0.0)) if best_overall else 0.0,
             "deepest_level": int(tree.get(best_node, {}).get("level", -1)) if best_node in tree else -1,
-            "path": per_level, "stop_reason": None, "_embedding": x}
+            "path": per_level, "stop_reason": stop_reason, "_embedding": x}
 
 def _deleuzian_flow(active: list, results: list, pred: dict) -> dict:
     if not results or not active:
@@ -2784,7 +2808,7 @@ def cmd_build(args) -> None:
     kb = p.stat().st_size / 1024
     print(f"\nSaved -> {p}  ({kb:.0f} KB)")
     print(f"Nodes with data: {cd['n_nodes_with_data']} / {cd['n_nodes']}")
-    print(f"Flat accuracy:   {cd['flat_prototype_accuracy']:.1%}")
+    print(f"Sibling recall on build records (not held-out accuracy): {cd['flat_prototype_accuracy']:.1%}")
     print(f"Sources:         {chr(44).join(cd['data_sources'])}")
 
 
@@ -2884,39 +2908,50 @@ def compute_metric_families(results: List[dict]) -> Dict[str, dict]:
     }
 
 def _consensus_and_recommended(winners: Dict[str, dict]) -> Tuple[Tuple[str, dict], Tuple[str, dict]]:
+    """Consensus and recommended winner across the score families.
+
+    laplace (-z), smallest_z (z) and gaussian (-z^2/2, with z >= 0) are
+    monotone transforms of the same sigma-capped z-score, so they always pick
+    the same node. They count as ONE metric ("z") when voting; earlier
+    versions counted them three times, and their agreement checks for the
+    recommended winner were always true.
+
+    Recommended: the node with the smallest sigma-capped z-score (unchanged
+    from earlier versions, which always reduced to this).
+    """
     from collections import Counter
-    order = ["production", "cosine", "smallest_z", "laplace", "gaussian", "manifold"]
-    votes = Counter(winners[k]["node"] for k in order if k in winners)
+    metrics = {
+        "z": winners["smallest_z"],
+        "production": winners["production"],
+        "cosine": winners["cosine"],
+        "manifold": winners["manifold"],
+    }
+    votes = Counter(m["node"] for m in metrics.values())
     best_vote = max(votes.values())
-    candidates = sorted([node for node, c in votes.items() if c == best_vote])
-    consensus_node = None
-    for fam in ["manifold", "laplace", "smallest_z", "gaussian", "production", "cosine"]:
-        if winners[fam]["node"] in candidates:
-            consensus_node = winners[fam]["node"]
-            consensus_rep = {**winners[fam], "family": fam}
+    candidates = {node for node, c in votes.items() if c == best_vote}
+    consensus_node, consensus_rep = None, None
+    for fam in ["manifold", "z", "production", "cosine"]:   # tie-break order, as before
+        if metrics[fam]["node"] in candidates:
+            consensus_node = metrics[fam]["node"]
+            consensus_rep = {**metrics[fam], "family": fam}
             break
-    lap_node = winners["laplace"]["node"]
-    z_node = winners["smallest_z"]["node"]
-    gau_node = winners["gaussian"]["node"]
-    if gau_node == lap_node or gau_node == z_node:
-        recommended_node = gau_node; recommended_family = "gaussian_agreement"
-    elif lap_node == z_node:
-        recommended_node = lap_node; recommended_family = "laplace_smallest_z_agreement"
-    else:
-        recommended_node = lap_node; recommended_family = "laplace"
-    rec_rep = None
-    for fam in ["manifold", "laplace", "smallest_z", "gaussian", "production", "cosine"]:
-        if winners[fam]["node"] == recommended_node:
-            rec_rep = {**winners[fam], "family": fam, "recommended_family": recommended_family}
-            break
+    recommended_node = metrics["z"]["node"]
+    rec_rep = {**metrics["z"], "family": "smallest_z", "recommended_family": "smallest_z"}
     return (consensus_node, consensus_rep), (recommended_node, rec_rep)
 
 def analyze_text_rhizome(coredrill: dict, text: str, model, tau: float = 0.1, print_output: bool = True) -> dict:
     x = model.encode([text], normalize_embeddings=True, convert_to_numpy=True)[0].astype(np.float32)
-    microtexts = split_segment_into_microtexts(text)
-    micro_embs = model.encode(microtexts, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32) if microtexts else np.zeros((0, x.shape[0]), dtype=np.float32)
-    barycenter = (micro_embs.mean(axis=0).astype(np.float32) if len(micro_embs) else x.copy())
-    barycenter /= (np.linalg.norm(barycenter) + 1e-12)
+    # Scoring uses the full-text embedding x. The micro-text barycenter is
+    # only displayed (terminal + metrics dump), so it is computed only when
+    # printing; the API (print_output=False) used to encode dozens of
+    # micro-chunks per request for nothing.
+    if print_output:
+        microtexts = split_segment_into_microtexts(text)
+        micro_embs = model.encode(microtexts, normalize_embeddings=True, convert_to_numpy=True).astype(np.float32) if microtexts else np.zeros((0, x.shape[0]), dtype=np.float32)
+        barycenter = (micro_embs.mean(axis=0).astype(np.float32) if len(micro_embs) else x.copy())
+        barycenter /= (np.linalg.norm(barycenter) + 1e-12)
+    else:
+        microtexts, micro_embs, barycenter = [], np.zeros((0, x.shape[0]), dtype=np.float32), x.copy()
     tree = coredrill.get("tree", {})
     _rff = _get_rff(coredrill)
     if _rff is not None:
