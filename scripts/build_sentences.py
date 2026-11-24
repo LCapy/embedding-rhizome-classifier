@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build_sentences_rhizome.py - Build a multi-label rhizomatic sentence dataset.
+build_sentences.py - Build a multi-label rhizomatic sentence dataset.
 
 Reads:
   - data/sentences.json       (existing single-label corpus)
@@ -33,12 +33,12 @@ The KME built from this dataset will correctly represent territory distributions
 without arborescent single-label bias.
 
 USAGE:
-  python build_sentences_rhizome.py \\
+  python scripts/build_sentences.py \\
     --sentences  data/sentences.json \\
     --embeddings data/embeddings.npz \\
     --coredrill  coredrill/coredrill_hierarchical.json \\
     --out        data/sentences_rhizome.json \\
-    --z-cutoff   1.5 \\
+    --cos-threshold 0.40 \\
     --min-weight 0.01
 """
 
@@ -139,8 +139,11 @@ def load_coredrill(path: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     centroids  = []
     sigmas     = []
 
+    # The coredrill's own skip list, as the API uses it; 5.1 builds carry an
+    # empty one. The hard-coded list is only for older coredrills without one.
+    skip = set(cd.get("skip_nodes", SKIP_NODES))
     for node, stats in tree.items():
-        if node in SKIP_NODES:
+        if node in skip:
             continue
         c = stats.get("centroid")
         if c is None:
@@ -155,7 +158,7 @@ def load_coredrill(path: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
 
     C = np.array(centroids, dtype=np.float32)   # (N, 768)
     S = np.array(sigmas,    dtype=np.float32)   # (N,)
-    log.info(f"  {len(node_names)} nodes with centroids (excluded {len(SKIP_NODES)} skip)")
+    log.info(f"  {len(node_names)} nodes with centroids (excluded {len(skip)} skip)")
     return C, S, node_names
 
 
@@ -168,6 +171,7 @@ def score_all(embeddings: np.ndarray,
               S:          np.ndarray,
               node_names: List[str],
               cos_threshold: float,
+              min_weight: float = MIN_WEIGHT,
               batch_size: int = 1024,
               ) -> List[List[dict]]:
     """
@@ -207,7 +211,7 @@ def score_all(embeddings: np.ndarray,
                 cosij = float(cos[i, j])
                 zij   = float(z[i, j])
                 wij   = float(np.exp(-zij))
-                if wij < MIN_WEIGHT:
+                if wij < min_weight:
                     continue
                 cats.append({
                     "node":   node_names[j],
@@ -377,7 +381,7 @@ def main():
     print(f"  output:     {args.out}")
     print(f"  cos_thresh: {args.cos_threshold}  (fixed cosine distance radius)")
     print(f"  min_weight: {args.min_weight}")
-    print(f"  skip_nodes: {len(SKIP_NODES)}")
+    print("  skip_nodes: the coredrill's own list (engine default if it has none)")
     print()
     print("  Every sentence will carry ALL territories it inhabits.")
     print("  No single-label assignment. Overlap is the point.")
@@ -398,6 +402,7 @@ def main():
     all_categories = score_all(
         embeddings, C, S, node_names,
         cos_threshold=args.cos_threshold,
+        min_weight=args.min_weight,
     )
 
     # Build and write
@@ -412,11 +417,7 @@ def main():
     print("DONE")
     print(f"  sentences_rhizome.json: {args.out}")
     print()
-    print("  Next: build v4 coredrill from this dataset")
-    print("  python build_rhizome_v4.py \\")
-    print(f"    --sentences-rhizome {args.out} \\")
-    print(f"    --embeddings {args.embeddings} \\")
-    print(f"    --coredrill coredrill/coredrill_v4.json")
+    print("  eval/held_out/02_train.py reads this file for its multi-label configs.")
     print("=" * 70)
 
 

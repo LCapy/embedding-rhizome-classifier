@@ -28,14 +28,11 @@ Three candidates, all operating across all 199 classes simultaneously
                          the real code only ever confirms that same node -
                          see commit notes / chat log for the derivation).
 
-predict()'s hierarchical per-level walk is deliberately NOT reproduced
-here: reading it closely, the per-level gate states (confident/weak/
-ambiguous/deep_space) are computed and stored but never used to stop the
-loop or override best_node - the loop runs every level unconditionally
-and best_node always ends up being the deepest level's raw nearest-
-neighbor pick. For our 199-class set (spanning levels 0-5), that would
-mean predict() can only ever answer with one of the ~19 level-5 nodes,
-which isn't a meaningful general classifier for this comparison.
+predict()'s per-level walk is not reproduced here. When this script was
+written its gates never stopped the walk, so it always answered with a
+level-5 node; it now stops at the first failed gate (05_full_pipeline.py
+reports it), and either way its answer is a lineage, not a choice among
+all 199 classes.
 """
 import json
 import numpy as np

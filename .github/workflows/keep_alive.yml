@@ -3,6 +3,11 @@ name: Keep HF Space Awake
 # Pings the /health endpoint every 24 hours so the free Space never
 # hits the 48-hour inactivity sleep limit.
 # Also runs on push to main so you can verify it works immediately.
+#
+# Needs two repository secrets (Settings > Secrets and variables > Actions):
+#   HF_SPACE_URL  the Space's URL, e.g. https://your-username-coredrill.hf.space
+#   HF_TOKEN      a Hugging Face token with read access to the Space. A private
+#                 Space rejects requests without one before they reach the app.
 
 on:
   schedule:
@@ -18,13 +23,22 @@ jobs:
     steps:
       - name: Ping /health
         env:
-          # Set this in your GitHub repo → Settings → Secrets → Actions
-          # Value: https://your-username-coredrill.hf.space
           HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # A missing secret is a configuration error, not a transient one, so
+          # the run fails. It used to exit 0 here, which showed a green run
+          # every day while nothing was pinged.
           if [ -z "$HF_SPACE_URL" ]; then
-            echo "HF_SPACE_URL secret is not set. Skipping ping."
-            exit 0
+            echo "::error::HF_SPACE_URL secret is not set, so the Space is not being pinged."
+            exit 1
+          fi
+
+          AUTH=()
+          if [ -n "$HF_TOKEN" ]; then
+            AUTH=(-H "Authorization: Bearer $HF_TOKEN")
+          else
+            echo "::warning::HF_TOKEN secret is not set. A private Space rejects unauthenticated requests."
           fi
 
           echo "Pinging $HF_SPACE_URL/health ..."
@@ -33,6 +47,7 @@ jobs:
           for i in 1 2 3 4 5; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
                      --max-time 120 \
+                     "${AUTH[@]}" \
                      "$HF_SPACE_URL/health" || echo "000")
             echo "Attempt $i: HTTP $STATUS"
             if [ "$STATUS" = "200" ]; then
@@ -43,6 +58,6 @@ jobs:
             sleep 30
           done
 
-          echo "WARNING: Space did not respond with 200 after 5 attempts."
           # Do not fail the workflow - Space may just be rebuilding
+          echo "::warning::Space did not respond with 200 after 5 attempts (last status $STATUS)."
           exit 0

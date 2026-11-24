@@ -14,7 +14,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from common import load_embeddings, load_split, load_coredrill
+from common import OUT_DIR, load_embeddings, load_split, load_coredrill
 
 SEEDS = [0, 1, 2]
 KS = [1, 2, 5, 10, 20, None]   # None = all training data
@@ -84,7 +84,7 @@ def error_structure(labels, y_test):
     tree = load_coredrill()["tree"]
     parents_map = {n: (s.get("parents") or []) for n, s in tree.items()}
     memo = {}
-    preds = np.load("artifacts/train_preds.npz", allow_pickle=True)["plain"]
+    preds = np.load(OUT_DIR / "train_preds.npz", allow_pickle=True)["plain"]
     wrong = np.where(preds != y_test)[0]
 
     counts = {"ancestor_or_descendant": 0, "shared_parent": 0, "unrelated": 0}

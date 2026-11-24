@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "description": "Coredrill evaluation suite - real internet data with pre-defined ground truth",
   "items": [
 
@@ -101,7 +101,7 @@
       "fetch": {"type": "wikipedia_intro", "title": "Influenza"},
       "expected": {
         "node": "Diagnosis",
-        "accept_nodes": ["Diagnosis", "Medicine", "Symptoms & Self-Care", "Treatment"],
+        "accept_nodes": ["Diagnosis", "Medicine", "Symptoms & Self-Care", "Treatment", "Epidemiology", "Public Health"],
         "partial_nodes": ["Life & Biology", "Natural World"]
       },
       "tags": ["medicine", "health", "l3"]
@@ -114,7 +114,7 @@
       "fetch": {"type": "wikipedia_intro", "title": "Cancer treatment"},
       "expected": {
         "node": "Treatment",
-        "accept_nodes": ["Treatment", "Diagnosis", "Medicine", "Appointments & Medication"],
+        "accept_nodes": ["Treatment", "Diagnosis", "Medicine", "Appointments & Medication", "Pharmacology"],
         "partial_nodes": ["Life & Biology", "Natural World"]
       },
       "tags": ["medicine", "health", "l3"]
@@ -257,7 +257,7 @@
       "fetch": {"type": "wikipedia_intro", "title": "Roman law"},
       "expected": {
         "node": "Law & Regulation",
-        "accept_nodes": ["Law & Regulation", "Rights & Obligations", "Rules & Enforcement", "Legal Obligation", "Government"],
+        "accept_nodes": ["Law & Regulation", "Rights & Obligations", "Rules & Enforcement", "Legal Obligation", "Government", "Jurisprudence"],
         "partial_nodes": ["Institutions & Governance", "Human Activity & Society"]
       },
       "tags": ["law", "history", "l2"]
@@ -285,8 +285,11 @@
       "source": "bbc_rss",
       "fetch": {"type": "rss_item", "url": "https://feeds.bbci.co.uk/news/technology/rss.xml", "index": 0},
       "expected": {
-        "node": "Physics",
-        "accept_nodes": ["Physics", "Mathematics", "Statistics", "Logic", "Mechanics",
+        "node": "Technology",
+        "accept_nodes": ["Technology", "Computing & Software", "Artificial Intelligence", "Cybersecurity",
+                         "Consumer Electronics", "Wearable Technology", "Internet & Digital Media",
+                         "Social Media", "Online Commerce",
+                         "Physics", "Mathematics", "Statistics", "Logic", "Mechanics",
                          "Economics", "Business Operations", "Macroeconomics", "Politics",
                          "Education & Training"],
         "partial_nodes": ["Physical Reality", "Formal Systems", "Work & Economy", "Human Mind & Knowledge", "Human Activity & Society"]
@@ -303,7 +306,8 @@
         "node": "Economics",
         "accept_nodes": ["Economics", "Macroeconomics", "Microeconomics", "Business Operations",
                          "Transactions", "Customer Service", "Politics", "Government",
-                         "Public Policy", "Workplace Coordination", "Operations Management"],
+                         "Public Policy", "Workplace Coordination", "Operations Management",
+                         "Online Commerce"],
         "partial_nodes": ["Work & Economy", "Institutions & Governance", "Human Activity & Society"]
       },
       "tags": ["economics", "dynamic", "l2-l3"]
@@ -334,7 +338,8 @@
         "node": "Medicine",
         "accept_nodes": ["Medicine", "Diagnosis", "Treatment", "Health Routine",
                          "Symptoms & Self-Care", "Appointments & Medication", "Doctor Appointment",
-                         "Biology", "Genetics", "Ecology"],
+                         "Biology", "Genetics", "Ecology",
+                         "Epidemiology", "Public Health", "Pharmacology"],
         "partial_nodes": ["Life & Biology", "Natural World", "Daily Life"]
       },
       "tags": ["health", "medicine", "dynamic", "l2-l3"]
@@ -350,7 +355,8 @@
         "accept_nodes": ["Physics", "Biology", "Chemistry", "Medicine", "Astronomy", "Ecology",
                          "Genetics", "Evolution", "Astrophysics", "Cosmology", "Climate Change",
                          "Climate & Weather", "Ecosystems", "Quantum Mechanics", "Thermodynamics",
-                         "Geology", "Mathematics", "Statistics"],
+                         "Geology", "Mathematics", "Statistics",
+                         "Epidemiology", "Public Health", "Pharmacology"],
         "partial_nodes": ["Physical Reality", "Life & Biology", "Earth & Cosmos", "Formal Systems", "Natural World"]
       },
       "tags": ["science", "dynamic", "reddit"]

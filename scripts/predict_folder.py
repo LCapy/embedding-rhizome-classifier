@@ -4,22 +4,22 @@
 predict_folder.py - Batch prediction with optional A/B comparison.
 
 Single mode:
-  python predict_folder.py \
-    --input-dir  test_texts \
+  python scripts/predict_folder.py \
+    --input-dir  data/test_texts \
     --output-dir reports \
-    --coredrill  coredrill/coredrill_v4.json \
-    --script     full_build_rhizome_final.py
+    --coredrill  coredrill/coredrill_hierarchical.json \
+    --script     scripts/rhizome_engine.py
 
-A/B comparison mode:
-  python predict_folder.py \
-    --input-dir   test_texts \
+A/B comparison mode (two engine versions, or two coredrills):
+  python scripts/predict_folder.py \
+    --input-dir   data/test_texts \
     --output-dir  reports_compare \
-    --script-a    full_build_rhizome_final.py \
-    --coredrill-a coredrill/coredrill_v4.json \
-    --script-b    full_build_rhizome_final_n.py \
-    --coredrill-b coredrill/coredrill_v4.json \
-    --label-a "old formula" \
-    --label-b "pure cosine"
+    --script-a    scripts/rhizome_engine.py \
+    --coredrill-a coredrill/coredrill_hierarchical.json \
+    --script-b    path/to/other_rhizome_engine.py \
+    --coredrill-b coredrill/coredrill_hierarchical.json \
+    --label-a "current" \
+    --label-b "candidate"
 """
 
 from __future__ import annotations
@@ -36,6 +36,24 @@ log = logging.getLogger("predict_folder")
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+def _split_row(row: str):
+    """Split a table row into (node name, remaining columns).
+
+    The name is every token before the first numeric one; node names never
+    contain a number. Counting columns from the right broke when the profile
+    table's layout changed: it read the sigma column as part of the name and
+    the Laplace score as the cosine.
+    """
+    tokens = row.split()
+    for i, tok in enumerate(tokens):
+        try:
+            float(tok.rstrip("s%"))
+        except ValueError:
+            continue
+        return " ".join(tokens[:i]), tokens[i:]
+    return " ".join(tokens), []
+
 
 def run_prediction(script: str, coredrill: str, text: str) -> str:
     result = subprocess.run(
@@ -66,6 +84,7 @@ def parse_output(raw: str) -> dict:
     lines = raw.splitlines()
     in_profile = in_table = in_flow = False
     first_node_done = False
+    profile_rows = False   # the text preview sits above the profile table's header
 
     for line in lines:
         s = line.strip()
@@ -79,29 +98,37 @@ def parse_output(raw: str) -> dict:
         if "CLADISTIC PATH:" in line:
             in_profile = False; continue
         if "PRIMARY FLOW:" in line:
-            p["primary_flow"] = s.replace("PRIMARY FLOW:", "").strip().split()[0]
+            # The whole label: "LINE OF FLIGHT" and "BwO APPROACH" are several words.
+            p["primary_flow"] = s.split("PRIMARY FLOW:", 1)[1].strip()
             continue
 
         if any(s.startswith(k) for k in ("BWO", "TERRIT", "DETERR", "RETERR", "LINE OF")):
             p["flow_bars"].append(s)
             continue
 
-        if in_profile and s and not any(s.startswith(k) for k in ("=", "-", "[->", "NODE")):
+        if in_profile and s.startswith("NODE"):
+            profile_rows = True
+            continue
+        if in_profile and s and not any(s.startswith(k) for k in ("=", "-", "[->")):
             p["profile"].append(s)
-            if not first_node_done and "%" in s:
-                first_node_done = True
-                cols = s.split()
-                if len(cols) >= 7:
-                    p["top_node"] = " ".join(cols[:-6])
-                    try:
-                        nums = [c for c in cols[-6:] if c.replace(".", "").replace("-", "").isdigit()]
-                        if nums:
-                            p["top_cos"] = float(nums[0])
-                    except Exception as e:
-                        logging.debug("Could not parse top_cos from table row: %s", e)
+            if profile_rows and not first_node_done and "%" in s:
+                name, cols = _split_row(s)
+                if name and cols:
+                    first_node_done = True
+                    p["top_node"] = name
 
         if in_table and s and not any(s.startswith(k) for k in ("NODE", "---", "[->", "===")):
             p["table"].append(s)
+
+    # The profile table has no cosine column; take it from the ranked table's
+    # first row (sigma, cos, z, ...).
+    if p["table"]:
+        _, cols = _split_row(p["table"][0])
+        if len(cols) > 1:
+            try:
+                p["top_cos"] = float(cols[1])
+            except ValueError:
+                pass
 
     if "CLADISTIC PATH:" in raw:
         cs = raw.find("CLADISTIC PATH:") + len("CLADISTIC PATH:")
@@ -111,7 +138,10 @@ def parse_output(raw: str) -> dict:
 
     # flow score from bars
     for bar in p["flow_bars"]:
-        if p["primary_flow"] in bar:
+        # Case-insensitive: the label reads "BwO APPROACH", its bar "BWO APPROACH".
+        # startswith, not "in": TERRITORIALIZATION is inside the
+        # DETERRITORIALIZATION and RETERRITORIALIZATION bars.
+        if bar.upper().startswith(p["primary_flow"].upper()):
             for tok in reversed(bar.split()):
                 try:
                     p["flow_score"] = tok
@@ -127,13 +157,9 @@ def summarize_row(row: str) -> str:
     """Extract node name + cos + prod from a ranked table row."""
     if not row:
         return ""
-    cols = row.split()
-    if len(cols) >= 10:
-        name = " ".join(cols[:-9])
-        cos  = cols[-8]
-        prod = cols[-3]
-        mass = cols[-2]
-        return f"{name} cos={cos} prod={prod} {mass}"
+    name, cols = _split_row(row)
+    if len(cols) >= 9:   # sigma cos z lap gau man prod mass lvl
+        return f"{name} cos={cols[1]} prod={cols[6]} {cols[7]}"
     return row[:70]
 
 
@@ -177,11 +203,9 @@ def write_single_report(txt_path: Path, text: str, parsed: dict,
         f"|------|-------|-----|---|-----|-----|-----|------|------|-----|",
     ]
     for row in parsed["table"][:10]:
-        cols = row.split()
-        if len(cols) >= 10:
-            name = " ".join(cols[:-9])
-            rest = " | ".join(cols[-9:])
-            lines.append(f"| {name} | {rest} |")
+        name, cols = _split_row(row)
+        if len(cols) >= 9:
+            lines.append(f"| {name} | {' | '.join(cols[:9])} |")
     lines += [
         f"",
         f"<details><summary>Raw output</summary>",
@@ -258,8 +282,8 @@ def write_compare_report(txt_path: Path, text: str,
     for i in range(max(len(rows_a), len(rows_b))):
         sa = summarize_row(rows_a[i]) if i < len(rows_a) else ""
         sb = summarize_row(rows_b[i]) if i < len(rows_b) else ""
-        node_a = rows_a[i].split()[0] if i < len(rows_a) and rows_a[i].split() else ""
-        node_b = rows_b[i].split()[0] if i < len(rows_b) and rows_b[i].split() else ""
+        node_a = _split_row(rows_a[i])[0] if i < len(rows_a) else ""
+        node_b = _split_row(rows_b[i])[0] if i < len(rows_b) else ""
         diff = "🔴" if node_a != node_b else ""
         lines.append(f"| {i+1} | {sa} | {sb} | {diff} |")
     lines += [

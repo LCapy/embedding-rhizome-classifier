@@ -7,8 +7,9 @@ COREDRILL_FILE="$COREDRILL_DIR/coredrill_hierarchical.json"
 mkdir -p "$COREDRILL_DIR"
 
 # Fetch coredrill JSON if not already present. Two backends:
-#   - COREDRILL_S3_URI  (s3://bucket/key.json)          - used on EKS, no
-#     static credentials needed: boto3 picks up the pod's IRSA role.
+#   - COREDRILL_S3_URI  (s3://bucket/key.json)          - used by the EC2
+#     option in infra/; boto3 picks up the instance's IAM role, so no
+#     static credentials are needed.
 #   - HF_DATASET_REPO   (e.g. your-username/coredrill-data) - used on
 #     Hugging Face Spaces. HF_TOKEN only needed if the dataset is private.
 # S3 takes priority if both are set.
@@ -52,7 +53,7 @@ print(f"[start.sh] Downloaded to {path}")
 PYEOF
     else
         echo "[start.sh] ERROR: neither COREDRILL_S3_URI nor HF_DATASET_REPO is set." >&2
-        echo "[start.sh] Set COREDRILL_S3_URI=s3://bucket/coredrill_hierarchical.json (EKS)" >&2
+        echo "[start.sh] Set COREDRILL_S3_URI=s3://bucket/coredrill_hierarchical.json (EC2 option)" >&2
         echo "[start.sh] or HF_DATASET_REPO=your-username/coredrill-data (HF Spaces)." >&2
         exit 1
     fi

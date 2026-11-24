@@ -9,7 +9,7 @@ Everything here is open-source.
 | Resource | Provider | Purpose | Cost |
 |----------|----------|---------|------|
 | Code repository | GitHub | Source of truth for all code | Free |
-| `coredrill_hierarchical.json` | HF Dataset repo | Stores the 50 MB coredrill file | Free |
+| `coredrill_hierarchical.json` | HF Dataset repo | Stores the coredrill file (about 9 MB for the 5.1 build) | Free |
 | Live API | HF Spaces (Docker) | `https://your-username-coredrill.hf.space` | Free |
 | Keep-alive pinger | GitHub Actions (cron) | Prevents the Space from sleeping | Free |
 
@@ -37,7 +37,7 @@ git push -u origin main
 
 ## Step 2 - Upload the coredrill JSON to a HF Dataset repo
 
-The `coredrill_hierarchical.json` is ~50 MB. Git and GitHub Release assets both have size limits and rate limits that make them awkward for large binary files. HF Dataset repos have no meaningful size limit and are designed for exactly this.
+The `coredrill_hierarchical.json` is about 9 MB (5.1 build) and changes on every rebuild, which makes it a poor fit for git history. HF Dataset repos are designed for exactly this.
 
 1. Go to https://huggingface.co/new-dataset
    - Name: `coredrill-data`
@@ -84,19 +84,26 @@ git clone https://huggingface.co/spaces/your-username/coredrill hf-space
 cd hf-space
 ```
 
-3. Copy the HF Spaces deployment files into it:
+3. Copy the deployment files into it (they live at the root of this repo):
 
 ```bash
 # From your main project directory:
-cp deploy/hf_spaces/Dockerfile      hf-space/Dockerfile
-cp deploy/hf_spaces/start.sh        hf-space/start.sh
-cp deploy/hf_spaces/README.md       hf-space/README.md
+cp Dockerfile                       hf-space/Dockerfile
+cp start.sh                         hf-space/start.sh
 cp requirements-api.txt             hf-space/requirements-api.txt
 cp -r api/                          hf-space/api/
 cp -r scripts/                      hf-space/scripts/
 ```
 
-4. Edit `hf-space/README.md`: replace every `your-username` with your actual HF username.
+4. Give `hf-space/README.md` the Space's front matter, so Hugging Face builds it with Docker on port 7860:
+
+```yaml
+---
+title: Coredrill
+sdk: docker
+app_port: 7860
+---
+```
 
 5. Commit and push to HF:
 

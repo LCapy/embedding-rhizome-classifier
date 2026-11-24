@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import secrets
 import time
 from pathlib import Path
 from typing import List, Optional
@@ -38,12 +39,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 _coredrill: dict | None = None
 _model = None
 _coredrill_path: str = os.environ.get("COREDRILL_PATH", "coredrill/coredrill_hierarchical.json")
-_model_name: str = os.environ.get("MODEL_NAME", "sentence-transformers/LaBSE")
+_model_name_env: str | None = os.environ.get("MODEL_NAME")
+_model_name: str = _model_name_env or "sentence-transformers/LaBSE"
 _api_key: str | None = os.environ.get("API_KEY")
 
 
 def _get_coredrill() -> dict:
-    global _coredrill, SKIP_NODES
+    global _coredrill, SKIP_NODES, _model_name
     if _coredrill is None:
         p = Path(_coredrill_path)
         if not p.exists():
@@ -66,6 +68,15 @@ def _get_coredrill() -> dict:
             _engine.SKIP_NODES.clear()
             _engine.SKIP_NODES.update(SKIP_NODES)
             log.info(f"SKIP_NODES loaded from coredrill: {len(SKIP_NODES)} nodes")
+        # The coredrill names the encoder it was built with. Without
+        # MODEL_NAME the API follows it; a MODEL_NAME that disagrees would put
+        # the text in a different space from the centroids, so say so loudly.
+        built_with = _coredrill.get("labse_model")
+        if built_with and not _model_name_env:
+            _model_name = built_with
+        elif built_with and built_with != _model_name:
+            log.warning("Coredrill was built with %s but MODEL_NAME is %s: scores will be wrong "
+                        "until they match.", built_with, _model_name)
         log.info(f"Coredrill loaded. Nodes: {len(_coredrill.get('tree', {}))}")
     return _coredrill
 
@@ -73,6 +84,10 @@ def _get_coredrill() -> dict:
 def _get_model():
     global _model
     if _model is None:
+        try:
+            _get_coredrill()   # settles _model_name when MODEL_NAME is not set
+        except RuntimeError as e:
+            log.warning("Loading the model before the coredrill: %s", e)
         from sentence_transformers import SentenceTransformer
         log.info(f"Loading embedding model: {_model_name} ...")
         _model = SentenceTransformer(_model_name)
@@ -255,26 +270,16 @@ def _build_cluster_summary_lines(gram_scores: dict, results_all: list, gram_winn
         )
 
     def _display_area_and_path(node):
+        # The node's own taxonomy path. This used to rewrite Family Life's path
+        # to start at Daily Life whenever Daily Life was active, showing a
+        # lineage the taxonomy does not have (Family Life is under Social
+        # Relations).
         path = _display_taxonomy_path(node)
 
         if not path:
             return node, [node]
 
-        area = _taxonomy_area(node)
-
-        # Display repair for the family/daily-life rhizome:
-        # the taxonomy may place Family Life under Social Relations,
-        # but if Daily Life is also active, the readable surface should show
-        # the practical daily-life combination.
-        if (
-            area == "Social Relations"
-            and "Daily Life" in active_names
-            and any(x in path for x in ["Family Life", "Family Discussion", "Family Planning Talk"])
-        ):
-            repaired = ["Daily Life"] + [x for x in path if x != "Social Relations"]
-            return "Daily Life", repaired
-
-        return area, path
+        return _taxonomy_area(node), path
 
     clusters = {}
 
@@ -330,18 +335,11 @@ def _build_cluster_summary_lines(gram_scores: dict, results_all: list, gram_winn
         best = _best_path(area, cluster)
         best_set = set(best)
 
-        nearby = []
-
-        # For biology/evolution, these are better explanatory neighbors than
-        # Ecology/Ecosystems when the winner path is Genes.
-        if area == "Life & Biology" and gram_winner in best_set:
-            for n in ["Adaptation", "Evolution", "Natural Selection"]:
-                if n in active_names and n not in best_set:
-                    nearby.append(n)
-        else:
-            for node in sorted(cluster["nodes"], key=_node_strength, reverse=True):
-                if node not in best_set:
-                    nearby.append(node)
+        # Strongest other active nodes in this area. A hard-coded list
+        # (Adaptation, Evolution, Natural Selection) used to replace this for
+        # Life & Biology, so the summary named those three whatever the text.
+        nearby = [node for node in sorted(cluster["nodes"], key=_node_strength, reverse=True)
+                  if node not in best_set]
 
         nearby = _dedupe_keep_order(nearby)[:5]
 
@@ -428,19 +426,21 @@ def _build_cluster_summary_lines(gram_scores: dict, results_all: list, gram_winn
 app = FastAPI(
     title="Coredrill - Rhizome Text Classifier",
     description=(
-        "Geometry-native multilingual text classification over a 238-node rhizomatic taxonomy. "
+        "Geometry-native multilingual text classification over a hand-built rhizomatic taxonomy. "
         "Based on LaBSE embedding space structure. No trained classifiers. "
         "See the paper: *Geometry-Native Text Classification via High-Dimensional Embedding Space Analysis* (Lucas, 2026)."
     ),
     version="1.0.0",
-    contact={"name": "Coredrill", "url": "https://github.com/your-username/coredrill"},
+    contact={"name": "Coredrill", "url": "https://github.com/LCapy/embedding-rhizome-classifier"},
     license_info={"name": "MIT"},
 )
 
+# No credentialed CORS: the API authenticates with a bearer token, not cookies,
+# and "*" with credentials makes Starlette echo any Origin back as allowed.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -471,7 +471,9 @@ def _check_key(credentials: HTTPAuthorizationCredentials | None):
     """If API_KEY is set, enforce bearer token auth."""
     if _api_key is None:
         return  # open mode
-    if credentials is None or credentials.credentials != _api_key:
+    # compare_digest takes the same time wherever the two values differ.
+    if credentials is None or not secrets.compare_digest(
+            credentials.credentials.encode(), _api_key.encode()):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key.",
@@ -514,7 +516,7 @@ class PredictionResponse(BaseModel):
 
 
 class BatchPredictRequest(BaseModel):
-    texts: List[str] = Field(..., min_items=1, max_items=64)
+    texts: List[str] = Field(..., min_length=1, max_length=64)  # min/max_items: deprecated in Pydantic 2
     tau: Optional[float] = Field(None, ge=0.01, le=2.0)
 
 
@@ -668,7 +670,7 @@ def predict_endpoint(
     credentials: HTTPAuthorizationCredentials = Security(security),
 ):
     """
-    Classify a single text against the 238-node rhizome taxonomy.
+    Classify a single text against the rhizome taxonomy.
 
     Returns the best-matching node, its lineage path, confidence, Deleuzian flow
     topology, and the active overlap set (co-activated semantic territories).
@@ -857,9 +859,10 @@ def predict_text(
         lines.append("=" * W)
 
         return "\n".join(lines)
-    except Exception as e:
-        import traceback
-        return f"ERROR: {e}\n{traceback.format_exc()}"
+    except Exception:
+        # Logged, not sent: this used to return the traceback with HTTP 200.
+        log.exception("predict/text failed")
+        return PlainTextResponse("ERROR: prediction failed; see the server log.", status_code=500)
 
 
 @app.post("/predict/file", response_model=PredictionResponse, tags=["classify"])
@@ -915,7 +918,7 @@ async def predict_file_text(
         content = await file.read()
         text = content.decode("utf-8", errors="replace").strip()
         if not text:
-            return "ERROR: File is empty."
+            return PlainTextResponse("ERROR: File is empty.", status_code=422)
         if len(text) > 8000:
             text = text[:8000]
         raw = _run_predict(text, tau)
@@ -1002,9 +1005,10 @@ async def predict_file_text(
         lines.append("")
         lines.append("=" * W)
         return "\n".join(lines)
-    except Exception as e:
-        import traceback
-        return f"ERROR: {e}\n{traceback.format_exc()}"
+    except Exception:
+        log.exception("predict/file/text failed")
+        return PlainTextResponse("ERROR: prediction failed; see the server log.", status_code=500)
+
 
 @app.get("/taxonomy/nodes", tags=["taxonomy"])
 def taxonomy_nodes(level: Optional[int] = None):

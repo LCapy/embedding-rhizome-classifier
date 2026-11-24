@@ -43,14 +43,12 @@ USAGE
 """
 from __future__ import annotations
 
-import argparse, json, logging, re, sys, time, urllib.parse, warnings
+import argparse, ast, json, logging, re, sys, time, urllib.parse, warnings
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
 logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
@@ -99,6 +97,18 @@ SKIP_NODES: set = {
     "Agreement Formation",
     "Project Agreement",
 }
+
+
+# One SentenceTransformer per model name per process. predict() used to load
+# LaBSE again on every call that passed raw text.
+_MODEL_CACHE: Dict[str, object] = {}
+
+
+def _default_model(name: str = "sentence-transformers/LaBSE"):
+    if name not in _MODEL_CACHE:
+        from sentence_transformers import SentenceTransformer
+        _MODEL_CACHE[name] = SentenceTransformer(name)
+    return _MODEL_CACHE[name]
 
 # ══════════════════════════════════════════════════════════════════════════════
 # § RFF - Random Fourier Features for Rhizome-Centroid (v3)
@@ -150,14 +160,17 @@ def _is_v3(coredrill: dict) -> bool:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def load_taxonomy(path: Path) -> List[dict]:
-    src = path.read_text(encoding="utf-8").replace(": null", ": None")
+    # utf-8-sig: api/taxonomy.py starts with a byte-order mark.
+    src = path.read_text(encoding="utf-8-sig").replace(": null", ": None")
     m = re.search(r"TAXONOMY:\s*List\[dict\]\s*=\s*(\[.*\])", src, re.DOTALL)
     if not m:
         sys.exit(f"[ERROR] Cannot parse taxonomy from {path}")
     try:
-        raw = eval(m.group(1))
+        # literal_eval instead of eval: the taxonomy is data, and eval would
+        # run any code that ended up in the file.
+        raw = ast.literal_eval(m.group(1))
     except Exception as e:
-        sys.exit(f"[ERROR] {e}")
+        sys.exit(f"[ERROR] Cannot parse taxonomy from {path}: {e}")
 
     norm: List[dict] = []
     seen = set()
@@ -534,7 +547,10 @@ SIMPLE_WIKI: Dict[str, List[str]] = {
 DAILYDIALOG_TOPIC: Dict[int, List[str]] = {
     1:  ["Daily Life", "Home Life", "Meal Preparation", "Domestic Planning"],
     2:  ["Education & Training", "Work & Economy"],
-    3:  ["Arts", "Literature", "Creative Expression"],
+    # "Arts" used to open this list. It is not a node, so the resolver
+    # fuzzy-matched it to Visual Arts; Creative Expression (en_category
+    # "The arts") is the node it meant.
+    3:  ["Literature", "Creative Expression"],
     4:  ["Emotion Expression", "Affection & Reassurance", "Social Relations"],
     5:  ["Social Relations", "Romance & Intimacy", "Family Life",
          "Parent\u2013Child Interaction"],
@@ -581,7 +597,8 @@ def _fetch_wiki(title: str, simple: bool = False) -> List[str]:
     url = f"https://{sub}.wikipedia.org/wiki/" + urllib.parse.quote(
         title.replace(" ", "_"))
     try:
-        r = requests.get(url, headers=HEADERS, timeout=15, verify=False)
+        # Certificates are verified; this call used to switch the check off.
+        r = requests.get(url, headers=HEADERS, timeout=15)
         if r.status_code != 200:
             return []
         html = r.text
@@ -981,7 +998,7 @@ SGD_DOMAIN_MAP: Dict[str, List[str]] = {
     "Homes":           ["Home Life"],
     "Media":           ["Creative Expression"],
     "Messaging":       ["Social Relations", "Task Assignment"],
-    "Movies":          ["Arts", "Creative Expression"],
+    "Movies":          ["Creative Expression"],   # "Arts" was not a node; see DAILYDIALOG_TOPIC
     "Music":           ["Music"],
     "RentalCars":      ["Commuting", "Repair"],
     "Restaurants":     ["Restaurant & Ordering", "Ordering at a Restaurant"],
@@ -1022,7 +1039,7 @@ EMPATHETIC_EMOTION_MAP: Dict[str, List[str]] = {
 
 # Taskmaster domain → taxonomy node
 TASKMASTER_DOMAIN_MAP: Dict[str, List[str]] = {
-    "movie-ticket":  ["Ordering at a Restaurant", "Purchase & Payment"],
+    "movie-ticket":  ["Purchase & Payment"],   # was also "Ordering at a Restaurant"
     "restaurant":    ["Restaurant & Ordering", "Ordering at a Restaurant"],
     "pizza":         ["Restaurant & Ordering", "Meal Preparation"],
     "coffee":        ["Restaurant & Ordering", "Purchase & Payment"],
@@ -1062,6 +1079,29 @@ def _try_arrow(data_dir: Path) -> Optional[object]:
         return load_from_disk(str(data_dir))
     except Exception as e:
         logging.debug("Could not load Arrow dataset from %s: %s", data_dir, e)
+        return None
+
+
+def load_from_disk_or_hf(data_dir: Optional[Path], hf_name: str,
+                         hf_kwargs: Optional[dict] = None):
+    """The dataset saved with save_to_disk() at data_dir if there is one, else
+    hf_name from the Hugging Face Hub.
+
+    Returns something iterable as {split: rows} (a single saved split comes
+    back as {"train": dataset}), or None if neither loads. load_circa,
+    load_dolly and load_persuasion called this before it existed, so their
+    --*-dir flags crashed collect with a NameError.
+    """
+    if data_dir is not None and Path(data_dir).exists():
+        ds = _try_arrow(Path(data_dir))
+        if ds is not None:
+            return ds if isinstance(ds, dict) else {"train": ds}
+        logging.warning("No save_to_disk() dataset at %s; trying the Hub (%s)", data_dir, hf_name)
+    try:
+        from datasets import load_dataset
+        return load_dataset(hf_name, **(hf_kwargs or {}))
+    except Exception as e:
+        logging.warning("Could not load %s from the Hub: %s", hf_name, e)
         return None
 
 
@@ -1249,7 +1289,7 @@ def load_taskmaster(tm_dir: Path) -> List[dict]:
 
     # instruction_id prefix → domain for Taskmaster-1
     TM1_INSTRUCTION_MAP = {
-        "movie":      ["Ordering at a Restaurant", "Purchase & Payment"],
+        "movie":      ["Purchase & Payment"],   # was also "Ordering at a Restaurant"
         "restaurant": ["Restaurant & Ordering", "Ordering at a Restaurant"],
         "pizza":      ["Restaurant & Ordering", "Meal Preparation"],
         "coffee":     ["Restaurant & Ordering", "Purchase & Payment"],
@@ -2061,8 +2101,7 @@ def predict(text_or_emb, coredrill: dict, tau: Optional[float] = None) -> dict:
     lineage_paths_map = backbone.get("lineage_paths", {})
 
     if isinstance(text_or_emb, str):
-        from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer("sentence-transformers/LaBSE")
+        model = _default_model(coredrill.get("labse_model", "sentence-transformers/LaBSE"))
         x = model.encode([text_or_emb], normalize_embeddings=True, convert_to_numpy=True)[0].astype(np.float32)
     else:
         x = np.asarray(text_or_emb, dtype=np.float32)
@@ -2173,10 +2212,14 @@ def _deleuzian_flow(active: list, results: list, pred: dict) -> dict:
     active_zs  = [r["sigma_dist"] for r in active]
     z_spread   = max(active_zs) - min(active_zs) if len(active_zs) > 1 else 0.0
     cross_dag  = any(rn.get("dag_distance", 0) == 999999 for rn in pred.get("related_nodes", []))
-    paths      = pred.get("best_lineage_paths", [])
-    branches   = set()
-    for r in active:
-        if paths and len(paths[0]) > 0:
+    # Top-level branch of each active node, from the "Root -> ... -> Node"
+    # lineage string analyze_text_rhizome() attaches. The old loop added the
+    # winner's root once per active node, so the set never held two branches
+    # and line_of_flight never got its cross-branch term.
+    branches = {r["lineage"].split(" -> ")[0] for r in active if r.get("lineage")}
+    if not branches:
+        paths = pred.get("best_lineage_paths", [])
+        if paths and paths[0]:
             branches.add(paths[0][0])
     cross_branch = len(branches) > 1
     deltas     = [r.get("_delta_from_best", 0.0) for r in active if "_delta_from_best" in r]
@@ -2365,81 +2408,69 @@ def _dump_full_metrics(text: str, results: list, active: list, pred: dict,
 # § CARTOGRAPHY - Consume and reterritorialize
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _welford_update(mean: list, M2: list, n: int, new_vec: list) -> tuple:
-    """Online mean + variance update (Welford algorithm)."""
-    import numpy as np
-    n += 1
-    x = np.array(new_vec, dtype=np.float64)
-    m = np.array(mean, dtype=np.float64)
-    delta = x - m
-    m += delta / n
-    delta2 = x - m
-    M2_arr = np.array(M2, dtype=np.float64) + delta * delta2
-    return m.tolist(), M2_arr.tolist(), n
+def update_centroid_stats(stats: dict, vectors) -> dict:
+    """Fold new unit vectors into a node's centroid and sigma, in place.
 
+    Uses build_coredrill()'s definitions: centroid = normalized mean of the
+    support vectors, sigma = 1 - mean cosine to that centroid. For unit
+    vectors the mean cosine to the normalized mean equals the length of the
+    mean vector, so the stored centroid and sigma give the mean back
+    (mean = centroid * (1 - sigma)) and no stored records are needed. Exact
+    for a node whose centroid came from its own records; for a parent built
+    from its children (centroid_mode "child_only") it is an approximation.
 
-def _sigma_from_M2(M2: list, n: int) -> float:
-    """Compute sigma (std of cosine distances) from Welford M2."""
-    import numpy as np
-    if n < 2:
-        return 0.0
-    variance = np.array(M2, dtype=np.float64) / (n - 1)
-    # sigma here = mean of per-dimension variance, converted to cosine std approx
-    return float(np.sqrt(np.mean(variance)))
+    consume() used a Welford update instead, whose sigma (RMS per-dimension
+    spread) was on a different scale from every other node's.
+    """
+    X = np.atleast_2d(np.asarray(vectors, dtype=np.float64))
+    X = X / (np.linalg.norm(X, axis=1, keepdims=True) + 1e-12)
+    n_old = int(stats.get("support_n") or stats.get("n") or 0)
+    old = stats.get("centroid")
+    if old is None or n_old == 0:
+        n_new = X.shape[0]
+        mean = X.mean(axis=0)
+    else:
+        mu = np.asarray(old, dtype=np.float64)
+        mu = mu / (np.linalg.norm(mu) + 1e-12)
+        mean_old = mu * (1.0 - float(stats.get("sigma") or 0.0))
+        n_new = n_old + X.shape[0]
+        mean = (mean_old * n_old + X.sum(axis=0)) / n_new
+    r_bar = float(np.linalg.norm(mean))
+    stats["centroid"] = (mean / (r_bar + 1e-12)).tolist()
+    stats["sigma"] = round(1.0 - r_bar, 6)
+    stats["support_n"] = n_new
+    stats["kappa_vmf"] = round(vmf_kappa(r_bar), 2)
+    stats.pop("no_data", None)
+    return stats
 
 
 def consume(text: str, embedding: list, confirmed_node: str,
             coredrill: dict, coredrill_path: str,
             backup: bool = True) -> dict:
     """
-    Add a classified sentence to the coredrill, updating the centroid
-    and sigma of the confirmed node incrementally (Welford algorithm).
-    Writes the updated coredrill JSON back to disk.
+    Add a classified sentence to the coredrill, folding it into the
+    confirmed node's centroid and sigma (update_centroid_stats). Writes the
+    updated coredrill JSON back to disk.
 
     Returns the updated node stats.
     """
-    import numpy as np, json, shutil
-    from pathlib import Path
+    import shutil
 
     tree = coredrill.get("tree", {})
     if confirmed_node not in tree:
         raise ValueError(f"Node '{confirmed_node}' not in taxonomy.")
 
     node = tree[confirmed_node]
-    old_centroid = node.get("centroid")
-    old_n        = int(node.get("n", 0))
-    old_sigma    = float(node.get("sigma") or 0.0)
-    M2           = node.get("_M2")  # stored for Welford continuity
+    old_n     = int(node.get("n", 0) or 0)
+    old_sigma = float(node.get("sigma") or 0.0)
 
     x = np.array(embedding, dtype=np.float64)
     x /= np.linalg.norm(x) + 1e-12
 
-    if old_centroid is None or old_n == 0:
-        # First record for this node
-        new_centroid = x.tolist()
-        new_M2       = [0.0] * len(x)
-        new_n        = 1
-        new_sigma    = 0.0
-    else:
-        old_c = np.array(old_centroid, dtype=np.float64)
-        old_c /= np.linalg.norm(old_c) + 1e-12
-        if M2 is None:
-            # Approximate M2 from existing sigma
-            M2 = [old_sigma ** 2] * len(old_centroid)
-        new_centroid, new_M2, new_n = _welford_update(
-            old_c.tolist(), M2, old_n, x.tolist()
-        )
-        # Renormalize centroid to unit sphere
-        nc = np.array(new_centroid, dtype=np.float64)
-        nc /= np.linalg.norm(nc) + 1e-12
-        new_centroid = nc.tolist()
-        new_sigma = _sigma_from_M2(new_M2, new_n)
-
-    # Update node in tree
-    node["centroid"] = new_centroid
-    node["n"]        = new_n
-    node["sigma"]    = round(new_sigma, 6)
-    node["_M2"]      = new_M2  # persist for future updates
+    update_centroid_stats(node, x)
+    node["n"]        = old_n + 1
+    node["direct_n"] = int(node.get("direct_n", 0) or 0) + 1
+    node.pop("_M2", None)  # left by the old Welford update
     # Track consumed records count separately
     node["n_consumed"] = node.get("n_consumed", 0) + 1
     # Update source counts
@@ -2450,11 +2481,12 @@ def consume(text: str, embedding: list, confirmed_node: str,
     # v3: also update RMC (KME in RFF space) if this is a v3 coredrill
     rff_params = coredrill.get("rff")
     if rff_params is not None and node.get("rmc") is not None:
+        support_n = node["support_n"]
         rff_obj = _RFF(rff_params)
         phi_new = rff_obj.transform_one(x.astype(np.float32))
         old_rmc = np.array(node["rmc"], dtype=np.float64)
-        # Weighted update: new_rmc = (old_rmc * old_n + phi_new) / new_n
-        new_rmc = (old_rmc * (new_n - 1) + phi_new.astype(np.float64)) / new_n
+        # Weighted update: new_rmc = (old_rmc * (n - 1) + phi_new) / n
+        new_rmc = (old_rmc * (support_n - 1) + phi_new.astype(np.float64)) / support_n
         new_rmc /= (np.linalg.norm(new_rmc) + 1e-12)
         node["rmc"] = new_rmc.tolist()
 
@@ -2470,11 +2502,11 @@ def consume(text: str, embedding: list, confirmed_node: str,
 
     return {
         "node":       confirmed_node,
-        "n":          new_n,
+        "n":          node["n"],
         "n_consumed": node["n_consumed"],
-        "sigma":      new_sigma,
+        "sigma":      node["sigma"],
         "old_sigma":  old_sigma,
-        "delta_n":    new_n - old_n,
+        "delta_n":    1,
     }
 
 
@@ -2612,6 +2644,27 @@ def print_result(result: dict, text: str = "", active: list = None, results_all:
 # § 15  CLI
 # ══════════════════════════════════════════════════════════════════════════════
 
+def check_mapping_targets(taxonomy: List[dict]) -> List[str]:
+    """Node names the source mappings use that the taxonomy does not have.
+
+    Such a name is not dropped: _resolve_category_candidate() fuzzy-matches it
+    to whatever node shares a word with it, which is how "Arts" sent SGD movie
+    dialogues to Visual Arts. collect warns about every one it finds.
+    """
+    names = {n["name"] for n in taxonomy}
+    mappings = {
+        "DAILYDIALOG_TOPIC": DAILYDIALOG_TOPIC, "DAILYDIALOG_ACT": DAILYDIALOG_ACT,
+        "MULTIWOZ_DOMAIN": MULTIWOZ_DOMAIN, "SGD_DOMAIN_MAP": SGD_DOMAIN_MAP,
+        "EMPATHETIC_EMOTION_MAP": EMPATHETIC_EMOTION_MAP,
+        "TASKMASTER_DOMAIN_MAP": TASKMASTER_DOMAIN_MAP, "DOLLY_CATEGORY_MAP": DOLLY_CATEGORY_MAP,
+    }
+    missing = {f"{name}: {target}" for name, mapping in mappings.items()
+               for targets in mapping.values() for target in targets if target not in names}
+    missing |= {f"WIKI_ARTICLES/SIMPLE_WIKI: {node}"
+                for node in list(WIKI_ARTICLES) + list(SIMPLE_WIKI) if node not in names}
+    return sorted(missing)
+
+
 def cmd_collect(args) -> None:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -2621,6 +2674,8 @@ def cmd_collect(args) -> None:
     print("12_BENCHMARK_FULL_TAXONOMY -- Collect")
     print("=" * 72)
     print(f"  Taxonomy: {len(taxonomy)} nodes  |  Output: {out_dir}")
+    for problem in check_mapping_targets(taxonomy):
+        print(f"  [WARN] mapping names a node the taxonomy lacks (it would be fuzzy-matched): {problem}")
     print()
     out_json = out_dir / "sentences.json"
     existing: List[dict] = []
@@ -3028,21 +3083,23 @@ def cmd_predict(args) -> None:
     if not texts:
         sys.exit("[ERROR] Provide --text, --batch, or --file")
 
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer("sentence-transformers/LaBSE")
+    # The encoder the coredrill was built with (stock LaBSE unless a trained
+    # encoder built it).
+    model = _default_model(cd.get("labse_model", "sentence-transformers/LaBSE"))
     qpts  = Path(args.coredrill).parent / "query_points.jsonl"
 
     for text in texts:
         try:
             consume_mode = getattr(args, "consume", False)
             if consume_mode or getattr(args, "analyze", False):
-                analyze_text_rhizome._consume_mode = consume_mode
-                analyze_text_rhizome._coredrill_path = args.coredrill
                 rich = analyze_text_rhizome(cd, text, model, tau=args.tau or cd.get("tau", 0.1), print_output=True)
                 result = rich["prediction"]
                 if consume_mode:
-                    import json as _json
-                    cd = _json.loads(Path(args.coredrill).read_text(encoding="utf-8"))
+                    # Ask which node the text belongs to and fold it into that
+                    # node (writes the coredrill file). --consume used to set
+                    # two attributes nothing read, so it never asked.
+                    cartography_prompt(text, rich["embedding"], rich["active_overlap_set"],
+                                       rich["results"], cd, args.coredrill)
             else:
                 x = model.encode([text], normalize_embeddings=True,
                                  convert_to_numpy=True)[0].astype(np.float32)

@@ -1,5 +1,5 @@
 # Private bucket for coredrill_hierarchical.json - replaces the HF Dataset
-# repo. Not public; the API pod reads it via the IRSA role in irsa.tf.
+# repo. Not public; the instance reads it through its IAM role (ec2.tf).
 resource "aws_s3_bucket" "coredrill_data" {
   bucket = "${var.project}-data-${data.aws_caller_identity.current.account_id}"
 }

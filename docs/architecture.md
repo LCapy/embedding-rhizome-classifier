@@ -118,11 +118,11 @@ flowchart TD
     Merge --> Embed["embed_all()\nLaBSE encode, batched, checkpointed"]
     Embed --> Emb[("embeddings.npz")]
 
-    Tax[("taxonomy_legal.yaml /\ntaxonomy definition, 238 nodes, 6 levels")] --> Build
+    Tax[("TAXONOMY_fixed.txt\ntaxonomy definition, 6 levels")] --> Build
     Emb --> Build["build_coredrill()\ncentroids from each node's own records"]
 
     Build --> Leaf["Leaf nodes:\ncentroid = mean of direct-labeled embeddings"]
-    Leaf --> Parent["Parent nodes:\nown records if at least 5,\nelse weighted mean of child centroids\n(multi-parent: a leaf can feed >1 branch)"]
+    Leaf --> Parent["Parent nodes:\nown records if at least 5,\nelse weighted mean of child centroids"]
     Parent --> Sigma["Per-node sigma (dispersion),\nvMF kappa, PCA basis for 3D projection"]
 
     Sigma --> Out[("coredrill_hierarchical.json")]
@@ -136,10 +136,13 @@ Notes:
   parent mostly from its children, which cut held-out accuracy on
   parent-labeled texts from 46.5% to 19.0% (see
   [`evaluation.md`](evaluation.md)).
-- "Rhizome" refers to the multi-parent step: a single sentence's embedding can
-  contribute to more than one branch of the taxonomy (e.g. a sentence can
-  support both a biology node and a daily-life node), so the graph is a DAG,
-  not a strict tree.
+- The taxonomy itself is a strict tree: every node in `api/taxonomy.py` has
+  one parent (the engine accepts a `parents` list, but no node uses it).
+  "Rhizome" is what sits on top of the tree: `build_coredrill()` links each
+  node to its most similar centroids anywhere in the taxonomy (the
+  `related_nodes` overlay), and each prediction reports every node within
+  reach of the winner (the active set), so one text can light up several
+  branches at once.
 
 ---
 
@@ -182,27 +185,29 @@ Notes:
 
 ## 5. Taxonomy structure (illustrative subgraph)
 
-The real taxonomy has 238 nodes across 6 levels (L0-L5); this is a small
-slice showing the multi-parent shape described above - `Natural Selection`
-feeds both the biology branch and, indirectly, the daily-life branch through
-shared source sentences.
+The taxonomy in `api/taxonomy.py` has 251 nodes across 6 levels (L0-L5),
+one parent each. This slice shows two branches. The dotted edge is the kind
+of link the rhizome overlay adds between branches (`related_nodes`, by
+centroid similarity); it is illustrative, not taken from a build.
 
 ```mermaid
 flowchart TD
     L0["L0 Natural World"] --> L1a["L1 Life & Biology"]
     L1a --> L2a["L2 Biology"]
     L2a --> L3a["L3 Genetics"]
+    L2a --> L3b["L3 Evolution"]
     L3a --> L4a["L4 DNA Inheritance"]
     L4a --> L5a["L5 Genes"]
-    L4a --> L5b["L5 Natural Selection"]
+    L3b --> L4b["L4 Natural Selection"]
+    L4b --> L5b["L5 Adaptation"]
 
-    L0b["L0 Human Activity & Society"] --> L1b["L1 Daily Life"]
+    L0b["L0 Human Activity & Society"] --> L1b["L1 Social Relations"]
     L1b --> L2b["L2 Family Life"]
-    L2b --> L3b["L3 Family Discussion"]
-    L3b --> L4b["L4 Family Planning Talk"]
+    L2b --> L3c["L3 Family Discussion"]
+    L3c --> L4c["L4 Family Planning Talk"]
 
-    L5b -. shared source data .-> L4b
+    L4b -. overlay link .-> L4c
 
     style L5a fill:#2d6a4f,color:#fff
-    style L5b fill:#2d6a4f,color:#fff
+    style L4b fill:#2d6a4f,color:#fff
 ```

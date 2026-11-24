@@ -3,8 +3,8 @@
 """
 12_by_article.py - the held-out numbers again, with a split by article.
 
-01's split is by record: 4,863 of its 4,867 Wikipedia test records come from
-an article that also has training records, so a test paragraph's neighbours
+01's split is by record: every one of its 4,867 Wikipedia test records comes
+from an article that also has training records, so a test paragraph's neighbours
 from the same article sit in the training set. Here every Wikipedia record
 is grouped by its concept (all language versions of an article, plus its
 Simple English version) and whole concepts go to train or test. Records

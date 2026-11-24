@@ -333,12 +333,15 @@ def find_expected_metrics(results_all: list, gram_scores: dict,
         "mass":             _sf(best_r.get("mass"), 0.0),
         "production_score": _sf(best_r.get("production_score"), 0.0),
         "conf":             _sf(best_r.get("conf"), 0.0),
+        "cos":              _sf(best_r.get("score"), 0.0),
         "node":             best_r.get("node"),
     }
 
-    gram_expected = next(
-        (gram_scores.get(n) for n in accept_nodes if n in gram_scores), None
-    )
+    # The gram score of that same best-ranked accept node. This used to take
+    # the first accept node met while iterating a set, which depends on string
+    # hash order; Python randomizes that per process, so grades could change
+    # from one run to the next.
+    gram_expected = gram_scores.get(best_r.get("node")) if best_r else None
     return metrics, gram_expected
 
 
@@ -532,7 +535,8 @@ def write_report(rows: list, args_coredrill: str,
             gs_str = f"{gs_exp:+.4f}" if gs_exp is not None else "not in gram"
             lines += [
                 f"**Expected node** (`{em.get('node', r['expected_node'])}`) **in results:**  ",
-                f"Rank #{em['rank']} | gram: {gs_str} | cos: {em.get('conf', 0):.4f} "
+                f"Rank #{em['rank']} | gram: {gs_str} | cos: {em.get('cos', 0):.4f} "
+                f"| conf: {em.get('conf', 0):.4f} "
                 f"| z: {em.get('sigma_dist', 'n/a'):.2f}s | mass: {em.get('mass', 0):.1f}%",
                 "",
             ]

@@ -16,7 +16,7 @@ terraform {
   # then uncomment this block and run `terraform init -migrate-state`.
   # backend "s3" {
   #   bucket         = "coredrill-terraform-state"
-  #   key            = "eks/terraform.tfstate"
+  #   key            = "coredrill/terraform.tfstate"
   #   region         = "eu-central-1"
   #   dynamodb_table = "coredrill-terraform-locks"
   #   encrypt        = true

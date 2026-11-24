@@ -16,9 +16,8 @@ Target nodes:
   - Appointments & Medication (L3) - 66 records
 
 Usage:
-  python collect_medical.py \
+  python scripts/collect_medical.py \
     --sentences data/sentences.json \
-    --embeddings data/embeddings.npz \
     --coredrill coredrill/coredrill_hierarchical.json \
     --max-per-node 500
 """
@@ -29,6 +28,9 @@ from pathlib import Path
 from typing import List, Dict
 
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from rhizome_engine import update_centroid_stats  # noqa: E402
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -239,40 +241,18 @@ def update_coredrill(coredrill_path: str, new_records: List[dict],
             continue
 
         stats = tree[node]
-        old_centroid = stats.get("centroid")
         old_n = int(stats.get("n", 0) or 0)
         old_sigma = float(stats.get("sigma") or 0.0)
 
-        new_vecs = np.array(embs, dtype=np.float64)
-
-        if old_centroid is None or old_n == 0:
-            # First data for this node
-            new_centroid = new_vecs.mean(axis=0)
-            new_centroid /= np.linalg.norm(new_centroid) + 1e-12
-            # Sigma = std of cosine distances from centroid
-            cosines = new_vecs @ new_centroid
-            new_sigma = float(np.std(1 - cosines)) if len(cosines) > 1 else 0.0
-            new_n = len(embs)
-        else:
-            # Combine old centroid (weighted by n) with new embeddings
-            old_c = np.array(old_centroid, dtype=np.float64)
-            old_c /= np.linalg.norm(old_c) + 1e-12
-
-            # Weighted mean: old_n * old_c + sum(new_vecs)
-            combined_sum = old_c * old_n + new_vecs.sum(axis=0)
-            new_n = old_n + len(embs)
-            new_centroid = combined_sum / new_n
-            new_centroid /= np.linalg.norm(new_centroid) + 1e-12
-
-            # Approximate sigma: weighted std
-            all_vecs = np.vstack([old_c.reshape(1,-1)] * old_n + [new_vecs])
-            cosines = all_vecs @ new_centroid
-            new_sigma = float(np.std(1 - cosines))
-
-        # Update tree
-        stats["centroid"] = new_centroid.tolist()
+        # Same centroid and sigma definitions as build_coredrill(). This used
+        # to set sigma to the spread of cosine distances, with every old record
+        # placed exactly on the old centroid, which made updated nodes look far
+        # tighter than the rest and gave them the largest specificity bonus.
+        update_centroid_stats(stats, np.array(embs, dtype=np.float64))
+        new_n = old_n + len(embs)
+        new_sigma = stats["sigma"]
         stats["n"] = new_n
-        stats["sigma"] = round(new_sigma, 6)
+        stats["direct_n"] = int(stats.get("direct_n", 0) or 0) + len(embs)
 
         # Update source counts
         sc = stats.get("source_counts") or {}
@@ -328,9 +308,10 @@ def main():
     # Update coredrill centroids
     update_coredrill(args.coredrill, records, embs)
 
-    log.info("\nDone. Run rebuild if you want to recompute the full coredrill:")
-    log.info("  python scripts\\full_build_rhizome.py build \\")
-    log.info("    --taxonomy-txt taxonomy\\TAXONOMY_fixed.txt \\")
+    log.info("\nDone. sentences.json now has rows embeddings.npz lacks; embed them, then rebuild:")
+    log.info("  python scripts\\rhizome_engine.py embed --data data\\")
+    log.info("  python scripts\\rhizome_engine.py build \\")
+    log.info("    --taxonomy-txt data\\TAXONOMY_fixed.txt \\")
     log.info("    --data data\\ --out coredrill\\")
 
 
