@@ -38,6 +38,10 @@ env/
 # Coredrill runtime data
 coredrill/
 
+# Training loop outputs (python -m train)
+runs/
+exports/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

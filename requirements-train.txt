@@ -1,0 +1,7 @@
+# The training loop (python -m train; see docs/training.md).
+#
+# Install PyTorch first, with the build that matches your GPU driver, then
+# this file. On Windows the plain PyPI wheel is CPU-only, so for an NVIDIA GPU:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+#   pip install -r requirements-train.txt
+-r requirements-api.txt
