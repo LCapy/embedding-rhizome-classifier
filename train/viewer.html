@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: inside the training step</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #6f6d67;
+  --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10); --series: #2a78d6; --good: #006300; --bad: #b3261e;
+  --div: #104281,#2a78d6,#86b6ef,#f0efec,#f0a3a1,#e34948,#7f1d1d;
+  --seq: #f0efec,#cde2fb,#6da7ec,#2a78d6,#0d366b;
+}
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #9a9890;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --series: #3987e5; --good: #0ca30c; --bad: #e66767;
+  --div: #b7d3f6,#3987e5,#1c5cab,#383835,#9c3434,#e66767,#f8cfce;
+  --seq: #1f1f1e,#104281,#2a78d6,#6da7ec,#cde2fb;
+} }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink2: #c3c2b7; --muted: #9a9890;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --series: #3987e5; --good: #0ca30c; --bad: #e66767;
+  --div: #b7d3f6,#3987e5,#1c5cab,#383835,#9c3434,#e66767,#f8cfce;
+  --seq: #1f1f1e,#104281,#2a78d6,#6da7ec,#cde2fb;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1480px; margin: 0 auto; padding: 20px 24px 48px; }
+h1 { font-size: 22px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 2px; font-weight: 650; }
+p { margin: 0; } .sub { color: var(--ink2); max-width: 96ch; }
+.top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 12px 0 14px; }
+select, button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 6px; padding: 5px 10px; min-height: 32px; }
+button { cursor: pointer; } button:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { border-color: var(--series); box-shadow: inset 0 0 0 1px var(--series); }
+:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+label { color: var(--ink2); display: inline-flex; gap: 6px; align-items: center; }
+input[type=range] { accent-color: var(--series); width: 190px; }
+.tiles { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 8px 14px; min-width: 118px; }
+.tile b { display: block; font-size: 21px; font-weight: 600; line-height: 1.25; } .tile span { color: var(--ink2); font-size: 12.5px; }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+.scroll { overflow-x: auto; }
+.mm { display: grid; gap: 4px 8px; width: max-content; margin-top: 12px; }
+.mm .cap { color: var(--ink2); font-size: 12.5px; align-self: end; } .mm .cap b { color: var(--ink); font-weight: 600; }
+.corner { align-self: end; justify-self: end; text-align: right; font-size: 12.5px; color: var(--ink2); padding: 0 4px 4px; max-width: 270px; }
+canvas { display: block; touch-action: none; }
+.read { margin-top: 12px; min-height: 66px; font-size: 14px; } .read .eq { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; color: var(--ink2); overflow-wrap: anywhere; }
+.read b { font-weight: 650; }
+.legend { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.legend i { width: 120px; height: 9px; border-radius: 2px; display: inline-block; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: flex-start; }
+.heads { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; align-items: center; } .heads button { padding: 2px 8px; min-height: 28px; }
+.bars { display: grid; grid-template-columns: max-content 190px max-content; gap: 5px 10px; align-items: center; font-size: 13px; margin-top: 6px; }
+.bars .track { height: 12px; } .bars .fill { height: 12px; background: var(--series); border-radius: 0 4px 4px 0; min-width: 1px; }
+.bars .v { font-variant-numeric: tabular-nums; color: var(--ink2); }
+.thumbs { display: grid; gap: 6px 8px; width: max-content; margin-top: 12px; font-size: 12px; color: var(--ink2); }
+.thumb { padding: 3px; border: 1px solid transparent; border-radius: 6px; background: none; min-height: 0; line-height: 1.2; text-align: center; font-size: 11.5px; color: var(--ink2); }
+.thumb canvas { margin: 0 auto 2px; }
+.four { display: flex; flex-wrap: wrap; gap: 14px 18px; margin-top: 14px; } .four h3 { font-size: 13px; margin: 0; font-weight: 600; } .four small { color: var(--ink2); display: block; min-height: 18px; }
+table.num { border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; font-size: 12px; } .num td, .num th { padding: 3px 8px; text-align: right; border: 1px solid var(--grid); white-space: nowrap; } .num th { color: var(--ink2); font-weight: 500; } .num small { display: block; color: var(--ink2); }
+.num td.on { outline: 2px solid var(--ink); outline-offset: -2px; }
+.flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; margin-top: 10px; } .flow div { border: 1px solid var(--axis); border-radius: 6px; padding: 5px 9px; font-size: 12.5px; min-width: 86px; } .flow .frozen { color: var(--muted); border-color: var(--grid); } .flow b { display: block; font-weight: 600; } .flow .m { height: 5px; border-radius: 3px; margin-top: 4px; background: var(--grid); } .flow .m i { display: block; height: 5px; border-radius: 3px; background: var(--series); }
+.flow .arrow { border: 0; min-width: 0; padding: 5px 0; align-self: center; color: var(--muted); }
+#tip { position: fixed; pointer-events: none; z-index: 9; background: var(--surface); color: var(--ink); border: 1px solid var(--axis); border-radius: 6px; padding: 5px 9px; font-size: 12.5px; display: none; max-width: 320px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+#tip b { display: block; font-size: 14px; } #tip span { color: var(--ink2); }
+.msg { color: var(--ink2); padding: 8px 0; } pre { white-space: pre-wrap; margin: 6px 0 0; font: 12.5px/1.5 ui-monospace, Consolas, monospace; color: var(--ink2); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Inside the training step</h1>
+  <p class="sub" id="lead"></p>
+  <div class="top">
+    <label>Loop <select id="loop"></select></label>
+    <button id="live" aria-pressed="true">Live</button>
+    <label id="replayBox">Replay <input id="replay" type="range" min="0" max="0" value="0"><span id="replayAt"></span></label>
+    <button id="pause" aria-pressed="false">Pause the sweep</button>
+    <button id="theme">Light / dark</button>
+    <a href="/" style="color:inherit">3D view</a>
+  </div>
+  <div class="tiles" id="tiles"></div>
+
+  <section class="card" id="flowCard"><h2>The path of one batch</h2><p class="sub">The bar under each block is the size of its gradient in this step: how hard it is being pushed to change.</p><div class="flow" id="flow"></div></section>
+
+  <section class="card" id="attCard">
+    <h2 id="attTitle">Attention: query × key</h2>
+    <p class="sub">Each row of the query matrix meets each column of the key matrix. Their product, divided by 8 and normalized along the row, says how much one token looks at another. The GPU fills every cell at once; the sweep walks through them so you can follow. Hover over the result to pick a cell.</p>
+    <div class="heads" id="heads"></div>
+    <div class="scroll"><div class="mm" id="attMM"></div></div>
+    <div class="read" id="attRead"></div>
+  </section>
+
+  <section class="card" id="logCard">
+    <h2>Which label? text vectors × label vectors</h2>
+    <p class="sub">Every text in the batch (rows) is multiplied by every label's vector (columns). A redder cell is a better match. The outlined cell in each row is the correct label: training pushes it up and the rest of the row down.</p>
+    <div class="scroll"><div class="mm" id="logMM"></div></div>
+    <div class="read" id="logRead"></div>
+    <div class="row" style="margin-top:8px"><div style="max-width:520px"><b id="ftTitle"></b><p class="sub" id="ftText"></p></div><div class="bars" id="bars"></div></div>
+  </section>
+
+  <section class="card">
+    <h2 id="wTitle">The matrices being trained</h2>
+    <p class="sub" id="wSub"></p>
+    <div class="scroll"><div class="thumbs" id="thumbs"></div></div>
+    <div class="four" id="four"></div>
+    <div class="scroll"><div id="numbers"></div></div>
+  </section>
+
+  <section class="card" id="lossCard">
+    <h2>Loss</h2><p class="sub">Average of every 10 steps. Lower is better.</p>
+    <canvas id="loss" style="margin-top:8px"></canvas>
+    <p class="sub" id="vals" style="margin-top:6px"></p>
+    <details><summary>Loss as a table</summary><div class="scroll"><table class="num" id="lossTable"></table></div></details>
+  </section>
+  <section class="card"><h2>Log</h2><pre id="log"></pre></section>
+</main>
+<div id="tip" role="status"></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; };
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let loopsList = [], loopId = null, meta = null, frame = null, stamp = "", live = true, frames = [], paused = still, head = 0, sel = null;
+const S = { att: { i: 0, j: 0, hold: false }, log: { i: 0, j: 0, hold: false } };
+
+// ── data ──
+function unpack(o) {
+  const bin = atob(o.data), u8 = new Uint8Array(bin.length);
+  for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
+  const q = new Int16Array(u8.buffer), out = new Float32Array(q.length), s = o.scale / 32767;
+  for (let k = 0; k < q.length; k++) out[k] = q[k] * s;
+  return { shape: o.shape, v: out };
+}
+const num = (x, d = 3) => (x < 0 ? "−" : "") + Math.abs(x).toFixed(d);
+function sig(x) { const a = Math.abs(x); if (a === 0) return "0"; if (a >= 0.001 && a < 10000) return num(x, a < 0.1 ? 4 : a < 10 ? 3 : 1); const e = Math.floor(Math.log10(a)); return num(x / 10 ** e, 2) + "e" + e; }
+async function get(url) { const r = await fetch(url); if (r.status === 204 || !r.ok) return { none: true, status: r.status }; return { json: await r.json(), stamp: r.headers.get("X-Stamp") || "" }; }
+
+// ── color ──
+let LUT = {};
+function ramp(name) {
+  const hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim().split(",").map(h => h.trim());
+  const rgb = hex.map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))), out = new Uint8ClampedArray(256 * 4);
+  for (let k = 0; k < 256; k++) { const t = k / 255 * (rgb.length - 1), a = Math.min(Math.floor(t), rgb.length - 2), f = t - a;
+    for (let c = 0; c < 3; c++) out[k * 4 + c] = rgb[a][c] + (rgb[a + 1][c] - rgb[a][c]) * f; out[k * 4 + 3] = 255; }
+  return out;
+}
+const colors = () => { LUT = { div: ramp("--div"), seq: ramp("--seq") }; };
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function limit(v, seq) { const n = Math.min(v.length, 4000), step = Math.max(1, Math.floor(v.length / n)), a = []; for (let k = 0; k < v.length; k += step) a.push(seq ? v[k] : Math.abs(v[k])); a.sort((x, y) => x - y); return a[Math.floor(a.length * 0.99)] || a[a.length - 1] || 1e-12; }
+function paint(cv, v, rows, cols, w, h, kind, lim) {
+  const dpr = devicePixelRatio || 1, off = document.createElement("canvas"); off.width = cols; off.height = rows;
+  const ox = off.getContext("2d"), img = ox.createImageData(cols, rows), L = LUT[kind];
+  for (let k = 0; k < rows * cols; k++) { let t = kind === "seq" ? v[k] / lim : v[k] / lim * 0.5 + 0.5; t = Math.max(0, Math.min(1, t)); const c = Math.round(t * 255) * 4; img.data.set(L.subarray(c, c + 4), k * 4); }
+  ox.putImageData(img, 0, 0);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + "px"; cv.style.height = h + "px";
+  const x = cv.getContext("2d"); x.imageSmoothingEnabled = false; x.drawImage(off, 0, 0, cv.width, cv.height); x.scale(dpr, dpr); return x;
+}
+function legend(kind, lim) { const s = el("span", undefined, "legend"), bar = el("i"); bar.style.background = `linear-gradient(90deg, ${css(kind === "seq" ? "--seq" : "--div")})`; s.append(el("span", kind === "seq" ? "0" : "−" + sig(lim)), bar, el("span", (kind === "seq" ? "" : "+") + sig(lim))); return s; }
+function tip(e, value, text) { const t = $("tip"); t.replaceChildren(el("b", value), el("span", text)); t.style.display = "block"; t.style.left = Math.min(e.clientX + 14, innerWidth - 330) + "px"; t.style.top = (e.clientY + 16) + "px"; }
+const untip = () => { $("tip").style.display = "none"; };
+
+// ── the rows-meet-columns diagram ──
+class Product {
+  constructor(box, state) {
+    this.box = box; this.st = state; this.cv = {};
+    this.corner = el("div", undefined, "corner"); this.capT = el("div", undefined, "cap"); this.capL = el("div", undefined, "cap"); this.leg = el("div", undefined, "cap");
+    for (const k of ["left", "top", "res"]) this.cv[k] = document.createElement("canvas");
+    for (const [n, r, c] of [[this.corner, "1/3", "1"], [this.capT, "1", "2"], [this.cv.top, "2", "2"], [this.capL, "3", "1"], [this.leg, "3", "2"], [this.cv.left, "4", "1"], [this.cv.res, "4", "2"]]) { n.style.gridRow = r; n.style.gridColumn = c; box.append(n); }
+    this.cv.left.style.justifySelf = "end";
+    const c = this.cv.res; c.tabIndex = 0; c.setAttribute("role", "img");
+    c.addEventListener("pointermove", e => { if (!this.d) return; const b = c.getBoundingClientRect(); this.st.hold = true; this.st.j = Math.min(this.d.C - 1, Math.max(0, Math.floor((e.clientX - b.left - (this.d.padL || 0)) / this.d.cw))); this.st.i = Math.min(this.d.R - 1, Math.max(0, Math.floor((e.clientY - b.top) / this.d.ch))); this.draw(); });
+    c.addEventListener("pointerleave", () => { this.st.hold = false; });
+    c.addEventListener("keydown", e => { if (!this.d) return; const k = { ArrowRight: [0, 1], ArrowLeft: [0, -1], ArrowDown: [1, 0], ArrowUp: [-1, 0] }[e.key]; if (!k) return; e.preventDefault(); this.st.hold = true; this.st.i = (this.st.i + k[0] + this.d.R) % this.d.R; this.st.j = (this.st.j + k[1] + this.d.C) % this.d.C; this.draw(); });
+    c.addEventListener("blur", () => { this.st.hold = false; });
+  }
+  set(d) { this.d = d; this.cv.res.setAttribute("aria-label", d.label); this.st.i = Math.min(this.st.i, d.R - 1); this.st.j = Math.min(this.st.j, d.C - 1);
+    this.capT.replaceChildren(el("b", d.topName), document.createTextNode(" " + d.topNote)); this.capL.replaceChildren(el("b", d.leftName), document.createTextNode(" " + d.leftNote)); this.leg.replaceChildren(el("b", d.resName + "  "), legend(d.kind, d.lim)); this.draw(); }
+  advance() { const d = this.d; if (!d || this.st.hold) return; if (++this.st.j >= d.C) { this.st.j = 0; this.st.i = (this.st.i + 1) % d.R; } this.draw(); }
+  draw() {
+    const d = this.d, { i, j } = this.st, ink = css("--ink"), surf = css("--surface"), tall = d.R * d.ch, wide = d.C * d.cw, pl = d.rowNames ? 96 : 0;
+    const lw = d.K * d.kw, th = d.K * d.kh;
+    let x = paint(this.cv.left, d.left, d.R, d.K, lw, tall, "div", d.limL);
+    if (pl) { const dpr = devicePixelRatio || 1, cv = this.cv.left, copy = document.createElement("canvas"); copy.width = cv.width; copy.height = cv.height; copy.getContext("2d").drawImage(cv, 0, 0);
+      cv.width = Math.round((lw + pl) * dpr); cv.style.width = (lw + pl) + "px"; x = cv.getContext("2d"); x.drawImage(copy, Math.round(pl * dpr), 0); x.scale(dpr, dpr); x.font = Math.min(11, d.ch - 1) + "px system-ui, sans-serif"; x.textAlign = "right"; x.textBaseline = "middle";
+      d.rowNames.forEach((n, k) => { x.fillStyle = k === i ? ink : css("--ink2"); x.fillText(n.slice(0, 13), pl - 5, (k + .5) * d.ch); }); }
+    const frameBox = (c, a, b, w, h) => { c.lineWidth = 3; c.strokeStyle = surf; c.strokeRect(a, b, w, h); c.lineWidth = 1.5; c.strokeStyle = ink; c.strokeRect(a, b, w, h); };
+    frameBox(x, pl + .75, i * d.ch + .75, lw - 1.5, Math.max(3, d.ch - 1.5));
+    const y = paint(this.cv.top, d.top, d.K, d.C, wide, th, "div", d.limT); frameBox(y, j * d.cw + .75, .75, Math.max(3, d.cw - 1.5), th - 1.5);
+    const z = paint(this.cv.res, d.res, d.R, d.C, wide, tall, d.kind, d.lim);
+    if (d.marks) { z.lineWidth = 1.2; d.marks.forEach((m, r) => { z.strokeStyle = surf; z.strokeRect(m * d.cw - 1, r * d.ch + .5, d.cw + 2, d.ch - 1); z.strokeStyle = ink; z.strokeRect(m * d.cw - .2, r * d.ch + 1.2, d.cw + .4, d.ch - 2.4); }); }
+    z.strokeStyle = ink; z.globalAlpha = .45; z.lineWidth = 1; z.beginPath(); z.moveTo((j + .5) * d.cw, 0); z.lineTo((j + .5) * d.cw, i * d.ch); z.moveTo(0, (i + .5) * d.ch); z.lineTo(j * d.cw, (i + .5) * d.ch); z.stroke(); z.globalAlpha = 1;
+    frameBox(z, j * d.cw - 1, i * d.ch - .2, d.cw + 2, d.ch + .4);
+    this.corner.textContent = d.corner(i, j); d.read(i, j);
+  }
+}
+const attP = new Product($("attMM"), S.att), logP = new Product($("logMM"), S.log);
+const terms = (a, b) => { const t = []; for (let k = 0; k < a.length; k++) t.push([a[k] * b[k], a[k], b[k]]); t.sort((p, q) => Math.abs(q[0]) - Math.abs(p[0])); return t; };
+const expand = (t, n) => t.slice(0, 4).map(p => `${num(p[1], 2)}×${num(p[2], 2)}`).join(" + ") + ` + … (${n} products added; the four largest shown)`;
+
+// ── panels ──
+function drawAttention() {
+  const has = frame && frame.att && frame.tokens; $("attCard").hidden = !has; if (!has) return;
+  const q = unpack(frame.att.q), k = unpack(frame.att.k), a = unpack(frame.att.a), [H, T, D] = q.shape;
+  head = Math.min(head, H - 1); $("attTitle").textContent = `Attention in layer ${meta.attention_layer}, head ${head + 1}: query × key`;
+  if ($("heads").childElementCount !== H + 1) { $("heads").replaceChildren(el("span", "Head")); for (let n = 0; n < H; n++) { const b = el("button", n + 1); b.onclick = () => { head = n; drawAttention(); }; $("heads").append(b); } }
+  [...$("heads").querySelectorAll("button")].forEach((b, n) => b.setAttribute("aria-pressed", n === head));
+  const cut = (o, w) => o.v.subarray(head * T * w, (head + 1) * T * w), Q = cut(q, D), K = cut(k, D), A = cut(a, T), Kt = new Float32Array(D * T);
+  for (let r = 0; r < T; r++) for (let c = 0; c < D; c++) Kt[c * T + r] = K[r * D + c];
+  const ch = Math.max(13, Math.min(22, Math.floor(420 / T))), tok = frame.tokens;
+  attP.set({ left: Q, top: Kt, res: A, R: T, C: T, K: D, kw: 3, kh: 3, cw: ch, ch, kind: "seq", lim: limit(A, true), limL: limit(Q), limT: limit(Kt), rowNames: tok,
+    leftName: "Query", leftNote: `${T} tokens × ${D}`, topName: "Keyᵀ", topNote: `${D} × ${T} tokens`, resName: "Attention", label: "Attention matrix of one text; arrow keys move the cell",
+    corner: (i, j) => `row "${tok[i]}" meets column "${tok[j]}"`,
+    read: (i, j) => { let dot = 0; const qi = Q.subarray(i * D, (i + 1) * D), kj = K.subarray(j * D, (j + 1) * D); for (let c = 0; c < D; c++) dot += qi[c] * kj[c];
+      const p = el("p"), e = el("p", undefined, "eq"); p.append(el("b", `"${tok[i]}" looks at "${tok[j]}" with ${(A[i * T + j] * 100).toFixed(1)}%`), document.createTextNode(` of its attention. Score ${num(dot, 2)} ÷ √${D} = ${num(dot / Math.sqrt(D), 2)}.`)); e.textContent = expand(terms(qi, kj), D); $("attRead").replaceChildren(p, e); } });
+}
+function drawLogits() {
+  const has = frame && frame.L; $("logCard").hidden = !has; if (!has) return;
+  const E = unpack(frame.E), P = unpack(frame.P), L = unpack(frame.L), [R, C] = L.shape, D = E.shape[1], Pt = new Float32Array(D * C), eF = unpack(frame.e_full), pF = unpack(frame.p_full), full = meta.dim;
+  for (let r = 0; r < C; r++) for (let c = 0; c < D; c++) Pt[c * C + r] = P.v[r * D + c];
+  const name = n => meta.labels[n], cw = Math.max(4, Math.floor(900 / C)), ch = Math.max(8, Math.min(12, Math.floor(400 / R)));
+  logP.set({ left: E.v, top: Pt, res: L.v, R, C, K: D, kw: 2, kh: 1.6, cw, ch, kind: "div", lim: limit(L.v), limL: limit(E.v), limT: limit(Pt), marks: frame.texts.map(t => t.label),
+    leftName: "Text vectors", leftNote: `${R} texts × ${full} (${D} columns drawn)`, topName: "Label vectorsᵀ", topNote: `${full} × ${C} labels`, resName: "Match scores", label: "Scores of every text against every label; arrow keys move the cell",
+    corner: (i, j) => `text ${i + 1} meets label "${name(j)}"`,
+    read: (i, j) => { const t = frame.texts[i], s = L.v[i * C + j], right = t.label === j; let sum = 0, mx = -1e9; for (let c = 0; c < C; c++) mx = Math.max(mx, L.v[i * C + c]); for (let c = 0; c < C; c++) sum += Math.exp(L.v[i * C + c] - mx);
+      const p = el("p"), e = el("p", undefined, "eq"); p.append(el("b", `Text ${i + 1} · "${name(j)}" = ${num(s / meta.scale, 3)}`), document.createTextNode(` × ${meta.scale} = ${num(s, 2)}, probability ${(Math.exp(s - mx) / sum * 100).toFixed(1)}%${right ? ". This is its correct label" : `. Correct label: "${name(t.label)}" (${(t.p_true * 100).toFixed(1)}%)`}.`));
+      const at = i === frame.featured ? frame.top.findIndex(o => o.label === j) : -1;
+      e.textContent = at >= 0 ? expand(terms(eF.v, pF.v.subarray(at * full, (at + 1) * full)), full) : `"${t.text.slice(0, 150)}"`; $("logRead").replaceChildren(p, e); } });
+  const f = frame.texts[frame.featured]; $("ftTitle").textContent = `Text ${frame.featured + 1}: ${f.pred === f.label ? "✓ answered correctly" : "✗ answered wrong"}`; $("ftText").textContent = f.text;
+  $("bars").replaceChildren(); for (const o of [...frame.top].sort((a, b) => b.p - a.p)) { const tr = el("div", undefined, "track"), fill = el("div", undefined, "fill"); fill.style.width = Math.max(.5, o.p * 100) + "%"; tr.append(fill); $("bars").append(el("span", name(o.label) + (o.label === f.label ? " (correct)" : "")), tr, el("span", (o.p * 100).toFixed(1) + "%", "v")); }
+}
+let W = null;
+function drawWeights() {
+  const M = meta.matrices, st = !!frame.static; W = { w0: meta.w0.map(unpack), total: frame.total.map(unpack), grad: st ? null : frame.grad.map(unpack), delta: st ? null : frame.delta.map(unpack) };
+  if (sel === null || sel >= M.length) sel = Math.max(0, M.findIndex(m => m.part === "query" && m.layer === Math.max(...M.map(x => x.layer || 0))));
+  $("wTitle").textContent = st ? "What training changed: stock LaBSE against this loop's saved model" : "The matrices being trained";
+  $("wSub").textContent = (st ? "Each square is one trained matrix: red where a weight went up, blue where it went down. " : "Each square is how far one matrix has moved since training began: red where a weight went up, blue where it went down. ") + "Cells are real single weights, every 16th row and column of a 768 × 768 matrix. Click one to open it.";
+  const parts = [...new Set(M.filter(m => m.layer).map(m => m.part))], layers = [...new Set(M.filter(m => m.layer).map(m => m.layer))], T = $("thumbs"); T.style.gridTemplateColumns = `max-content repeat(${parts.length + 1}, 84px)`; T.replaceChildren(el("span")); parts.forEach(p => T.append(el("span", p))); T.append(el("span", "after the layers"));
+  const thumb = n => { const b = el("button", undefined, "thumb"), cv = document.createElement("canvas"), t = W.total[n]; paint(cv, t.v, t.shape[0], t.shape[1], 72, 72, "div", limit(t.v)); b.append(cv, el("span", "moved " + (frame.total_rms[n] / frame.w_rms[n] * 100).toFixed(2) + "%")); b.title = M[n].part + (M[n].layer ? ", layer " + M[n].layer : ""); b.setAttribute("aria-label", b.title); b.setAttribute("aria-pressed", n === sel); b.onclick = () => { sel = n; drawWeights(); }; return b; };
+  const rest = M.map((m, n) => n).filter(n => !M[n].layer);
+  layers.forEach((l, r) => { T.append(el("span", "layer " + l)); parts.forEach(p => { const n = M.findIndex(m => m.layer === l && m.part === p); T.append(n < 0 ? el("span") : thumb(n)); }); const n = rest[r]; if (n === undefined) T.append(el("span")); else { const d = el("div"); d.append(thumb(n), el("span", M[n].part)); d.style.textAlign = "center"; T.append(d); } });
+  const m = M[sel], w0 = W.w0[sel], tot = W.total[sel], now = new Float32Array(w0.v.length); for (let k = 0; k < now.length; k++) now[k] = w0.v[k] + tot.v[k];
+  const views = [["Weights now", "", now, "div"]]; if (!st) views.push(["Gradient", "which way each weight raises the loss", W.grad[sel].v], ["Change in this step", "the optimizer moves against the gradient", W.delta[sel].v]); else views.unshift(["Stock LaBSE", "before training", w0.v]);
+  views.push([st ? "Change" : "Change since training began", st ? "trained minus stock" : "", tot.v]);
+  $("four").replaceChildren(); let big = 0; const pickFrom = st ? tot.v : W.delta[sel].v; for (let k = 0; k < pickFrom.length; k++) if (Math.abs(pickFrom[k]) > Math.abs(pickFrom[big])) big = k;
+  const [R, C] = w0.shape; let at = [Math.floor(big / C), big % C];
+  const name = `${m.part}${m.layer ? ", layer " + m.layer : ""} (${m.shape[0]} × ${m.shape[1]})`;
+  for (const [title, note, v] of views) { const box = el("div"), cv = document.createElement("canvas"), lim = limit(v); box.append(el("h3", title), el("small", note || name)); const x = paint(cv, v, R, C, 264, 264, "div", lim); box.append(cv, legend("div", lim)); cv.setAttribute("role", "img"); cv.setAttribute("aria-label", title + " of " + name);
+    cv.addEventListener("pointermove", e => { const b = cv.getBoundingClientRect(), r = Math.min(R - 1, Math.max(0, Math.floor((e.clientY - b.top) / 264 * R))), c = Math.min(C - 1, Math.max(0, Math.floor((e.clientX - b.left) / 264 * C))); tip(e, sig(v[r * C + c]), `${title}, row ${m.rows[r]}, column ${m.cols[c]}`); numbers(r, c); }); cv.addEventListener("pointerleave", untip); $("four").append(box); }
+  function numbers(r0, c0) { const N = 7, rs = Math.max(0, Math.min(R - N, r0 - 3)), cs = Math.max(0, Math.min(C - N, c0 - 3)), t = el("table", undefined, "num"), hd = el("tr"); hd.append(el("th", "row \\ column")); for (let c = cs; c < Math.min(C, cs + N); c++) hd.append(el("th", m.cols[c])); t.append(hd);
+    for (let r = rs; r < Math.min(R, rs + N); r++) { const tr = el("tr"); tr.append(el("th", m.rows[r])); for (let c = cs; c < Math.min(C, cs + N); c++) { const k = r * C + c, td = el("td", num(now[k], 5)), ch = st ? tot.v[k] : W.delta[sel].v[k]; td.append(el("small", (ch >= 0 ? "+" : "") + sig(ch))); if (r === r0 && c === c0) td.className = "on"; tr.append(td); } t.append(tr); }
+    const cap = el("p", st ? "Each number is a trained weight; under it, how far it moved from stock LaBSE." : "Each number is a weight after this step; under it, what the step added. Outlined: the weight that moved most, or the one you point at.", "sub"); cap.style.marginTop = "12px"; $("numbers").replaceChildren(cap, t); }
+  numbers(at[0], at[1]);
+}
+function drawFlow() {
+  $("flowCard").hidden = !!frame.static; if (frame.static) return; const box = $("flow"); box.replaceChildren(); const M = meta.matrices, size = {}; M.forEach((m, n) => { const k = m.layer ? "layer " + m.layer : m.part; size[k] = Math.hypot(size[k] || 0, frame.grad_norms[n]); });
+  const mx = Math.max(...Object.values(size), 1e-12), add = (t, s, k) => { const d = el("div", undefined, k === undefined ? "frozen" : ""); d.append(el("b", t), el("span", s)); if (k !== undefined) { const m = el("div", undefined, "m"), i = el("i"); i.style.width = Math.max(2, size[k] / mx * 100) + "%"; m.append(i); m.style.cssText = "border:0;padding:0;min-width:0"; d.append(m); } box.append(d); }, arrow = () => box.append(el("div", "→", "arrow"));
+  add(`${frame.texts.length} texts`, "as tokens"); arrow(); if (meta.frozen_layers) { add(`layers 1 to ${meta.frozen_layers}`, "frozen"); arrow(); } Object.keys(size).filter(k => k.startsWith("layer ")).forEach(k => { add(k, "gradient " + sig(size[k]), k); arrow(); }); if (size.Dense !== undefined) { add("Dense", "gradient " + sig(size.Dense), "Dense"); arrow(); } add("× label vectors", "gradient " + sig(size["label vectors"] || 0), "label vectors"); arrow(); add("loss " + num(frame.loss, 3), "label " + num(frame.ce, 3) + " + anchor " + num(frame.anchor, 3));
+}
+function drawTiles() {
+  const it = loopsList.find(l => l.id === loopId) || {}, T = $("tiles"); T.replaceChildren(); const tile = (v, t) => { const d = el("div", undefined, "tile"); d.append(el("b", v), el("span", t)); T.append(d); };
+  tile(it.state || "", `loop ${it.seq}, ${it.kind}`); if (frame && !frame.static) { tile(`${frame.epoch} of ${meta.epochs}`, "epoch"); tile(`${frame.step} / ${meta.steps}`, "step"); tile(num(frame.loss, 3), "loss in this step"); const ok = frame.texts.filter(t => t.pred === t.label).length; tile(`${ok} of ${frame.texts.length}`, "texts in this batch answered right"); tile(frame.rate.toFixed(1), "steps per second"); tile(sig(frame.grad_norm), "gradient size"); }
+  if (it.deployed) tile((it.deployed * 100).toFixed(1) + "%", "holdout, deployed pipeline"); if (gpuNow) { tile(gpuNow.util.toFixed(0) + "%", "GPU busy"); tile((gpuNow.used / 1024).toFixed(1) + " / " + (gpuNow.total / 1024).toFixed(1) + " GB", "GPU memory"); tile(gpuNow.power.toFixed(0) + " W, " + gpuNow.temp.toFixed(0) + " °C", "GPU power, temperature"); }
+}
+function drawLoss() {
+  const s = frame.series || []; $("lossCard").hidden = s.length < 2; $("vals").textContent = (frame.val || []).map(v => `epoch ${v.epoch}: ${(v.val_acc * 100).toFixed(1)}% right on validation`).join("   ·   "); if (s.length < 2) return;
+  const cv = $("loss"), w = Math.min(1100, $("lossCard").clientWidth - 40), h = 230, dpr = devicePixelRatio || 1, L = 46, B = 26, X = s[s.length - 1][0], hi = Math.max(...s.map(p => p[1])) * 1.05; cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + "px"; cv.style.height = h + "px"; const x = cv.getContext("2d"); x.scale(dpr, dpr); x.font = "11.5px system-ui, sans-serif"; const px = n => L + (w - L - 60) * n / X, py = v => (h - B) * (1 - v / hi) + 4;
+  x.strokeStyle = css("--grid"); x.fillStyle = css("--muted"); x.lineWidth = 1; x.textAlign = "right"; x.textBaseline = "middle"; const st = hi > 4 ? 1 : .5; for (let v = 0; v <= hi; v += st) { x.beginPath(); x.moveTo(L, py(v)); x.lineTo(w - 60, py(v)); x.stroke(); x.fillText(v.toFixed(1), L - 6, py(v)); }
+  x.textAlign = "center"; for (let e = 1; e <= (meta.epochs || 0); e++) { const n = e * meta.steps; if (n <= X * 1.001) x.fillText("epoch " + e + " end", px(n), h - 8); } x.strokeStyle = css("--series"); x.lineWidth = 2; x.lineJoin = "round"; x.beginPath(); s.forEach((p, k) => k ? x.lineTo(px(p[0]), py(p[1])) : x.moveTo(px(p[0]), py(p[1]))); x.stroke();
+  const last = s[s.length - 1]; x.fillStyle = css("--ink"); x.textAlign = "left"; x.fillText(last[1].toFixed(2), px(last[0]) + 8, py(last[1]));
+  cv.onpointermove = e => { const r = cv.getBoundingClientRect(), n = (e.clientX - r.left - L) / (w - L - 60) * X; let b = s[0]; for (const p of s) if (Math.abs(p[0] - n) < Math.abs(b[0] - n)) b = p; tip(e, b[1].toFixed(3), "loss at step " + b[0]); }; cv.onpointerleave = untip;
+  const t = $("lossTable"), k = Math.max(1, Math.floor(s.length / 25)); t.replaceChildren(); const hr = el("tr"); hr.append(el("th", "step"), el("th", "loss")); t.append(hr); s.filter((_, n) => n % k === 0).forEach(p => { const r = el("tr"); r.append(el("td", p[0]), el("td", p[1].toFixed(3))); t.append(r); });
+}
+let gpuNow = null;
+function drawAll() {
+  colors(); const it = loopsList.find(l => l.id === loopId) || {}; drawTiles();
+  if (!frame || !meta) { ["flowCard", "attCard", "logCard", "lossCard"].forEach(i => $(i).hidden = true); $("thumbs").replaceChildren(); $("four").replaceChildren(); $("numbers").replaceChildren(); $("wTitle").textContent = "Nothing to draw for this loop"; $("wSub").textContent = it.state === "running" ? "This loop was started before its matrices could be captured, so only its log and the GPU can be shown. When it ends, its saved model appears here." : "It trained no model."; $("lead").textContent = ""; return; }
+  $("lead").textContent = frame.static ? "This loop ran before its matrices could be captured, so this compares its saved model with stock LaBSE. Loops started from now on show every step." : `Real numbers read from step ${frame.step} of epoch ${frame.epoch}, ${live ? "as it trains" : "replayed"}. Nothing here is simulated; the sweep only moves the highlight.`;
+  drawFlow(); drawAttention(); drawLogits(); drawWeights(); drawLoss();
+}
+
+// ── polling ──
+async function refreshLoops(first) {
+  const r = await get("/api/loops"); if (r.none) return; const had = JSON.stringify(loopsList.map(l => [l.id, l.live])); loopsList = r.json; const trained = loopsList.filter(l => ["fit", "round"].includes(l.kind));
+  if (had !== JSON.stringify(loopsList.map(l => [l.id, l.live]))) { $("loop").replaceChildren(); trained.forEach(l => { const o = el("option", `${l.seq}: ${l.kind}, ${l.state}${l.live ? ", live capture" : l.saved ? ", before and after" : ""}`); o.value = l.id; $("loop").append(o); }); if (loopId) $("loop").value = loopId; }
+  const run = trained.find(l => l.state === "running" && l.live); if (first) { const want = run || trained.find(l => l.live) || trained.find(l => l.saved) || trained[0]; if (want) await choose(want.id); } else if (run && run.id !== loopId && live && !(loopsList.find(l => l.id === loopId) || {}).pinned && autoFollow) await choose(run.id);
+  else if (!frame && loopId) { const me = loopsList.find(l => l.id === loopId); if (me && (me.live || me.saved)) await choose(loopId); }
+}
+let autoFollow = true;
+async function choose(id) {
+  loopId = id; meta = frame = null; stamp = ""; sel = null; frames = []; $("loop").value = id; const me = loopsList.find(l => l.id === id) || {};
+  if (me.live) { const m = await get(`/api/loop/${id}/meta`); if (!m.none) meta = m.json; await pull(); const f = await get(`/api/loop/${id}/frames`); if (!f.none) setFrames(f.json); }
+  else if (me.saved) { $("wTitle").textContent = "Loading the saved model…"; const s = await get(`/api/loop/${id}/saved`); if (!s.none && loopId === id) { meta = s.json.meta; frame = s.json.frame; } setFrames([]); } else setFrames([]);
+  drawAll(); pollLog();
+}
+function setFrames(list) { frames = list; $("replayBox").hidden = !list.length; $("live").hidden = !list.length; $("replay").max = Math.max(0, list.length - 1); if (live) $("replay").value = Math.max(0, list.length - 1); }
+async function pull() { if (!loopId || !live) return; const me = loopsList.find(l => l.id === loopId); if (!me || !me.live) return; const r = await get(`/api/loop/${loopId}/frame?since=${stamp}`); if (r.none || !live) return; frame = r.json; stamp = r.stamp; S.log.i = S.log.hold ? S.log.i : Math.min(S.log.i, frame.texts.length - 1); drawAll(); }
+async function pollLog() { if (!loopId) return; const r = await get(`/api/loop/${loopId}/log`); if (!r.none) $("log").textContent = r.json.join("\n"); }
+$("loop").onchange = e => { autoFollow = false; live = true; $("live").setAttribute("aria-pressed", true); choose(e.target.value); };
+$("live").onclick = () => { live = true; autoFollow = true; $("live").setAttribute("aria-pressed", true); $("replayAt").textContent = ""; stamp = ""; pull(); };
+$("replay").oninput = async e => { live = false; $("live").setAttribute("aria-pressed", false); const n = frames[+e.target.value]; $("replayAt").textContent = "step " + n; const r = await get(`/api/loop/${loopId}/frame/${n}`); if (!r.none) { frame = r.json; drawAll(); } };
+$("pause").onclick = () => { paused = !paused; $("pause").setAttribute("aria-pressed", paused); $("pause").textContent = paused ? "Resume the sweep" : "Pause the sweep"; };
+$("theme").onclick = () => { const dark = getComputedStyle(document.documentElement).colorScheme.includes("dark"); document.documentElement.dataset.theme = dark ? "light" : "dark"; drawAll(); };
+addEventListener("resize", () => frame && drawLoss()); matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawAll);
+let ticks = 0; setInterval(() => { if (paused || document.hidden || !frame || frame.static) return; if (!$("attCard").hidden && ticks % 2 === 0) attP.advance(); if (!$("logCard").hidden) logP.advance(); ticks++; }, 110);
+setInterval(pull, 1200); setInterval(() => refreshLoops(false), 4000); setInterval(pollLog, 4000);
+setInterval(async () => { const f = loopId ? await get(`/api/loop/${loopId}/frames`) : { none: true }; if (!f.none) setFrames(f.json); }, 20000);
+setInterval(async () => { const r = await get("/api/gpu"); if (!r.none) { gpuNow = r.json; drawTiles(); } }, 3000);
+colors(); refreshLoops(true);
+</script>
+</body>
+</html>

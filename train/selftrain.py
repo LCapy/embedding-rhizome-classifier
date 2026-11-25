@@ -30,6 +30,7 @@ from .evaluate import evaluate, format_metrics, load_predictions, metric_value, 
 from .fit import FitConfig, TrainSet, embed_trainset, fit
 from .harvest import (Wikipedia, archive_inbox, inbox_candidates, known_titles, seed_titles,
                       translation_candidates, wiki_candidates)
+from .live import LiveTap
 from .model import BASE_MODEL, apply_delta, encode, free_gpu, head_probs, load_encoder, load_run, save_run
 from .record import (LEDGER, LoopRecord, append_event, compare_to_reference, format_reference_check,
                      load_reference, loops, now, state)
@@ -42,6 +43,7 @@ class Paths:
     data: Path
     runs: Path
     taxonomy: Optional[Path] = None
+    live: bool = True               # capture the matrices for `python -m train view`
 
     @property
     def selftrain(self) -> Path:
@@ -58,6 +60,14 @@ class Paths:
     @property
     def rejected(self) -> Path:
         return self.selftrain / "rejected.jsonl"
+
+    @property
+    def pending_records(self) -> Path:
+        return self.selftrain / "pending.jsonl"
+
+    @property
+    def pending_f0(self) -> Path:
+        return self.selftrain / "pending_f0.npy"
 
     @property
     def inbox(self) -> Path:
@@ -97,6 +107,8 @@ class RoundConfig:
     per_class_frac: float = 0.5     # new pseudo-labels per label per round, as a share of its labeled rows
     min_per_class: int = 3
     max_new: int = 1500
+    total_frac: float = 1.0         # self-labeled rows a label may have in all, as a share of its labeled rows
+    unproven: str = "stack"         # a round that is not promoted: "stack" its rows with the next, or "drop" them
     wiki_delay: float = 0.3
 
 
@@ -128,27 +140,49 @@ def read_champion(paths: Paths) -> Optional[dict]:
 
 
 class Pool:
-    """Pseudo-labels from promoted rounds, with their stock LaBSE embeddings."""
+    """Pseudo-labels with their stock LaBSE embeddings: the ones from promoted
+    rounds, or (pending=True) the ones no round has proven yet. Those train
+    along with each new round's until the stack earns a promotion."""
 
-    def __init__(self, paths: Paths, enabled: bool = True):
+    def __init__(self, paths: Paths, enabled: bool = True, pending: bool = False):
         self.paths = paths
-        self.records = read_jsonl(paths.pool_records) if enabled else []
-        self.f0 = (np.load(paths.pool_f0) if enabled and paths.pool_f0.exists()
+        self.records_path = paths.pending_records if pending else paths.pool_records
+        self.f0_path = paths.pending_f0 if pending else paths.pool_f0
+        self.records = read_jsonl(self.records_path) if enabled else []
+        self.f0 = (np.load(self.f0_path) if enabled and self.f0_path.exists()
                    else np.zeros((0, 768), dtype=np.float32))
         if len(self.records) != len(self.f0):
-            raise SystemExit(f"{paths.pool_records} and {paths.pool_f0} are out of step "
+            raise SystemExit(f"{self.records_path} and {self.f0_path} are out of step "
                              f"({len(self.records)} vs {len(self.f0)} rows)")
+
+    def clear(self) -> None:
+        self.records, self.f0 = [], self.f0[:0]
+        self._save()
 
     def add(self, records: List[dict], f0: np.ndarray) -> None:
         self.records = self.records + records
         self.f0 = np.vstack([self.f0, f0]).astype(np.float32) if len(self.f0) else f0.astype(np.float32)
+        self._save()
+
+    def _save(self) -> None:
         self.paths.selftrain.mkdir(parents=True, exist_ok=True)
-        tmp = self.paths.pool_records.with_suffix(".tmp")
+        tmp = self.records_path.with_suffix(".tmp")
         tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in self.records), encoding="utf-8")
-        tmp.replace(self.paths.pool_records)
-        tmp_npy = self.paths.selftrain / "pool_f0.tmp.npy"
+        tmp.replace(self.records_path)
+        tmp_npy = self.f0_path.with_name(self.f0_path.stem + ".tmp.npy")
         np.save(tmp_npy, self.f0)
-        tmp_npy.replace(self.paths.pool_f0)
+        tmp_npy.replace(self.f0_path)
+
+
+def considered_titles(paths: Paths, champion: str) -> set:
+    """Articles that finished rounds under this champion already judged. The
+    champion would say the same again; a new one reconsiders everything."""
+    out: set = set()
+    for e in loops(paths.runs):
+        if (e.get("kind") == "round" and e.get("champion_before") == champion and e.get("folder")
+                and e.get("status") in ROUND_DONE):
+            out |= known_titles(read_jsonl(Path(e["folder"]) / "candidates.jsonl"))
+    return out
 
 
 def beats(new: dict, old: dict, gate: Gate, new_preds: Optional[List[dict]] = None,
@@ -247,7 +281,8 @@ def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitC
         init[k] = ts.f0[rows].mean(axis=0) if rows.any() else np.random.default_rng(k).normal(size=init.shape[1])
     targets = soft_target_matrix(corpus.labels, corpus.parents, cfg.ancestor_eps)
 
-    result = fit(ts, st, init, targets, cfg, device, log)
+    tap = LiveTap(rec.dir / "live", corpus.labels, log=log) if paths.live else None
+    result = fit(ts, st, init, targets, cfg, device, log, tap)
     fit_seconds = time.perf_counter() - t0
     head = result["head"]
     meta = {
@@ -403,14 +438,16 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
     if champ_meta["labels"] != corpus.labels:
         raise SystemExit("The corpus's label set changed since the champion was trained; run `fit` again.")
     pool = Pool(paths)
+    stacked = Pool(paths, enabled=rcfg.unproven == "stack", pending=True)
     rejected = read_jsonl(paths.rejected)
     round_no = 1 + sum(1 for e in loops(paths.runs)
                        if e.get("kind") == "round" and e["id"] != rec.id and e.get("status") in ROUND_DONE)
     name = f"round{round_no:03d}"
-    rec.update(round=round_no, champion_before=champ["run"], pool_before=len(pool.records))
+    rec.update(round=round_no, champion_before=champ["run"], pool_before=len(pool.records),
+               stacked_before=len(stacked.records))
     log(f"Round {round_no}: champion {champ['run']} "
         f"({gate.select_metric} {metric_value(champ['metrics'], gate.select_metric):.4f}), "
-        f"pool {len(pool.records):,} pseudo-labels")
+        f"pool {len(pool.records):,} pseudo-labels, {len(stacked.records):,} unproven")
 
     # 1. candidates
     if rcfg.labels not in ("tested", "all"):
@@ -424,7 +461,8 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
     inbox_files: List[Path] = []
     if "wiki" in sources:
         skip = holdout.blocked_titles | known_titles(corpus.records) | known_titles(pool.records) | known_titles(rejected)
-        skip |= known_titles(read_jsonl(paths.testset))
+        skip |= known_titles(read_jsonl(paths.testset)) | known_titles(stacked.records)
+        skip |= considered_titles(paths, champ["run"])
         seeds, n_articles = seed_titles(corpus)
         order = sorted(allowed, key=lambda l: (n_articles.get(l, 0), l))
         start = ((round_no - 1) * rcfg.nodes_per_round) % len(order)
@@ -438,7 +476,8 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
             log(f"  inbox: {len(inbox_cands):,} texts from {len(inbox_files)} files")
         cands += inbox_cands
     rec.update(inbox_files=[f.name for f in inbox_files])
-    known = {text_key(r["text"]) for r in corpus.records + pool.records + rejected + read_jsonl(paths.testset)}
+    known = {text_key(r["text"]) for r in corpus.records + pool.records + stacked.records + rejected
+             + read_jsonl(paths.testset)}
     unique = []
     for c in cands:
         k = text_key(c["text"])
@@ -510,6 +549,7 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
     # per-label caps (English first, best first), then the global cap
     labeled_counts = Counter(corpus.labels[k] for k in corpus.y[split_indices(corpus, holdout)[0]])
     taken: Counter = Counter()
+    have = Counter(r["category"] for r in pool.records + stacked.records)
     keep_rows = []
     for j in sorted(range(len(accepted)), key=lambda j: (accepted[j].get("translated_from") is not None,
                                                            -accepted[j]["confidence"])):
@@ -520,6 +560,8 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
             row["decision"] = f"round cap ({rcfg.max_new}) reached"
         elif taken[label] >= cap:
             row["decision"] = f"per-label cap ({cap}) reached for {label}"
+        elif have[label] + taken[label] >= max(cap, int(rcfg.total_frac * labeled_counts[label])):
+            row["decision"] = f"{label} already has as many self-labeled rows as it may"
         else:
             taken[label] += 1
             keep_rows.append(j)
@@ -537,15 +579,32 @@ def _round(paths: Paths, rcfg: RoundConfig, cfg: FitConfig, gate: Gate, device, 
         return {"status": "nothing_accepted", "round": round_no, "promoted": False, "candidates": len(cands)}
 
     # 4. challenger
-    result = train_and_evaluate(paths, corpus, holdout, cfg, rec, pool, (accepted, accepted_f0), device)
+    trial = stacked.records + accepted
+    trial_f0 = np.vstack([stacked.f0, accepted_f0]) if len(stacked.f0) else accepted_f0
+    result = train_and_evaluate(paths, corpus, holdout, cfg, rec, pool, (trial, trial_f0), device)
     promoted, reason, test = beats(result["metrics"], champ["metrics"], gate, result["predictions"],
                                    load_predictions(champ_dir))
+    worse = bool(test) and test["z"] <= -1.645
     if promoted:
-        pool.add(accepted, accepted_f0)
         promote(paths, result, reason, log)
+        pool.add(trial, trial_f0)
+        stacked.clear()
+    elif rcfg.unproven == "stack" and not worse:
+        stacked.add(accepted, accepted_f0)
+        log(f"Not promoted: {reason}. Its {len(accepted):,} pseudo-labels stack with the next round's "
+            f"({len(stacked.records):,} unproven).")
     else:
-        append_jsonl(paths.rejected, accepted)
-        log(f"Not promoted: {reason}. This round's {len(accepted):,} pseudo-labels are set aside.")
+        # Significantly worse: this round's rows go. Twice in a row under one
+        # champion, and the stack under them goes too.
+        before = [e for e in loops(paths.runs) if e.get("kind") == "round" and e["id"] != rec.id
+                  and e.get("champion_before") == champ["run"] and e.get("paired_test")]
+        dropped = list(accepted)
+        if worse and stacked.records and before and before[-1]["paired_test"]["z"] <= -1.645:
+            dropped += stacked.records
+            stacked.clear()
+        append_jsonl(paths.rejected, dropped)
+        log(f"Not promoted: {reason}. {len(dropped):,} pseudo-labels are set aside.")
+    rec.update(stacked_after=len(stacked.records))
     archive_inbox(inbox_files, paths.inbox, name)
     rec.update(status="promoted" if promoted else "not_promoted", promoted=promoted, reason=reason,
                paired_test=test, champion_after=(read_champion(paths) or {}).get("run"))
@@ -579,6 +638,7 @@ def cmd_status(paths: Paths, log=print) -> None:
     else:
         log("\nNo champion yet.")
     log(f"\nPseudo-label pool: {len(read_jsonl(paths.pool_records)):,}; "
+        f"unproven, stacking: {len(read_jsonl(paths.pending_records)):,}; "
         f"set aside: {len(read_jsonl(paths.rejected)):,}")
     items = loops(paths.runs)
     log(f"\n{len(items)} loops recorded in {paths.runs / LEDGER}" + ("; the last 10:" if items else "."))

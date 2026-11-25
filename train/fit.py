@@ -73,7 +73,8 @@ def fit_temperature(logits: np.ndarray, y: np.ndarray) -> float:
 
 
 def fit(ts: TrainSet, st, init_protos: np.ndarray, targets: np.ndarray, cfg: FitConfig,
-        device: torch.device, log=print) -> dict:
+        device: torch.device, log=print, tap=None) -> dict:
+    """tap (live.LiveTap) only reads what the steps compute; None trains the same."""
     torch.manual_seed(cfg.seed)
     np.random.seed(cfg.seed)
     st.to(device)
@@ -122,6 +123,8 @@ def fit(ts: TrainSet, st, init_protos: np.ndarray, targets: np.ndarray, cfg: Fit
         if cached:
             return apply_suffix(st, pooled[torch.as_tensor(rows, device=device)])
         feats = features_to(st.preprocess([ts.texts[i] for i in rows]), device)
+        if tap is not None and tap.armed:
+            tap.feats = {k: feats[k] for k in ("input_ids", "attention_mask")}
         with torch.autocast(device.type, dtype=amp_dtype, enabled=use_amp):
             emb = st(feats)["sentence_embedding"]
         return F.normalize(emb.float(), dim=1)
@@ -152,6 +155,8 @@ def fit(ts: TrainSet, st, init_protos: np.ndarray, targets: np.ndarray, cfg: Fit
         f"incl. prototypes), {epochs} epochs, batch {bs}, {'cached' if cached else 'fine-tune'} mode")
     history, best, bad = [], (-1.0, None, 0), 0
     n_steps = math.ceil(len(tr) / bs)
+    if tap is not None:
+        tap.start(st, head, named, ts, epochs, n_steps)
     for epoch in range(1, epochs + 1):
         t0 = time.perf_counter()
         last_report = t0
@@ -167,24 +172,37 @@ def fit(ts: TrainSet, st, init_protos: np.ndarray, targets: np.ndarray, cfg: Fit
                 last_report = now
             rows = perm[s:s + bs]
             ridx = torch.as_tensor(rows, device=device)
+            armed = tap is not None and tap.arm()
             emb = embed_batch(rows)
-            logp = F.log_softmax(head(emb), dim=1)
+            logits = head(emb)
+            logp = F.log_softmax(logits, dim=1)
             ce = -(T[y[ridx]] * logp).sum(dim=1)
             wb = w[ridx]
             loss = (ce * wb).sum() / wb.sum()
+            ce_loss = loss
             if cfg.anchor_weight > 0:
                 loss = loss + cfg.anchor_weight * (1.0 - (emb * f0[ridx]).sum(dim=1)).mean()
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(all_params, 1.0)
+            grad_norm = torch.nn.utils.clip_grad_norm_(all_params, 1.0)
+            if armed:
+                tap.before_step(emb, logits, rows, y[ridx], loss.detach(), ce_loss.detach(),
+                                (loss - ce_loss).detach(), grad_norm, [g["lr"] for g in opt.param_groups])
             scaler.step(opt)
             scaler.update()
             sched.step()
-            loss_sum += float(loss) * len(rows)
+            loss_value = float(loss)
+            loss_sum += loss_value * len(rows)
+            if armed:
+                tap.after_step(epoch, step)
+            if tap is not None:
+                tap.step(loss_value)
         acc = float((val_logits().argmax(dim=1) == y[torch.as_tensor(va, device=device)]).float().mean()) if len(va) else 0.0
         history.append({"epoch": epoch, "loss": round(loss_sum / len(perm), 5), "val_acc": round(acc, 4),
                         "seconds": round(time.perf_counter() - t0, 1)})
+        if tap is not None:
+            tap.epoch(history)
         log(f"  epoch {epoch}/{epochs}: loss {history[-1]['loss']:.4f}  val acc {acc:.4f}  "
             f"({history[-1]['seconds']:.0f}s)")
         if acc > best[0]:
@@ -194,6 +212,8 @@ def fit(ts: TrainSet, st, init_protos: np.ndarray, targets: np.ndarray, cfg: Fit
             if bad >= cfg.patience:
                 log(f"  stopping early: no validation gain for {cfg.patience} epochs")
                 break
+    if tap is not None:
+        tap.close()
     restore(best[1])
     opt.zero_grad(set_to_none=True)   # gradients and optimizer state are not needed past here
     del opt, sched, scaler

@@ -60,7 +60,11 @@ class Wikipedia:
                 if e.code not in (429, 500, 502, 503, 504) or attempt == self.retries - 1:
                     raise
                 retry_after = e.headers.get("Retry-After")
-                time.sleep(int(retry_after) if retry_after and retry_after.isdigit() else 5 * 2 ** attempt)
+                wait = int(retry_after) if retry_after and retry_after.isdigit() else 5 * 2 ** attempt
+                if e.code == 429:        # asked to slow down: wait as told, and ask less often from here on
+                    self.delay = min(15.0, self.delay * 1.5 + 0.5)
+                    self.log(f"    Wikipedia asked to slow down: waiting {wait}s, then {self.delay:.1f}s between requests")
+                time.sleep(wait)
             except urllib.error.URLError:
                 if attempt == self.retries - 1:
                     raise

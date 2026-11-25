@@ -74,7 +74,7 @@ baselines that differ only in floating-point rounding already disagree on
 
 ## Self-training
 
-Only labels the holdout tests (58 of 199) gain rows, so every change can be
+Only labels the holdout tests (58 of 209) gain rows, so every change can be
 measured; `--labels all` lifts that. `python -m train testset` gathers real
 paragraphs for the other labels into `data/testset/to_check.csv`, for a person
 to fill in `correct_label`. Their articles are never harvested for training.
@@ -93,14 +93,19 @@ A round:
 3. **Adds translations.** The Spanish, French, German and Portuguese versions
    of accepted articles come along with the English label when the champion
    places them near it.
-4. **Caps** new labels per node (half its labeled count, at least 3) and per
-   round (1,500).
-5. **Trains a challenger** from stock LaBSE on the labeled data, every
-   pseudo-label kept so far, and this round's, at half weight times
-   confidence.
-6. **Promotes it** if it beats the champion. Otherwise this round's
-   pseudo-labels go to `data/selftrain/rejected.jsonl` and are not fetched
-   again.
+4. **Caps** new labels per node (half its labeled count, at least 3), per
+   node in all (as many self-labeled rows as labeled ones), and per round
+   (1,500).
+5. **Trains a challenger** from stock LaBSE on the labeled data, the pool of
+   proven pseudo-labels, the unproven ones, and this round's, at half weight
+   times confidence.
+6. **Promotes it** if it beats the champion: the unproven pseudo-labels and
+   this round's move to the pool. Otherwise this round's join the unproven
+   ones (`data/selftrain/pending.jsonl`) and train again with the next
+   round's. If the round is significantly worse (z at most -1.645), they go
+   to `data/selftrain/rejected.jsonl` instead and are not fetched again; if
+   the round before was too, so does the whole unproven stack. With
+   `--unproven drop`, every round that is not promoted is set aside.
 
 `loop` repeats rounds and stops after two in a row without a promotion.
 Schedule it (Windows Task Scheduler, cron) to keep the model learning.
@@ -118,11 +123,38 @@ python -m train loop --rounds 10            # rounds until they stop helping
 python -m train status                      # baseline, champion, pool, latest loops
 python -m train report                      # every loop next to the reference benchmark
 python -m train watch                       # follow the running loop live: log and GPU
+python -m train view                        # see the matrices in 3D, in the browser
+python -m train forever                     # self-training rounds with no end ...
+python -m train stop                        # ... until this; ends after the current loop
 python -m train export --out exports/coredrill-trained
 ```
 
 `round` and `loop` reuse the champion's training settings unless a flag
 overrides one. `python -m train <command> --help` lists every flag.
+
+### Running without end
+
+`forever` starts one round after another, each in its own process, until
+`stop`, Ctrl+C, or its window is closed. Its journal is `runs/forever.log`.
+
+- It waits for any loop already running, while the laptop is on battery, and
+  when less than 20 GB of disk is left.
+- A loop that fails is tried again, after 2 minutes and then longer, up to an
+  hour.
+- When a round finds little, the next one searches wider. After two rounds
+  that find nothing, it trains one model with another seed instead.
+- It asks Wikipedia for little and slowly, and slows down further when told
+  to (HTTP 429).
+- Its bar for promotion is a McNemar z of 2.33 rather than 1.645, because
+  many tries on one holdout make a lucky win likely. Scores chosen this way
+  still drift upward on the holdout, so judge the result on text it has not
+  seen.
+
+A round that is not promoted keeps its pseudo-labels "unproven"
+(`data/selftrain/pending.jsonl`): they train together with the next round's
+until the stack earns a promotion. If a round is significantly worse, its
+rows are set aside. Articles already judged under the current champion are
+skipped.
 
 ### Following a run
 
@@ -243,7 +275,8 @@ using the default settings. Strict accuracy is on the by-article holdout:
 | `data/labeled/*.jsonl` | Hand-labeled additions, `{"text", "category"}`, always in training |
 | `data/inbox/` | Text to label: `.txt` (one text each) or `.jsonl`; moved to `inbox/processed/` |
 | `data/selftrain/pool.jsonl`, `pool_f0.npy` | Pseudo-labels from promoted rounds |
-| `data/selftrain/rejected.jsonl` | Pseudo-labels from rejected rounds |
+| `data/selftrain/pending.jsonl`, `pending_f0.npy` | Unproven pseudo-labels, training again with the next round's |
+| `data/selftrain/rejected.jsonl` | Pseudo-labels set aside |
 | `runs/holdout.json` | The fixed holdout |
 | `runs/ledger.jsonl` | Every loop: a start line and an end line (see [Records](#records)) |
 | `runs/<date>-<time>-<kind>/` | One loop: `record.json`, `log.txt`, `code/`; scored: `holdout_predictions.jsonl.gz`; trained: `weights.pt` (trained parameters and prototypes), `run.json`, `coredrill_hierarchical.json`; rounds: `candidates.jsonl` |

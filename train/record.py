@@ -38,6 +38,7 @@ import shutil
 import subprocess
 import sys
 import time
+from datetime import datetime
 import traceback
 from importlib import metadata
 from pathlib import Path
@@ -101,16 +102,50 @@ def loops(runs: Path) -> List[dict]:
 
 
 
-def _alive(pid) -> Optional[bool]:
+def _created(pid) -> Optional[float]:
+    """When a Windows process started (seconds since the epoch); None when that
+    cannot be read."""
+    import ctypes
+    from ctypes import wintypes
+    k = ctypes.WinDLL("kernel32", use_last_error=True)
+    k.OpenProcess.restype = wintypes.HANDLE
+    k.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    k.GetProcessTimes.argtypes = (wintypes.HANDLE, *[ctypes.POINTER(wintypes.FILETIME)] * 4)
+    k.CloseHandle.argtypes = (wintypes.HANDLE,)
+    handle = k.OpenProcess(0x1000, False, int(pid))     # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return None
+    try:
+        t = [wintypes.FILETIME() for _ in range(4)]
+        if not k.GetProcessTimes(handle, *map(ctypes.byref, t)):
+            return None
+        return ((t[0].dwHighDateTime << 32) + t[0].dwLowDateTime) / 1e7 - 11644473600
+    finally:
+        k.CloseHandle(handle)
+
+
+def _alive(pid, since: Optional[float] = None) -> Optional[bool]:
     """Whether a process still runs; None when it cannot be told. (Not
-    os.kill(pid, 0): on Windows that terminates the process.)"""
+    os.kill(pid, 0): on Windows that terminates the process.)
+
+    since: a time (seconds since the epoch) at which the process was already
+    running. Windows gives a dead process's number to other programs, above
+    all after a restart, so a process that began later is another one."""
     if not pid:
         return None
     try:
         if os.name == "nt":
             out = subprocess.run(["tasklist", "/FI", f"PID eq {int(pid)}", "/NH", "/FO", "CSV"],
                                  capture_output=True, text=True, timeout=15).stdout
-            return f'"{int(pid)}"' in out
+            row = next(csv.reader(line for line in out.splitlines() if f'"{int(pid)}"' in line), None)
+            if row is None:
+                return False
+            if since is None:
+                return True
+            if not row[0].lower().startswith("python"):
+                return False
+            created = _created(pid)
+            return None if created is None else created <= since + 5
         os.kill(int(pid), 0)
         return True
     except ProcessLookupError:
@@ -125,7 +160,11 @@ def state(loop: dict) -> str:
     status = loop.get("status", "")
     if status != "did_not_finish":
         return status
-    alive = _alive(loop.get("pid"))
+    try:
+        since = datetime.fromisoformat(loop["started"]).timestamp()
+    except (KeyError, TypeError, ValueError):
+        since = None
+    alive = _alive(loop.get("pid"), since)
     return "running" if alive else ("killed" if alive is False else status)
 
 
@@ -152,7 +191,8 @@ def data_fingerprint(paths, inputs: bool = True) -> dict:
         files.update({"sentences": paths.data / "sentences.json", "embeddings": paths.data / "embeddings.npz",
                       "taxonomy": Path(paths.taxonomy) if paths.taxonomy else default_taxonomy(paths.data),
                       "holdout": paths.holdout})
-    files.update({"pool": paths.pool_records, "pool_f0": paths.pool_f0, "rejected": paths.rejected})
+    files.update({"pool": paths.pool_records, "pool_f0": paths.pool_f0, "rejected": paths.rejected,
+                  "pending": paths.pending_records})
     out = {}
     try:
         out = {name: _file_info(p) for name, p in files.items()}
@@ -221,6 +261,39 @@ def environment() -> dict:
     return env
 
 
+def memory() -> Optional[dict]:
+    """Free RAM and free commit (RAM plus page file) in GB, on Windows. GPU
+    memory is backed by commit there, so running out of it kills a loop with a
+    CUDA out-of-memory error while the card still has room."""
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+
+        class Status(ctypes.Structure):
+            _fields_ = [("length", ctypes.c_ulong), ("load", ctypes.c_ulong)] + [
+                (n, ctypes.c_ulonglong) for n in ("ram", "ram_free", "commit", "commit_free", "v", "v_free", "ext")]
+        st = Status()
+        st.length = ctypes.sizeof(Status)
+        if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(st)):
+            return None
+        return {"ram_free_gb": round(st.ram_free / 2 ** 30, 1), "commit_free_gb": round(st.commit_free / 2 ** 30, 1),
+                "commit_limit_gb": round(st.commit / 2 ** 30, 1)}
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def keep_awake(on: bool) -> None:
+    """Windows must not go to sleep while a loop runs. Asks for this process
+    only, changes no setting; closing the lid still sleeps."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000001 if on else 0x80000000)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 # ── one loop ─────────────────────────────────────────────────────────────────
 
 class LoopRecord:
@@ -253,10 +326,16 @@ class LoopRecord:
         self.entry = {"id": self.id, "seq": self.seq, "kind": self.kind, "batch": self.batch,
                       "started": now(), "folder": str(self.dir), "pid": os.getpid(), "command": self.command}
         append_event(runs, {"event": "start", **self.entry})
+        keep_awake(True)
         self.log(f"[loop {self.seq}] {self.id}: {' '.join(self.command)}")
         self.entry["config"] = self.configs
         self.entry["code"] = code_snapshot(self.dir / "code")
         self.entry["environment"] = environment()
+        mem = memory()
+        self.entry["memory_at_start"] = mem
+        if mem and self.kind != "baseline" and mem["commit_free_gb"] < 8:
+            self.log(f"  low memory: {mem['commit_free_gb']} GB can still be committed (RAM plus page file); "
+                     "a fit needs about 8. Close other programs if it fails with out of memory.")
         self.entry["data"] = data_fingerprint(self.paths)
         try:
             import torch
@@ -294,6 +373,7 @@ class LoopRecord:
                 self.entry["peak_vram_reserved_mb"] = round(torch.cuda.max_memory_reserved() / 2 ** 20)
         except Exception:  # noqa: BLE001
             pass
+        keep_awake(False)
         self.entry["pool_after"] = data_fingerprint(self.paths, inputs=False)
         (self.dir / "record.json").write_text(json.dumps(self.entry, indent=2, ensure_ascii=False, default=str),
                                               encoding="utf-8")
