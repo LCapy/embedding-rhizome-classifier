@@ -39,13 +39,15 @@ from huggingface_hub import hf_hub_download
 
 repo_id  = os.environ.get("HF_DATASET_REPO")
 filename = os.environ.get("HF_DATASET_FILE", "coredrill_hierarchical.json")
+revision = os.environ.get("HF_DATASET_REVISION") or None   # a version tag, e.g. v6.0; the latest without one
 token    = os.environ.get("HF_TOKEN")           # only needed if the dataset is private
 
-print(f"[start.sh] Fetching {filename} from {repo_id} ...")
+print(f"[start.sh] Fetching {filename} ({revision or 'latest'}) from {repo_id} ...")
 path = hf_hub_download(
     repo_id=repo_id,
     filename=filename,
     repo_type="dataset",
+    revision=revision,
     token=token or None,
     local_dir="/app/coredrill",
 )

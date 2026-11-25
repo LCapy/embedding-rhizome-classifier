@@ -1,0 +1,38 @@
+name: Checks
+
+# Fast checks without PyTorch, a model or data files: the code compiles, the
+# taxonomy and the source lists hold together, and the parts the corpus, the
+# coredrill and the training loop are built from do what they say.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tests/unit/requirements.txt
+      - run: pip install -r tests/unit/requirements.txt
+      - name: Everything compiles
+        run: python -m compileall -q api scripts train eval tests
+      - name: Unit tests
+        env:
+          OPENBLAS_NUM_THREADS: "2"
+        run: python -m unittest discover -s tests/unit -v
+      - name: The Space bundle builds
+        run: python scripts/deploy_space.py --dry-run

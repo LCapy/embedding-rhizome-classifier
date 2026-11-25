@@ -1,0 +1,54 @@
+name: Deploy to the HF Space
+
+# Makes the Space run what this repository holds. Runs when a version tag is
+# pushed (git tag v6.0 && git push origin v6.0) or from the Actions tab.
+#
+# Needs the repository secret HF_DEPLOY_TOKEN: a Hugging Face token with WRITE
+# access to the Space only. HF_TOKEN (read) stays what keep_alive.yml uses.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only show what would change
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-space
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: hugging-face      # add reviewers to it to approve each deploy
+    env:
+      HF_DEPLOY_TOKEN: ${{ secrets.HF_DEPLOY_TOKEN }}
+      HF_SPACE: LCapy/coredrill
+      # A tag deploys; the button deploys only with the dry-run box unticked.
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r tests/unit/requirements.txt huggingface_hub
+      - name: Unit tests
+        run: python -m unittest discover -s tests/unit
+      - name: Deploy
+        run: |
+          if [ -z "$HF_DEPLOY_TOKEN" ]; then
+            echo "::error::HF_DEPLOY_TOKEN is not set, so nothing can be deployed."
+            exit 1
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            python scripts/deploy_space.py --space "$HF_SPACE" --diff
+          else
+            python scripts/deploy_space.py --space "$HF_SPACE" --deploy --message "Deploy ${GITHUB_REF_NAME} (${GITHUB_SHA::7})"
+          fi

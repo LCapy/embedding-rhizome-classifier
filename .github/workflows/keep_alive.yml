@@ -2,7 +2,7 @@ name: Keep HF Space Awake
 
 # Pings the /health endpoint every 24 hours so the free Space never
 # hits the 48-hour inactivity sleep limit.
-# Also runs on push to main so you can verify it works immediately.
+# To check it at once, run it from the Actions tab.
 #
 # Needs two repository secrets (Settings > Secrets and variables > Actions):
 #   HF_SPACE_URL  the Space's URL, e.g. https://your-username-coredrill.hf.space
@@ -12,8 +12,6 @@ name: Keep HF Space Awake
 on:
   schedule:
     - cron: "0 12 * * *"   # every day at 12:00 UTC
-  push:
-    branches: [main]
   workflow_dispatch:        # allow manual trigger from the Actions tab
 
 jobs:

@@ -174,71 +174,16 @@ every 24 hours so it never sleeps.
 
 ## Updating the coredrill JSON
 
-When you rebuild the coredrill (after adding data or retraining):
-
-```bash
-python - <<'EOF'
-from huggingface_hub import HfApi
-api = HfApi()
-api.upload_file(
-    path_or_fileobj="coredrill/coredrill_hierarchical.json",
-    path_in_repo="coredrill_hierarchical.json",
-    repo_id="your-username/coredrill-data",
-    repo_type="dataset",
-)
-print("Done.")
-EOF
-```
-
-Then restart your Space (Settings → Factory reboot). The startup script will fetch the new file.
+Publish it as a version, together with the encoder it was built with, and then
+switch the Space to it: see [releases.md](releases.md).
 
 ---
 
 ## Updating the API code
 
-The Space has its own git repo. Push changes there:
-
-```bash
-cd hf-space
-# copy updated files from your main project
-cp ../api/app.py api/app.py
-git add . && git commit -m "update api" && git push
-```
-
-HF automatically rebuilds and redeploys the Space on every push.
-
-Alternatively, keep the Space repo as a subtree or just sync it with a script. There is no
-CI/CD bridge between GitHub and HF Spaces out of the box, but it is easy to add one:
-
-```yaml
-# Add this job to .github/workflows/ci.yml to auto-deploy on push to main
-  deploy-hf:
-    name: Deploy to HF Spaces
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Push to HF Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          pip install huggingface_hub
-          python - <<'EOF'
-from huggingface_hub import HfApi
-import subprocess, os
-api = HfApi(token=os.environ["HF_TOKEN"])
-# Upload changed files to the Space repo
-for path in ["api/app.py", "scripts/rhizome_engine.py", "requirements-api.txt"]:
-    api.upload_file(
-        path_or_fileobj=path,
-        path_in_repo=path,
-        repo_id="your-username/coredrill",
-        repo_type="space",
-    )
-print("Deployed.")
-EOF
-```
+The Space runs what this repository holds: GitHub Actions deploys it (see
+[releases.md](releases.md)). Do not edit the Space's files by hand; the next
+deploy replaces them.
 
 ---
 

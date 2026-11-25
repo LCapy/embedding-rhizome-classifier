@@ -123,7 +123,8 @@ python -m train loop --rounds 10            # rounds until they stop helping
 python -m train status                      # baseline, champion, pool, latest loops
 python -m train report                      # every loop next to the reference benchmark
 python -m train watch                       # follow the running loop live: log and GPU
-python -m train view                        # see the matrices in 3D, in the browser
+python -m train view                        # the matrices in 3D and the classifier, in the browser
+python -m train classify "a text"           # its rhizome profile, with the champion's model
 python -m train forever                     # self-training rounds with no end ...
 python -m train stop                        # ... until this; ends after the current loop
 python -m train export --out exports/coredrill-trained
@@ -173,6 +174,37 @@ training. Two other views:
   graph to Cuda (or Compute_0). The default 3D graph stays flat during
   training.
 - **nvidia-smi:** `nvidia-smi -l 5` prints the GPU's state every 5 seconds.
+
+### Classifying with a trained model
+
+`python -m train view` serves the classifier at
+`http://127.0.0.1:8765/classify`, next to the training pages. It is only
+served to this machine, and texts do not leave it.
+
+- **The map.** Each territory with data is a point. Distances come as close
+  as three dimensions allow to the model's own (the angle between centroids),
+  and the text is placed by its distances to them. Lines follow the taxonomy;
+  fainter ones are the engine's related nodes in other branches.
+- **The answer** is the one the API would give with that model, from the same
+  engine code. Next to it are the active territories, their areas, the flow,
+  and the trained prototypes' probabilities as a second opinion.
+- **Random holdout text** picks one of the texts the model never trained on
+  and shows its true label.
+- **Model** switches to any other trained loop.
+
+The same from the command line or a script:
+
+```bash
+python -m train classify "a text"           # add --json for everything, --run <loop> for another model
+curl -H "Content-Type: application/json" -d '{"text": "a text"}' http://127.0.0.1:8765/api/classify
+```
+
+It runs LaBSE in NumPy (`train/encoder_np.py`) with the weights mapped from
+disk, so it commits about 0.6 GB where PyTorch takes 2.3 and peaks at 5.7,
+and can run next to a training loop. On 300 random holdout texts in 14
+languages it gave the same answer, profile and top ten prototypes as the
+champion's GPU run recorded, every time. The page's model runs in a process
+of its own that ends after 10 minutes unused.
 
 ## Records
 

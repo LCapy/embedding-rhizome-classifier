@@ -254,6 +254,8 @@ The same taxonomy applies across all LaBSE-supported languages. Tested languages
 embedding-rhizome-classifier/
 ├── .github/
 │   └── workflows/
+│       ├── ci.yml              # checks on every push
+│       ├── deploy_space.yml    # puts the API on the HF Space
 │       └── keep_alive.yml      # pings the HF Space so it doesn't sleep
 ├── api/
 │   ├── __init__.py
@@ -265,6 +267,7 @@ embedding-rhizome-classifier/
 │   ├── architecture.md         # deployment, build pipeline, request flow
 │   ├── evaluation.md           # held-out evaluation
 │   ├── free_deployment.md      # deployment guide
+│   ├── releases.md             # how code and models reach Hugging Face
 │   ├── study_v5.md             # full research paper
 │   └── training.md             # the training loop
 ├── eval/
@@ -272,11 +275,18 @@ embedding-rhizome-classifier/
 ├── infra/                      # Terraform for a single-EC2 option (not applied)
 ├── scripts/
 │   ├── rhizome_engine.py       # core engine: collect / embed / build / predict
+│   ├── build_corpus.py         # the corpus, rebuilt: one label per text, even sizes
+│   ├── gather_territories.py   # Wikipedia text for territories (territory_articles.txt)
+│   ├── gather_dialogues.py     # conversation lines for what people do in conversation
 │   ├── build_sentences.py      # multi-label sentence dataset builder
+│   ├── deploy_space.py         # the Space's files, and what would change there
+│   ├── publish_model.py        # a trained model as a version on Hugging Face
 │   ├── collect_medical.py      # targeted medical data collection
 │   ├── collect_tech_medical.py # Wikipedia data for the newer nodes
 │   └── predict_folder.py       # batch prediction and A/B comparison
+├── space/                      # the Space's README (its Hugging Face settings)
 ├── tests/
+│   ├── unit/                   # fast tests, no model needed
 │   ├── run_eval.py             # online eval suite (Wikipedia, BBC, Reddit)
 │   └── eval_suite.json
 ├── train/                      # training loop: python -m train
@@ -291,7 +301,7 @@ embedding-rhizome-classifier/
 
 ## Deployment
 
-See [`docs/free_deployment.md`](docs/free_deployment.md) for the complete guide to deploying your own instance on Hugging Face Spaces. The coredrill JSON is distributed separately and fetched at container startup.
+See [`docs/free_deployment.md`](docs/free_deployment.md) for the complete guide to deploying your own instance on Hugging Face Spaces. The coredrill JSON is distributed separately and fetched at container startup. How code and trained models get from here to Hugging Face is in [`docs/releases.md`](docs/releases.md).
 
 ---
 
@@ -319,8 +329,8 @@ flowchart LR
     New --> Self[("Self-labeled<br/>texts")]
     Self --> Train
 
-    classDef champion fill:#2d6a4f,color:#fff,stroke:#2d6a4f
-    classDef store fill:#1f2937,color:#fff,stroke:#6b7280
+    classDef champion fill:#37483f,color:#d6d3cb,stroke:#4a5d53
+    classDef store fill:#30343e,color:#d6d3cb,stroke:#474c58
     class Champion champion
     class Data,Holdout,Self store
 ```
@@ -332,6 +342,8 @@ flowchart LR
 | `python -m train round` | One self-training round: finds and labels new text, then trains a challenger with it |
 | `python -m train loop` | Rounds (5 by default), stopping early after two in a row without a promotion |
 | `python -m train forever` | Rounds with no end, until `python -m train stop` |
+| `python -m train view` | The training loops in 3D and the classifier, in the browser |
+| `python -m train classify "a text"` | The rhizome profile of a text, with the champion's model |
 
 ### Training one model
 
@@ -348,7 +360,7 @@ flowchart LR
     Step --> Best["Keep the<br/>best epoch"]
     Best --> Score["Rebuild coredrill,<br/>score the holdout"]
 
-    classDef store fill:#1f2937,color:#fff,stroke:#6b7280
+    classDef store fill:#30343e,color:#d6d3cb,stroke:#474c58
     class Rows store
 ```
 
@@ -372,8 +384,8 @@ flowchart LR
     Near -->|"no"| Stay
     Z -->|"no"| Stay
 
-    classDef champion fill:#2d6a4f,color:#fff,stroke:#2d6a4f
-    classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
+    classDef champion fill:#37483f,color:#d6d3cb,stroke:#4a5d53
+    classDef ended fill:#483b37,color:#d6d3cb,stroke:#5d4d48
     class Win champion
     class Stay ended
 ```
@@ -396,8 +408,8 @@ flowchart LR
     Caps --> Rows[("This<br/>round's<br/>rows")]
     Sure -->|"no"| Skip["Left out,<br/>reason<br/>recorded"]
 
-    classDef store fill:#1f2937,color:#fff,stroke:#6b7280
-    classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
+    classDef store fill:#30343e,color:#d6d3cb,stroke:#474c58
+    classDef ended fill:#483b37,color:#d6d3cb,stroke:#5d4d48
     class Inbox,Rows store
     class Skip ended
 ```
@@ -416,9 +428,9 @@ flowchart LR
     Worse -->|"no"| Join[("Rows join the<br/>unproven stack")]
     Worse -->|"yes"| Aside["Rows set aside"]
 
-    classDef champion fill:#2d6a4f,color:#fff,stroke:#2d6a4f
-    classDef store fill:#1f2937,color:#fff,stroke:#6b7280
-    classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
+    classDef champion fill:#37483f,color:#d6d3cb,stroke:#4a5d53
+    classDef store fill:#30343e,color:#d6d3cb,stroke:#474c58
+    classDef ended fill:#483b37,color:#d6d3cb,stroke:#5d4d48
     class Promote champion
     class Rows,Stack,Pool,Join store
     class Aside ended
@@ -447,7 +459,7 @@ flowchart LR
     Wait --> Stop
     Stop -->|"yes"| End(["Ends"])
 
-    classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
+    classDef ended fill:#483b37,color:#d6d3cb,stroke:#5d4d48
     class End ended
 ```
 
@@ -459,6 +471,10 @@ flowchart LR
 | Failed, or silent for 60 minutes | Waits 2 minutes, then longer each time, up to an hour |
 
 `python -m train stop` takes effect after the current loop. There are four search widths, from 10 articles per label to 60, and a restart resumes at the width it had reached. Each round searches 20 labels and asks Wikipedia slowly, slowing down further when told to. `python -m train watch` follows the running loop, and `python -m train view` shows its matrices in 3D.
+
+### Using the trained classifier
+
+`python -m train view` also serves the classifier at `http://127.0.0.1:8765/classify`, to this machine only. It places a text among the taxonomy's territories in 3D and shows the answer, the active territories, the areas and the flow, with the champion or any other trained loop. It can also pick a random holdout text and compare the answer with its true label. See [`docs/training.md`](docs/training.md#classifying-with-a-trained-model).
 
 ---
 
