@@ -161,7 +161,7 @@ sequenceDiagram
     API->>Eng: analyze_text_rhizome_v2(coredrill, text, model)
     Eng->>M: encode(text) -> 768-dim unit vector
     Eng->>CD: cosine score vs every node centroid
-    Eng->>Eng: predict() - walk down from the roots through\nthe winner's children; stop at the first\nfailed gate (sigma-distance, confidence, margin)
+    Eng->>Eng: predict() - walk down from the roots through\nthe winner's children, stop at the first\nfailed gate (sigma-distance, confidence, margin)
     Eng->>Eng: gram_inverse_scores()\nR_i = alpha_i * s_i * NS_i * PC_i * SW_i * sqrt(mass_i)
     Eng->>Eng: _deleuzian_flow()\nclassify flow topology from active set
     Eng-->>API: raw result dict
