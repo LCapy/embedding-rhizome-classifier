@@ -306,24 +306,23 @@ The flowcharts below show the default settings with a GPU.
 The **champion** is the best model so far. A **challenger** is any newly trained model.
 
 ```mermaid
-flowchart TD
-    Hand[("Hand-labeled<br/>additions<br/>data/labeled/")] --> Train
-    Corpus[("Labeled corpus")] -->|"everything else"| Train["Train a challenger<br/>from stock LaBSE"]
-    Corpus -->|"whole articles,<br/>drawn once"| Holdout[("Holdout<br/>5,065 texts, fixed")]
-    Train --> Score["Score it on<br/>the holdout"]
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    Data[("Labeled<br/>data")] --> Train["Train a<br/>challenger"]
+    Data -->|"drawn once"| Holdout[("Fixed<br/>holdout")]
+    Train --> Score["Score it"]
     Holdout --> Score
-    Score --> Gate{"Beats the<br/>champion?"}
-    Score -.->|"recorded"| Ledger[("Ledger<br/>runs/ledger.jsonl")]
-    Gate -->|"no"| Keep["The champion stays,<br/>the challenger is kept"]
-    Gate -->|"yes"| Champion(["New champion"])
-    Champion -->|"labels"| New["New, unlabeled text<br/>Wikipedia and data/inbox/"]
-    New -->|"only confident labels that<br/>a second signal confirms"| Self[("Self-labeled texts")]
-    Self -->|"at half weight<br/>or less"| Train
+    Score --> Gate{{"Beats the<br/>champion?"}}
+    Gate -->|"no"| Keep["Champion<br/>stays"]
+    Gate -->|"yes"| Champion(["New<br/>champion"])
+    Champion --> New["Labels<br/>new text"]
+    New --> Self[("Self-labeled<br/>texts")]
+    Self --> Train
 
     classDef champion fill:#2d6a4f,color:#fff,stroke:#2d6a4f
     classDef store fill:#1f2937,color:#fff,stroke:#6b7280
     class Champion champion
-    class Corpus,Holdout,Hand,Ledger,Self store
+    class Data,Holdout,Self store
 ```
 
 | Command | What it runs |
@@ -339,53 +338,37 @@ flowchart TD
 Every challenger starts again from stock LaBSE, so an earlier model's mistakes do not carry over in its weights.
 
 ```mermaid
-flowchart TD
-    Rows[("Training rows<br/>labeled: weight 1<br/>self-labeled:<br/>0.5 × confidence")] --> Split["Keep 10% of each label's<br/>labeled rows for validation"]
-    Split --> Shuffle
-
-    subgraph Epoch["One epoch (4 in all)"]
-        Shuffle["Shuffle the training rows"] --> Batch["Next batch of 32 texts"]
-        Batch --> Embed["Embed each text<br/>in 768 dimensions"]
-        Embed --> Logits["Cosine with every<br/>prototype, × 20"]
-        Logits --> Loss["Loss: cross-entropy<br/>on soft targets<br/>+ 0.1 × distance<br/>from stock LaBSE"]
-        Loss --> Step["Backpropagate, clip,<br/>AdamW step"]
-        Step --> More{"More<br/>batches?"}
-        More -->|"yes"| Batch
-        More -->|"no"| Val["Validation accuracy;<br/>remember the best epoch"]
-    end
-
-    Base["Stock LaBSE: its top<br/>4 layers and Dense<br/>layer train"] --> Embed
-    Protos["One prototype per label,<br/>starting at its centroid"] --> Logits
-    Val --> Next{"Epochs left, and a<br/>gain in the last 3?"}
-    Next -->|"yes"| Shuffle
-    Next -->|"no"| Best["Restore the best epoch and<br/>calibrate its probabilities"]
-    Best --> Save[("weights.pt")]
-    Best --> ReEmbed["Embed every training<br/>and holdout text with<br/>the trained encoder"]
-    ReEmbed --> Build["Rebuild the coredrill:<br/>build_coredrill()"]
-    Build --> Score["Score the holdout"]
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    Rows[("Training<br/>rows")] --> Embed["Embed a<br/>batch of 32"]
+    Base["Stock<br/>LaBSE"] --> Embed
+    Embed --> Loss["Loss against<br/>prototypes"]
+    Loss --> Step["Update<br/>weights"]
+    Step -->|"next batch,<br/>4 epochs"| Embed
+    Step --> Best["Keep the<br/>best epoch"]
+    Best --> Score["Rebuild coredrill,<br/>score the holdout"]
 
     classDef store fill:#1f2937,color:#fff,stroke:#6b7280
-    class Rows,Save store
-    style Epoch fill:none,stroke:#6b7280
+    class Rows store
 ```
 
-- **Soft targets:** 0.9 of a row's target goes to its label and 0.1 to the label's ancestors, so confusing a label with its parent costs less than an unrelated answer.
-- **The distance term** keeps embeddings close to stock LaBSE's, which carries its cross-lingual alignment through training.
+- **Weights that train:** LaBSE's top 4 layers, its Dense layer, and one prototype per label that starts at the label's centroid.
+- **Training rows:** labeled rows count fully, self-labeled ones 0.5 × their confidence. 10% of each label's labeled rows are kept for validation, which picks the best epoch and calibrates the probabilities.
+- **The loss** is cross-entropy between each text's cosines with the prototypes (× 20) and soft targets (0.9 on the label, 0.1 on its ancestors), plus 0.1 × the distance from stock LaBSE's embedding, which carries its cross-lingual alignment through training.
 - **Scoring** covers five systems: the deployed pipeline, the nearest centroid, the linear head, logistic regression and the prototypes.
 
 ### The gate
 
-A challenger has to pass every test against the champion, on the same holdout texts.
+A challenger has to pass every test against the champion, on the same holdout texts. The first model trained becomes champion without one.
 
 ```mermaid
-flowchart TD
-    New["Challenger, scored<br/>on the holdout"] --> First{"Is there a<br/>champion yet?"}
-    First -->|"no"| Win(["New champion"])
-    First -->|"yes"| Delta{"Strict accuracy<br/>at least 0.2<br/>points higher?"}
-    Delta -->|"yes"| Near{"Near-miss accuracy<br/>down by at most<br/>1 point?"}
-    Near -->|"yes"| Z{"McNemar z<br/>at least 1.645?"}
-    Z -->|"yes"| Win
-    Delta -->|"no"| Stay["Not promoted:<br/>the champion stays"]
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    New["Challenger"] --> Strict{{"Strict accuracy<br/>up 0.2 points?"}}
+    Strict -->|"yes"| Near{{"Near-miss down<br/>1 point at most?"}}
+    Near -->|"yes"| Z{{"McNemar z at<br/>least 1.645?"}}
+    Z -->|"yes"| Win(["New<br/>champion"])
+    Strict -->|"no"| Stay["Not<br/>promoted"]
     Near -->|"no"| Stay
     Z -->|"no"| Stay
 
@@ -399,73 +382,81 @@ Both accuracies are the deployed pipeline's. A near miss is an answer that is ri
 
 ### A self-training round
 
+First it finds new text and labels it:
+
 ```mermaid
-flowchart TD
-    Start(["Champion"]) --> Nodes["Pick 40 of the labels<br/>the holdout tests,<br/>fewest articles first,<br/>rotating"]
-    Nodes --> Wiki["Fetch Wikipedia articles<br/>similar to each label's own"]
-    Wiki --> Dedupe["Leave out holdout articles,<br/>known texts, and articles<br/>this champion has judged"]
-    Inbox[("data/inbox/")] --> Dedupe
-    Dedupe --> Any{"Any new<br/>text?"}
-    Any -->|"no"| NoText["Round ends:<br/>no_candidates"]
-    Any -->|"yes"| Label["The champion<br/>labels each text"]
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    Wiki["Similar<br/>Wikipedia<br/>articles"] --> Drop["Drop known<br/>and holdout<br/>text"]
+    Inbox[("data/inbox/")] --> Drop
+    Drop --> Label["Champion<br/>labels it"]
+    Label --> Sure{{"Confident, and<br/>second signal<br/>agrees?"}}
+    Sure -->|"yes"| Trans["Add other<br/>languages"]
+    Trans --> Caps["Apply<br/>the caps"]
+    Caps --> Rows[("This<br/>round's<br/>rows")]
+    Sure -->|"no"| Skip["Left out,<br/>reason<br/>recorded"]
 
-    Label --> Conf{"Probability at least<br/>0.8, and 0.15 ahead<br/>of the runner-up?"}
-    Conf -->|"no"| Skip["Left out, with<br/>the reason recorded"]
-    Conf -->|"yes"| Second{"Second signal agrees,<br/>and the holdout<br/>tests the label?"}
-    Second -->|"no"| Skip
-    Second -->|"yes"| Trans["Add other-language<br/>versions of the article,<br/>if the champion agrees"]
-    Trans --> Caps["Cap the new rows<br/>per label and per round"]
-    Caps -->|"over the cap"| Skip
-    Caps --> Left{"Any row<br/>left?"}
-    Left -->|"no"| NoRows["Round ends:<br/>nothing_accepted"]
+    classDef store fill:#1f2937,color:#fff,stroke:#6b7280
+    classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
+    class Inbox,Rows store
+    class Skip ended
+```
 
-    Left -->|"yes"| Train["Train a challenger on<br/>labeled rows + pool<br/>+ unproven stack<br/>+ this round's rows"]
-    Train --> Gate{"Passes<br/>the gate?"}
-    Gate -->|"yes"| Promote(["New champion: the stack<br/>and this round's rows<br/>move to the pool"])
-    Gate -->|"no"| Worse{"Significantly worse?<br/>z at most -1.645"}
-    Worse -->|"no"| Stack[("Unproven stack:<br/>the rows train again<br/>with the next round")]
-    Worse -->|"yes"| Aside[("Set aside: this round's<br/>rows, and the stack if the<br/>last one was worse too")]
+Then it trains a challenger with those rows and decides what becomes of them:
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    Rows[("This round's<br/>rows")] --> Train["Train a<br/>challenger"]
+    Stack[("Unproven<br/>stack")] --> Train
+    Pool[("Labeled data<br/>and pool")] --> Train
+    Train --> Gate{{"Passes<br/>the gate?"}}
+    Gate -->|"yes"| Promote(["New champion: stack and<br/>rows move to the pool"])
+    Gate -->|"no"| Worse{{"Significantly<br/>worse?"}}
+    Worse -->|"no"| Join[("Rows join the<br/>unproven stack")]
+    Worse -->|"yes"| Aside["Rows set aside"]
 
     classDef champion fill:#2d6a4f,color:#fff,stroke:#2d6a4f
     classDef store fill:#1f2937,color:#fff,stroke:#6b7280
     classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
-    class Start,Promote champion
-    class Inbox,Stack store
-    class NoText,NoRows,Skip,Aside ended
+    class Promote champion
+    class Rows,Stack,Pool,Join store
+    class Aside ended
 ```
 
-- **The second signal:** for a Wikipedia article, the label must be the one whose articles led to it, or a relative (ancestor, descendant or sibling). For an inbox text, the nearest centroid must be the label or a relative.
+- **Where it looks:** 40 of the labels the holdout tests, fewest articles first and rotating. Articles this champion already judged are skipped.
+- **Confident:** a probability of at least 0.8, and 0.15 ahead of the runner-up.
+- **The second signal:** for a Wikipedia article, the label must be the one whose articles led to it, or a relative (ancestor, descendant or sibling). For an inbox text, the nearest centroid must be the label or a relative. The holdout must also test the label.
+- **Other languages:** the article's versions in Spanish, French, German and Portuguese, where the champion places them near its label.
 - **The caps:** at most half as many new rows as a label has labeled rows (at least 3), as many self-labeled rows in all as labeled ones, and 1,500 per round.
+- **Significantly worse** means z is at most -1.645. If the round before was too, the whole unproven stack is set aside as well.
+- **Ending early:** a round that finds no new text, or keeps none of it, ends before training.
 - **No text is lost track of:** `candidates.jsonl` in the round's folder holds every text it considered, the champion's top two labels and the decision.
 
 ### Running without end
 
 ```mermaid
-flowchart TD
-    Start(["python -m train forever"]) --> Stop{"Stop<br/>requested?"}
-    Stop -->|"yes"| End(["Ends"])
-    Stop -->|"no"| Busy{"Another loop running,<br/>on battery, or under<br/>20 GB of disk left?"}
-    Busy -->|"yes"| Wait["Wait a minute"]
+%%{init: {"flowchart": {"nodeSpacing": 22, "rankSpacing": 28}}}%%
+flowchart LR
+    Start(["train forever"]) --> Stop{{"Stop<br/>requested?"}}
+    Stop -->|"no"| Busy{{"Busy, on battery<br/>or low on disk?"}}
+    Busy -->|"no"| Run["Run one<br/>round"]
+    Run --> Adjust["Adjust to<br/>the outcome"]
+    Adjust --> Stop
+    Busy -->|"yes"| Wait["Wait a<br/>minute"]
     Wait --> Stop
-    Busy -->|"no"| Empty{"Nothing new in the<br/>last two rounds?"}
-    Empty -->|"no"| Round["Start a round<br/>in its own process"]
-    Empty -->|"yes"| Fit["Start a fit with<br/>another seed instead"]
-    Round --> Watch["Watch it; end it if it<br/>is silent for 60 minutes"]
-    Fit --> Watch
-    Watch --> Outcome{"How did<br/>it end?"}
-    Outcome -->|"promoted"| Narrow["Search narrow again"]
-    Outcome -->|"not promoted"| Few["Search wider if the round<br/>added under 60 rows"]
-    Outcome -->|"nothing new"| Wider["Search wider"]
-    Outcome -->|"failed"| Backoff["Wait 2 minutes, then<br/>longer, up to an hour"]
-    Narrow --> Next["Next loop"]
-    Few --> Next
-    Wider --> Next
-    Backoff --> Next
-    Next --> Stop
+    Stop -->|"yes"| End(["Ends"])
 
     classDef ended fill:#7c2d12,color:#fff,stroke:#7c2d12
     class End ended
 ```
+
+| Outcome of the round | What comes next |
+|---|---|
+| Promoted | Searches narrow again |
+| Not promoted | Searches wider if the round added fewer than 60 rows |
+| Nothing new | Searches wider; after two in a row, trains one model with another seed instead |
+| Failed, or silent for 60 minutes | Waits 2 minutes, then longer each time, up to an hour |
 
 `python -m train stop` takes effect after the current loop. There are four search widths, from 10 articles per label to 60, and a restart resumes at the width it had reached. Each round searches 20 labels and asks Wikipedia slowly, slowing down further when told to. `python -m train watch` follows the running loop, and `python -m train view` shows its matrices in 3D.
 
