@@ -14,6 +14,7 @@ gather_dialogues.py wrote to data/sources/, and changes neither. What it does:
   2. Corrected labels. CFPB complaints were spread over labels by keyword; they
      are complaints (billing ones: billing). ChatDoctor messages were labeled
      by any medical word; they are labeled by who speaks and what they do.
+     Bitext's lines are left out: they are generated from templates.
   3. No articles about talking. Territories that name something people do in
      conversation keep only real conversation.
   4. The gathered text is added.
@@ -74,12 +75,16 @@ ROUTINE = re.compile(r"\b(exercise|diet|check-?ups?|healthy|weight loss|sleep|vi
 def relabel(r: dict) -> Tuple[Optional[str], str]:
     """(label, why) for a record whose label came from a keyword; None drops it."""
     text, source, label = r["text"], r.get("source", ""), r["category"]
+    if source == "bitext":
+        return None, "a Bitext line (generated from templates)"
     if source == "cfpb":
         if len(text) < 60 or text.count("XX") > max(3, len(text) // 60):
             return None, "a complaint that is mostly redacted"
         if TWICE.search(text):
             return "Double Charge Complaint", "a complaint about being charged twice"
         if BILLING.search(text) and not REPORTING.search(text):
+            if re.search(r"\brefund", text, re.I):
+                return "Refund Processing", "a complaint about a refund"
             return "Billing & Refunds", "a billing complaint"
         return "Complaint Handling", "a complaint"
     if source == "medical_chatdoctor_patient":

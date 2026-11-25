@@ -331,18 +331,48 @@ def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitC
 
 # ── commands ─────────────────────────────────────────────────────────────────
 
-def cmd_baseline(paths: Paths, device) -> dict:
+def cmd_score(paths: Paths, run_dir: Path, device, node_cap: int = 0) -> dict:
+    """An earlier model on this corpus and holdout: its encoder embeds the
+    training rows here, and the coredrill is rebuilt from them."""
+    run_dir = Path(run_dir).resolve()
+    with LoopRecord(paths, "score", {"scored": str(run_dir), "node_cap": node_cap}) as rec:
+        corpus = load_corpus(paths.data, paths.taxonomy)
+        holdout = load_or_create_holdout(corpus, paths.holdout, rec.log)
+        train_idx, test_idx = split_indices(corpus, holdout)
+        st, head, meta = load_run(run_dir, device)
+        rec.log(f"Scoring {run_dir.name} on {len(test_idx):,} holdout records; embedding {len(train_idx) + len(test_idx):,} texts ...")
+        E = encode(st, [corpus.records[i]["text"] for i in np.concatenate([train_idx, test_idx])], device)
+        train_embs, test_embs = E[:len(train_idx)], E[len(train_idx):]
+        protos = head.protos.detach().cpu().numpy()
+        mine = {l: i for i, l in enumerate(meta["labels"])}
+        logits = np.full((len(test_idx), len(corpus.labels)), -1e9, dtype=np.float32)
+        unit = protos / np.linalg.norm(protos, axis=1, keepdims=True)
+        for k, l in enumerate(corpus.labels):
+            if l in mine:
+                logits[:, k] = head.scale * test_embs @ unit[mine[l]]
+        del st, head
+        free_gpu()
+        ev = evaluate(corpus, [corpus.records[i] for i in train_idx], train_embs, test_idx, test_embs, logits,
+                      blocked_titles=holdout.blocked_titles, log=rec.log, node_cap=node_cap)
+        ev["benchmark"].update({"n_labeled": int(len(train_idx)), "n_hand_added": 0, "n_pseudo": 0})
+        save_predictions(rec.dir / "holdout_predictions.jsonl.gz", ev["predictions"])
+        rec.update(metrics=ev["metrics"], benchmark=ev["benchmark"])
+        rec.log(format_metrics(ev["metrics"]))
+        return ev["metrics"]
+
+
+def cmd_baseline(paths: Paths, device, node_cap: int = 0) -> dict:
     """Stock LaBSE on the same holdout, every system 12_by_article.py scores:
     the deployed pipeline, nearest centroid, the linear head and logistic
     regression. Its numbers should match eval/held_out/results/by_article.json;
     the record says by how much they differ."""
-    with LoopRecord(paths, "baseline") as rec:
+    with LoopRecord(paths, "baseline", {"node_cap": node_cap}) as rec:
         corpus = load_corpus(paths.data, paths.taxonomy)
         holdout = load_or_create_holdout(corpus, paths.holdout, rec.log)
         train_idx, test_idx = split_indices(corpus, holdout)
         rec.log(f"Baseline: stock LaBSE, {len(train_idx):,} training records, {len(test_idx):,} holdout records")
         ev = evaluate(corpus, [corpus.records[i] for i in train_idx], corpus.f0[train_idx], test_idx,
-                      corpus.f0[test_idx], blocked_titles=holdout.blocked_titles, log=rec.log)
+                      corpus.f0[test_idx], blocked_titles=holdout.blocked_titles, log=rec.log, node_cap=node_cap)
         bench = ev["benchmark"]
         bench.update({"n_labeled": int(len(train_idx)), "n_hand_added": 0, "n_pseudo": 0})
         save_predictions(rec.dir / "holdout_predictions.jsonl.gz", ev["predictions"])

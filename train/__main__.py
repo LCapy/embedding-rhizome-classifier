@@ -1,6 +1,7 @@
 """python -m train <command>: train the coredrill's encoder and keep it learning.
 
   baseline   stock LaBSE on the fixed holdout (run once, first)
+  score      an earlier model on this corpus and holdout, to compare with a new one
   fit        train a model on the labeled data plus the pseudo-label pool
   round      one self-training round: harvest, pseudo-label, train, gate
   loop       rounds until they stop helping

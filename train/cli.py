@@ -26,7 +26,7 @@ from pathlib import Path
 from .fit import FitConfig
 from .model import pick_device
 from .record import REFERENCE, cmd_report
-from .selftrain import (Gate, Paths, RoundConfig, cmd_baseline, cmd_export, cmd_fit, cmd_loop, cmd_round,
+from .selftrain import (Gate, Paths, RoundConfig, cmd_baseline, cmd_export, cmd_fit, cmd_loop, cmd_round, cmd_score,
                         cmd_status, cmd_testset, read_champion)
 
 FIT_HELP = {
@@ -129,7 +129,11 @@ def main(argv=None) -> None:
     ap = argparse.ArgumentParser(prog="python -m train", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("baseline", parents=[common], help="stock LaBSE on the holdout")
+    p = sub.add_parser("baseline", parents=[common], help="stock LaBSE on the holdout")
+    p.add_argument("--node-cap", type=int, default=0)
+    p = sub.add_parser("score", parents=[common], help="an earlier model on this corpus and holdout")
+    p.add_argument("--run", type=Path, required=True, help="its folder")
+    p.add_argument("--node-cap", type=int, default=0)
     p = sub.add_parser("fit", parents=[common], help="train on the labeled data (+ pool)")
     _add_fit_flags(p)
     _add_gate_flags(p)
@@ -176,7 +180,9 @@ def main(argv=None) -> None:
         import torch
         log(f"device: {device}" + (f" ({torch.cuda.get_device_name(0)})" if device.type == "cuda" else ""))
     if args.cmd == "baseline":
-        cmd_baseline(paths, device)
+        cmd_baseline(paths, device, args.node_cap)
+    elif args.cmd == "score":
+        cmd_score(paths, args.run, device, args.node_cap)
     elif args.cmd == "fit":
         cmd_fit(paths, _fit_config(args, None, device),
                 Gate(args.select_metric, args.min_delta, min_z=args.min_z), device,
