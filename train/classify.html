@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: the rhizome classifier</title>
+<link rel="icon" href="data:,">
+<style>
+:root { color-scheme: dark; --bg: #0b0c0f; --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.09); --panel: rgba(19,21,26,.93); --blue: #7888a6; --ivory: #aaa79e; --rest: #696e79; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+#map, #over { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; } #map { touch-action: none; cursor: grab; outline: none; } #map.drag { cursor: grabbing !important; } #over { pointer-events: none; }
+.panel { position: fixed; z-index: 2; top: 20px; width: 350px; max-height: calc(100vh - 40px); overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; scrollbar-width: thin; scrollbar-color: #34373f transparent; }
+#ask { left: 20px; } #out { right: 20px; } #out[hidden] { display: none; }
+nav { display: flex; gap: 2px; padding: 3px; margin: 0 0 14px; border: 1px solid var(--line); border-radius: 999px; width: max-content; }
+nav a { color: var(--ink2); text-decoration: none; font-size: 13px; padding: 3px 13px; border-radius: 999px; } nav a[aria-current] { color: var(--ink); background: rgba(255,255,255,.08); }
+h1 { font-size: 15px; font-weight: 600; margin: 0 0 2px; } h2 { font-size: 12px; font-weight: 600; color: var(--muted); margin: 18px 0 6px; } h3 { font-size: 11.5px; font-weight: 500; color: var(--muted); margin: 9px 0 2px; flex-basis: 100%; }
+p { margin: 0; } .note { color: var(--muted); font-size: 12.5px; } label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+textarea { width: 100%; min-height: 118px; max-height: 34vh; resize: vertical; font: inherit; color: var(--ink); background: rgba(0,0,0,.28); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+button, select { font: inherit; font-size: 13px; color: var(--ink2); background: rgba(38,41,50,.55); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; min-height: 34px; cursor: pointer; } select { width: 100%; } select option { color: #14161b; background: #d8d6d0; } button:hover, select:hover { color: var(--ink); } button:disabled { opacity: .5; cursor: default; }
+button.main { color: var(--ink); background: rgba(170,167,158,.18); border-color: rgba(170,167,158,.32); font-weight: 600; } button.main:hover { background: rgba(170,167,158,.28); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; } .row { display: flex; gap: 8px; margin: 10px 0 0; flex-wrap: wrap; }
+#status { min-height: 20px; margin-top: 10px; font-size: 13px; color: var(--ink2); } #status.bad { color: #c3a394; }
+#key { display: flex; flex-wrap: wrap; gap: 2px 4px; } button.dom { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 1px 9px; font-size: 12px; background: none; border-color: transparent; } button.dom:hover { background: rgba(255,255,255,.06); } button.dom i, i.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; display: inline-block; } i.dot { margin-right: 7px; }
+#answer { font-size: 23px; font-weight: 600; line-height: 1.2; margin: 2px 0 6px; overflow-wrap: anywhere; } .path { color: var(--ink2); font-size: 13px; overflow-wrap: anywhere; }
+.box { margin-top: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,.045); font-size: 13px; color: var(--ink2); } .box b { color: var(--ink); font-weight: 600; }
+.bar { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; margin: 7px 0 0; font-size: 13px; } .bar span:nth-child(2) { color: var(--ink2); font-variant-numeric: tabular-nums; } .bar div { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; } .bar div i { display: block; height: 100%; border-radius: 3px; }
+.area { font-size: 13px; margin: 5px 0 0; } .area b { font-weight: 600; } .area span { color: var(--ink2); }
+details { margin-top: 16px; } summary { cursor: pointer; color: var(--ink2); font-size: 13px; } details p { margin-top: 6px; } .scroll { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 12px; margin-top: 8px; width: 100%; } th, td { text-align: right; padding: 3px 0 3px 10px; border-bottom: 1px solid rgba(255,255,255,.06); font-variant-numeric: tabular-nums; white-space: nowrap; } th { color: var(--muted); font-weight: 500; } th:first-child, td:first-child { text-align: left; padding-left: 0; }
+#tip { position: fixed; z-index: 3; pointer-events: none; width: 284px; padding: 9px 12px; border-radius: 12px; background: rgba(15,16,20,.95); border: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; color: var(--ink2); } #tip b { display: block; color: var(--ink); font-weight: 600; } #tip span { display: block; } #tip em { display: block; font-style: normal; color: var(--muted); margin-top: 6px; } #tip .warn { color: #c3a394; } #tip[hidden] { display: none; }
+@media (max-width: 1000px) { html, body { overflow: auto; height: auto; } #map { position: relative; width: 100%; height: 62vh; touch-action: pan-y; } #over { position: absolute; height: 62vh; width: 100%; inset: auto; } #stage { position: relative; } #ask.panel, #out.panel { position: relative; inset: auto; width: auto; max-height: none; margin: 12px; } }
+</style>
+</head>
+<body>
+<section class="panel" id="ask" aria-label="Your text">
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify" aria-current="page">Classifier</a></nav>
+  <h1>The rhizome classifier</h1>
+  <p class="note">Any of LaBSE's 109 languages. The model runs on this machine and your text stays on it.</p>
+  <label for="text">Text</label>
+  <textarea id="text" maxlength="8000" placeholder="Write or paste a text"></textarea>
+  <div class="row"><button class="main" id="go">Classify</button><button id="sample" title="One of the 5,065 texts the model never trained on, with its true label">Random holdout text</button></div>
+  <label for="model">Model</label>
+  <select id="model"></select>
+  <p id="status" role="status" aria-live="polite">Loading the model…</p>
+  <h2>Domains</h2>
+  <div id="key"></div>
+  <div class="row"><button id="whole">Whole universe</button></div>
+  <details><summary>What this map shows</summary><p class="note" id="how"></p></details>
+</section>
+<div id="stage"><canvas id="map" tabindex="0" role="img" aria-label="The taxonomy as a universe. Drag or use the arrow keys to turn it, scroll to zoom, hold shift to move it, click a territory to fly there, Escape for the whole."></canvas><canvas id="over"></canvas></div>
+<section class="panel" id="out" aria-label="Rhizome profile" aria-live="polite" hidden></section>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), canvas = $("map"), over = $("over"), g = over.getContext("2d");
+const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "low-power" });
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let map = null, result = null, truth = null, busy = false, started = 0, hover = -1, dirty = true;
+
+// ── colors: each domain a hue, the domains of a branch side by side, each territory its own shade ──
+function oklch(L, C, h) {
+  const a = C * Math.cos(h * Math.PI / 180), b = C * Math.sin(h * Math.PI / 180);
+  const l = (L + .3963377774 * a + .2158037573 * b) ** 3, m = (L - .1055613458 * a - .0638541728 * b) ** 3, s = (L - .0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + .2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - .3413193965 * s, -.0041960863 * l - .7034186147 * m + 1.707614701 * s]
+    .map(v => Math.max(0, Math.min(1, v <= .0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - .055)));
+}
+const css = (c, a = 1) => `rgba(${c.map(v => Math.round(v * 255)).join(",")},${a})`;
+const INK = [.79, .78, .75], IVORY = [.8, .78, .72];
+function paint(m) {
+  const at = {}; m.domains.forEach((d, i) => at[d] = i);
+  const groups = {}; m.nodes.forEach(n => { if (n.domain) { const k = n.domain + "/" + (n.path[2] || ""); (groups[n.domain] ||= []).includes(k) || groups[n.domain].push(k); } });
+  m.nodes.forEach((n, i) => {
+    if (!n.domain) { n.color = [.44, .44, .43]; return; }
+    const g0 = groups[n.domain], k = g0.indexOf(n.domain + "/" + (n.path[2] || "")), u = g0.length > 1 ? k / (g0.length - 1) - .5 : 0;
+    n.hue = 205 + at[n.domain] * 360 / m.domains.length; const j = ((i * 37) % 17) / 17 - .5;
+    n.color = oklch(.545 + .08 * j - (n.data ? 0 : .13), n.data ? .058 : .02, n.hue + 13 * u + 5 * j);
+  });
+  m.domainColor = {}; for (const d of m.domains) m.domainColor[d] = oklch(.56, .06, 205 + at[d] * 360 / m.domains.length);
+}
+
+// ── camera ──
+const FOV = 46 * Math.PI / 180, HOME = { t: [0, 0, 0], d: 34, yaw: .5, pitch: .38 };
+const cam = { t: [0, 0, 0], d: 46, yaw: .2, pitch: .5 }, goal = { ...HOME, t: [0, 0, 0] };
+let W = 1, H = 1, off = 0;
+function resize() {
+  const r = Math.min(devicePixelRatio || 1, 2), b = canvas.getBoundingClientRect(); W = b.width; H = b.height;
+  for (const c of [canvas, over]) { c.width = Math.round(W * r); c.height = Math.round(H * r); } g.setTransform(r, 0, 0, r, 0, 0); dirty = true;
+}
+addEventListener("resize", resize);
+function axes() {
+  const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const f = [-sy * cp, -sp, -cy * cp], r = [cy, 0, -sy], u = [-sy * sp, cp, -cy * sp]; return { f, r, u, e: cam.t.map((v, i) => v - f[i] * cam.d) };
+}
+let A = axes();
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+function project(p) { const v = [p[0] - A.e[0], p[1] - A.e[1], p[2] - A.e[2]], z = dot(v, A.f), k = H / 2 / Math.tan(FOV / 2) / Math.max(z, .05); return { x: W / 2 + off + dot(v, A.r) * k, y: H / 2 - dot(v, A.u) * k, z, k }; }
+function matrix() {
+  const c = 1 / Math.tan(FOV / 2), n = .05, f = 160, ax = c * H / W, e = A.e, o = 2 * off / W;
+  const row = (v, s) => [v[0] * s, v[1] * s, v[2] * s, -dot(v, e) * s], X = row(A.r, ax), Y = row(A.u, c), Z = row(A.f, 1);
+  for (let i = 0; i < 4; i++) X[i] += o * Z[i];
+  const q = (f + n) / (f - n), w = -2 * f * n / (f - n), D = Z.map((v, i) => v * q + (i === 3 ? w : 0));
+  return new Float32Array([X[0], Y[0], D[0], Z[0], X[1], Y[1], D[1], Z[1], X[2], Y[2], D[2], Z[2], X[3], Y[3], D[3], Z[3]]);
+}
+function fly(t, d) { goal.t = t.slice(); goal.d = d; }
+
+// ── WebGL: stars, clouds, lines ──
+let P = {}, stars = null, clouds = null, suns = null, lines = null, threads = null;
+function program(v, f) {
+  const p = gl.createProgram(); for (const [t, s] of [[gl.VERTEX_SHADER, v], [gl.FRAGMENT_SHADER, f]]) { const x = gl.createShader(t); gl.shaderSource(x, "#version 300 es\nprecision highp float;\n" + s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); gl.attachShader(p, x); }
+  gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u = {}; for (let i = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS) - 1; i >= 0; i--) { const n = gl.getActiveUniform(p, i).name; u[n] = gl.getUniformLocation(p, n); } return { p, u };
+}
+function initGL() {
+  P.star = program("layout(location=0) in vec3 a; layout(location=1) in vec3 c; layout(location=2) in float s; uniform mat4 M; uniform float K, dim; out vec4 v; void main() { gl_Position = M * vec4(a, 1.0); float px = s * K / gl_Position.w; gl_PointSize = clamp(px, 1.0, 3.2); v = vec4(c, dim * clamp(px, 0.25, 1.0) * smoothstep(90.0, 14.0, gl_Position.w)); }",
+    "in vec4 v; out vec4 o; void main() { vec2 q = gl_PointCoord * 2.0 - 1.0; float d = dot(q, q); if (d > 1.0) discard; float a = v.a * (1.0 - d); o = vec4(v.rgb * a, a); }");
+  P.glow = program("layout(location=0) in vec2 q; layout(location=1) in vec3 a; layout(location=2) in vec4 c; layout(location=3) in float r; uniform mat4 M; uniform vec3 R, U; uniform float K, cap; out vec2 t; out vec4 v; void main() { float w = (M * vec4(a, 1.0)).w, px = r * K / max(w, 0.05), k = min(1.0, cap / px); gl_Position = M * vec4(a + (R * q.x + U * q.y) * r * k, 1.0); t = q; v = c; v.a *= smoothstep(0.25, 1.2, w); }",
+    "in vec2 t; in vec4 v; uniform float core; out vec4 o; void main() { float d = dot(t, t); if (d > 1.0) discard; float soft = exp(-d * 3.4) - 0.0334; if (core < 0.5) { o = vec4(v.rgb * v.a * max(soft, 0.0), 0.0); return; } float a = v.a * clamp(max(soft, 0.0) * 0.16 + smoothstep(0.078, 0.048, d) * 0.9, 0.0, 1.0); o = vec4(v.rgb * a, a); }");
+  P.line = program("layout(location=0) in vec3 a; layout(location=1) in vec4 c; uniform mat4 M; uniform float dim; out vec4 v; void main() { gl_Position = M * vec4(a, 1.0); v = vec4(c.rgb, c.a * dim * smoothstep(80.0, 10.0, gl_Position.w)); }",
+    "in vec4 v; out vec4 o; void main() { o = vec4(v.rgb * v.a, 0.0); }");
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.disable(gl.DEPTH_TEST);
+}
+function attribute(i, data, n, divisor) { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, 0, 0); if (divisor) gl.vertexAttribDivisor(i, 1); return b; }
+function mesh(parts, quad) { const a = gl.createVertexArray(); gl.bindVertexArray(a); let k = 0; if (quad) attribute(k++, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), 2); const b = parts.map(([d, n]) => attribute(k++, new Float32Array(d), n, quad)); gl.bindVertexArray(null); return { a, b }; }
+function build() {
+  const N = map.nodes, flat = a => a.flat();
+  const reach = {}; for (const n of N) { if (!n.domain) continue; const k = n.domain + "/" + (n.path[2] || ""); (reach[k] ||= []).push(n); }
+  const cl = { p: [], c: [], r: [], n: 0 };
+  for (const list of Object.values(reach)) {                       // a cloud per discipline, over its territories
+    const m = [0, 1, 2].map(i => list.reduce((s, n) => s + n.xyz[i], 0) / list.length), r = Math.max(...list.map(n => Math.hypot(...n.xyz.map((v, i) => v - m[i]))), .5);
+    cl.p.push(m); cl.c.push([...list[0].color, .045]); cl.r.push(r * 2.1 + .8); cl.n++;
+  }
+  for (const d of map.domains) { const list = N.filter(n => n.domain === d), m = [0, 1, 2].map(i => list.reduce((s, n) => s + n.xyz[i], 0) / list.length), r = Math.max(...list.map(n => Math.hypot(...n.xyz.map((v, i) => v - m[i])))); cl.p.push(m); cl.c.push([...map.domainColor[d], .05]); cl.r.push(r * 2.4); cl.n++; map.galaxy ||= {}; map.galaxy[d] = { c: m, r }; }
+  clouds = { ...mesh([[flat(cl.p), 3], [flat(cl.c), 4], [cl.r, 1]], true), n: cl.n };
+  suns = { ...mesh([[flat(N.map(n => n.xyz)), 3], [flat(N.map(n => [...n.color, n.data ? .85 : .4])), 4], [N.map(n => n.data ? .34 + .05 * Math.log2(1 + n.texts / 20) : .2), 1]], true), n: N.length };
+  const li = { p: [], c: [] }; for (const [a, b] of map.tree) { const c = N[a].color; li.p.push(N[a].xyz, N[b].xyz); li.c.push([...c, .3], [...c, .3]); } lines = { ...mesh([[flat(li.p), 3], [flat(li.c), 4]]), n: li.p.length };
+  const th = { p: [], c: [] };                                     // bent threads between galaxies
+  for (const [a, b, s] of map.threads) {
+    const u = N[a].xyz, v = N[b].xyz, m = u.map((x, i) => (x + v[i]) / 2 * .72), q = k => u.map((x, i) => (1 - k) ** 2 * x + 2 * (1 - k) * k * m[i] + k * k * v[i]), al = Math.min(.22, .28 * (s - .35));
+    for (let k = 0; k < 18; k++) { th.p.push(q(k / 18), q((k + 1) / 18)); for (const t of [k / 18, (k + 1) / 18]) th.c.push([...N[a].color.map((x, i) => x * (1 - t) + N[b].color[i] * t), al]); }
+  }
+  threads = { ...mesh([[flat(th.p), 3], [flat(th.c), 4]]), n: th.p.length };
+}
+function loadStars(s) {
+  const raw = t => Uint8Array.from(atob(t), c => c.charCodeAt(0)), at = new Int16Array(raw(s.xyz).buffer), no = new Uint16Array(raw(s.node).buffer), p = new Float32Array(s.count * 3), c = new Float32Array(s.count * 3), z = new Float32Array(s.count);
+  for (let i = 0; i < s.count; i++) { const col = map.nodes[no[i]].color; for (let k = 0; k < 3; k++) { p[i * 3 + k] = at[i * 3 + k] * s.scale; c[i * 3 + k] = col[k]; } z[i] = .022 + .02 * ((i * 7919) % 101) / 101; }
+  if (stars) { gl.deleteVertexArray(stars.a); stars.b.forEach(b => gl.deleteBuffer(b)); } stars = { ...mesh([[p, 3], [c, 3], [z, 1]]), n: s.count };
+}
+function drop(...list) { for (const m of list) if (m) { gl.deleteVertexArray(m.a); m.b.forEach(b => gl.deleteBuffer(b)); } }
+
+// ── labels ──
+let boxes = [];
+function label(text, p, c, alpha, size, weight, dy, must) {
+  if (p.z < .1 || alpha < .04 || p.x < -90 || p.x > W + 90 || p.y < -20 || p.y > H + 20) return false;
+  g.font = `${weight} ${size}px system-ui, "Segoe UI", sans-serif`; const w = g.measureText(text).width / 2 + 5, h = size * .62, free = y => !boxes.some(b => Math.abs(b.x - p.x) < b.w + w && Math.abs(b.y - y) < b.h + h);
+  let y = p.y + dy; if (!free(y)) { const other = must ? [p.y - dy + size * .7, y - size * 1.5, p.y - dy + size * 2.1, y - size * 2.9, p.y - dy + size * 3.5].find(free) : undefined; if (other === undefined && !must) return false; y = other ?? y; }
+  boxes.push({ x: p.x, y, w, h }); g.lineWidth = 3.5; g.strokeStyle = `rgba(12,13,17,${.8 * alpha})`; g.fillStyle = css(c, alpha); g.strokeText(text, p.x, y); g.fillText(text, p.x, y); return true;
+}
+const soft = (c, k) => c.map((v, i) => v * (1 - k) + INK[i] * k);
+function ring(p, r, c, a, w) { g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.lineWidth = w; g.strokeStyle = css(c, a); g.stroke(); }
+let seen = [];
+function labels(t) {
+  g.clearRect(0, 0, W, H); if (!map) return; g.textAlign = "center"; g.lineJoin = g.lineCap = "round"; boxes = [];
+  const N = map.nodes, Q = seen = N.map(n => project(n.xyz)), grow = result ? (still ? 1 : Math.min(1, (t - started) / 1200)) : 0, ease = 1 - Math.pow(1 - Math.max(0, grow), 3);
+  const mass = new Map(result ? result.active.map(a => [map.index[a.node], a.mass]) : []), best = result ? map.index[result.best.node] : -1, path = result ? result.best.path.map(n => map.index[n]).filter(i => i !== undefined) : [];
+  if (result) {
+    const me = project(result.xyz); g.lineWidth = 1.6; g.strokeStyle = css(IVORY, .42 * ease); g.setLineDash([2, 5]); g.beginPath(); path.forEach((i, k) => { if (Q[i].z > .1) k ? g.lineTo(Q[i].x, Q[i].y) : g.moveTo(Q[i].x, Q[i].y); }); g.stroke(); g.setLineDash([]);
+    for (const [i, m] of mass) {
+      const B = Q[i]; if (B.z < .1 || me.z < .1) continue; const mx = (me.x + B.x) / 2, my = (me.y + B.y) / 2, dx = B.x - me.x, dy = B.y - me.y, cx = mx - dy * .16, cy = my + dx * .16;
+      const s = g.createLinearGradient(me.x, me.y, B.x, B.y); s.addColorStop(0, css(IVORY, .55)); s.addColorStop(1, css(N[i].color, .85)); g.strokeStyle = s; g.lineWidth = 1 + 2.6 * m / 100; g.beginPath(); g.moveTo(me.x, me.y);
+      for (let k = 1; k <= 24; k++) { const u = ease * k / 24, v = 1 - u; g.lineTo(v * v * me.x + 2 * v * u * cx + u * u * B.x, v * v * me.y + 2 * v * u * cy + u * u * B.y); } g.stroke();
+      ring(B, Math.max(8, Math.min(26, .2 * B.k)), soft(N[i].color, i === best ? .5 : .15), ease * (i === best ? .9 : .55), i === best ? 1.8 : 1.1);
+    }
+    if (!mass.has(best) && best >= 0) ring(Q[best], Math.max(8, Math.min(26, .2 * Q[best].k)), soft(N[best].color, .5), ease * .9, 1.8);
+    const r = Math.max(4, Math.min(10, .075 * me.k)), s = g.createRadialGradient(me.x, me.y, 0, me.x, me.y, r * 3.2); s.addColorStop(0, css(IVORY, .95)); s.addColorStop(.28, css(IVORY, .8)); s.addColorStop(.36, css(IVORY, .2)); s.addColorStop(1, css(IVORY, 0)); g.fillStyle = s; g.beginPath(); g.arc(me.x, me.y, r * 3.2, 0, 7); g.fill();
+    label("Your text", me, IVORY, 1, 13, 600, r + 18, true);
+    if (best >= 0) label(N[best].name, Q[best], soft(N[best].color, .55), ease, 15, 600, -18, true);
+    for (const i of mass.keys()) if (i !== best) label(N[i].name, Q[i], soft(N[i].color, .3), .95 * ease, 13, 600, -16, true);
+  }
+  if (hover >= 0) { ring(Q[hover], Math.max(7, Math.min(22, .17 * Q[hover].k)), soft(N[hover].color, .4), .8, 1.2); label(N[hover].name, Q[hover], soft(N[hover].color, .5), 1, 13, 600, -15, true); for (const [j] of N[hover].near) { g.beginPath(); g.moveTo(Q[hover].x, Q[hover].y); g.lineTo(Q[j].x, Q[j].y); g.strokeStyle = css(N[j].color, .5); g.lineWidth = 1; if (Q[j].z > .1) { g.stroke(); label(N[j].name, Q[j], soft(N[j].color, .2), .85, 12, 500, -12, true); } } }
+  const dim = result ? .6 : 1, named = new Set();
+  for (const d of map.domains) { const G = map.galaxy[d], p = project(G.c), px = G.r * p.k; if (label(d, p, soft(map.domainColor[d], .3), dim * Math.max(0, Math.min(.9, (300 - px) / 90)), 14, 600, -Math.min(px * .7, 70), false)) named.add(d); }
+  const order = N.map((_, i) => i).filter(i => i !== hover && i !== best && !mass.has(i)).sort((a, b) => (N[a].level - N[b].level) || (Q[a].z - Q[b].z));
+  for (const i of order) { const n = N[i], k = Q[i].k; if (n.level === 1 && named.has(n.name)) continue; const need = n.level <= 1 ? 62 : n.level === 2 ? 46 : n.level === 3 ? 92 : 125; if (k > need) label(n.name, Q[i], soft(n.color, .12), dim * Math.min(.85, (k - need) / 40) * (n.data ? 1 : .6), n.level <= 2 ? 12.5 : 12, n.level <= 2 ? 600 : 400, -11, false); }
+}
+
+// ── frame ──
+let dragging = null, before = 0;
+function frame(t) {
+  requestAnimationFrame(frame); if (document.hidden || t - before < 15) return;      // 60 a second is plenty
+  const dt = Math.min(.5, (t - before) / 1000); before = t; const e = still ? 1 : 1 - Math.exp(-3.2 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt);
+  for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q;
+  if (!still && !dragging) goal.yaw += (result ? .02 : .042) * dt;
+  const wide = W > 1000, want = wide ? ($("out").hidden ? 185 : 0) : 0; off += (want - off) * e; A = axes();
+  const M = matrix(), K = H / 2 / Math.tan(FOV / 2) * (canvas.width / W); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .05, .06, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (map) {
+    const dim = result ? .62 : 1, use = p => { gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.M, false, M); };
+    use(P.glow); gl.uniform3fv(P.glow.u.R, A.r); gl.uniform3fv(P.glow.u.U, A.u); gl.uniform1f(P.glow.u.K, K); gl.uniform1f(P.glow.u.cap, 1e6); gl.uniform1f(P.glow.u.core, 0); gl.bindVertexArray(clouds.a); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, clouds.n);
+    use(P.line); gl.uniform1f(P.line.u.dim, dim); gl.bindVertexArray(threads.a); gl.drawArrays(gl.LINES, 0, threads.n); gl.bindVertexArray(lines.a); gl.drawArrays(gl.LINES, 0, lines.n);
+    if (stars) { use(P.star); gl.uniform1f(P.star.u.K, K); gl.uniform1f(P.star.u.dim, .5 * dim); gl.bindVertexArray(stars.a); gl.drawArrays(gl.POINTS, 0, stars.n); }
+    use(P.glow); gl.uniform1f(P.glow.u.cap, 62 * canvas.width / W); gl.uniform1f(P.glow.u.core, 1); gl.bindVertexArray(suns.a); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, suns.n); gl.bindVertexArray(null);
+  }
+  labels(t);
+}
+
+// ── moving about ──
+let last = null, moved = 0;
+canvas.addEventListener("pointerdown", e => { dragging = e.shiftKey || e.button === 2 ? "pan" : "turn"; last = [e.clientX, e.clientY]; moved = 0; canvas.classList.add("drag"); canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("pointermove", e => {
+  if (dragging) {
+    const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true;
+    if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(-1.45, Math.min(1.45, goal.pitch + dy * .005)); }
+    else { const k = cam.d * Math.tan(FOV / 2) * 2 / H; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return;
+  }
+  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 16, at = -1; seen.forEach((p, i) => { if (p.z > .1) { const d = Math.hypot(p.x - x, p.y - y); if (d < best) { best = d; at = i; } } });
+  hover = at; canvas.style.cursor = at >= 0 ? "pointer" : ""; tip(at, e.clientX, e.clientY);
+});
+addEventListener("pointerup", () => { if (dragging && moved < 5 && hover >= 0) { const n = map.nodes[hover]; fly(n.xyz, n.level <= 1 ? 7 : 3.2); } dragging = null; canvas.classList.remove("drag"); });
+canvas.addEventListener("pointerleave", () => { if (!dragging) { hover = -1; $("tip").hidden = true; } });
+canvas.addEventListener("wheel", e => { e.preventDefault(); goal.d = Math.max(.8, Math.min(70, goal.d * Math.exp(e.deltaY * .0011))); }, { passive: false });
+canvas.addEventListener("dblclick", () => home());
+canvas.addEventListener("keydown", e => {
+  const turn = { ArrowLeft: [-.14, 0], ArrowRight: [.14, 0], ArrowUp: [0, .1], ArrowDown: [0, -.1] }[e.key]; if (turn) { goal.yaw += turn[0]; goal.pitch = Math.max(-1.45, Math.min(1.45, goal.pitch + turn[1])); e.preventDefault(); }
+  if (e.key === "+" || e.key === "=") goal.d = Math.max(.8, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(70, goal.d * 1.2); if (e.key === "Home" || e.key === "Escape") home();
+});
+function home() { fly(HOME.t, HOME.d); }
+function tip(i, x, y) {
+  const box = $("tip"); box.hidden = i < 0; if (i < 0) return; const n = map.nodes[i]; box.textContent = "";
+  box.append(el("b", "", n.name), el("span", "", n.path.join(" → ")));
+  if (!n.data) box.append(el("span", "", "No texts yet, so it cannot be an answer.")); else {
+    box.append(el("span", "", `${n.texts.toLocaleString("en")} texts of its own`)); if (n.twins.length) box.append(el("span", "warn", `Same texts as ${n.twins.map(j => map.nodes[j].name).join(", ")}: the model cannot tell them apart.`));
+    box.append(el("em", "", "Most alike in all " + map.geometry.dims + " dimensions"));
+    for (const [j, c] of n.near) box.append(el("span", "", `${c.toFixed(2)}  ${map.nodes[j].name}`));
+  }
+  box.style.left = Math.max(8, Math.min(x + 16, innerWidth - 300)) + "px"; box.style.top = Math.max(8, Math.min(y + 16, innerHeight - box.offsetHeight - 10)) + "px";
+}
+
+// ── asking ──
+function say(text, bad) { const s = $("status"); s.textContent = text; s.classList.toggle("bad", !!bad); }
+async function get(url, options) {
+  let r; try { r = await fetch(url, options); } catch { throw new Error("The view is not running any more. Start it with: python -m train view"); }
+  const v = await r.json(); if (!r.ok) throw new Error(v.error || `error ${r.status}`); return v;
+}
+async function working(message, fn) {
+  if (busy) return; busy = true; for (const id of ["go", "sample", "model"]) $(id).disabled = true; say(message);
+  try { await fn(); } catch (e) { say(e.message, true); } finally { busy = false; for (const id of ["go", "sample", "model"]) $(id).disabled = false; }
+}
+const run = () => "?run=" + encodeURIComponent($("model").value);
+async function loadMap() {
+  const m = await get("/api/classify/map" + run()); m.index = {}; m.nodes.forEach((n, i) => m.index[n.name] = i); paint(m);
+  drop(clouds, suns, lines, threads, stars); stars = null; result = null; $("out").hidden = true; map = m; build(); home(); key(m);
+  const blank = m.nodes.filter(n => !n.data).length; say(`Ready: ${m.territories} territories with texts, ${blank} without.`);
+  get("/api/classify/stars" + run()).then(s => { if (map === m) loadStars(s); }).catch(e => say("Ready, without the stars: " + e.message, true));
+}
+async function classify() {
+  const text = $("text").value.trim(); if (!text) { say("Write a text first.", true); $("text").focus(); return; }
+  const r = await get("/api/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, run: $("model").value }) });
+  result = r; started = performance.now(); show(r);
+  const far = Math.max(1, ...r.active.map(a => map.index[a.node]).concat(map.index[r.best.node]).filter(i => i !== undefined).map(i => Math.hypot(...map.nodes[i].xyz.map((v, k) => v - r.xyz[k]))));
+  fly(r.xyz, Math.max(3.6, Math.min(24, far * 2.9)));
+  say(r.truncated ? `Read the first ${r.tokens} tokens only; the rest is too long for the model.` : `${r.tokens} tokens, ${(r.ms / 1000).toFixed(1)} s.`);
+}
+$("go").onclick = () => working("Classifying…", async () => { if (!map) await loadMap(); if (truth && truth.text.trim() !== $("text").value.trim()) truth = null; await classify(); });
+$("sample").onclick = () => working("Picking a text…", async () => { if (!map) await loadMap(); truth = await get("/api/classify/sample" + run()); $("text").value = truth.text; say("Classifying…"); await classify(); });
+$("model").onchange = () => working("Loading the model…", async () => { const again = !!result; await loadMap(); if (again) { say("Classifying…"); await classify(); } });
+$("text").addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("go").click(); });
+$("whole").onclick = home;
+
+// ── showing the profile ──
+function el(tag, cls, ...kids) { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids); return e; }
+const tint = name => { const n = map.nodes[map.index[name]]; return n ? css(n.color) : "var(--rest)"; };
+function bar(name, value, width, color) { const i = el("i"); i.style.width = Math.max(1.5, Math.min(100, width)) + "%"; i.style.background = color; return el("div", "bar", el("span", "", name), el("span", "", value), el("div", "", i)); }
+const FLOWS = { territorialization: "Territorialization", deterritorialization: "Deterritorialization", line_of_flight: "Line of flight", bwo_approach: "BwO approach", reterritorialization: "Reterritorialization" };
+function key(m) {
+  const box = $("key"); box.textContent = "";
+  for (const b of [...new Set(m.domains.map(d => m.nodes[m.index[d]].branch))]) { box.append(el("h3", "", b)); for (const d of m.domains.filter(d => m.nodes[m.index[d]].branch === b)) { const i = el("i"), k = el("button", "dom", i, d); i.style.background = css(m.domainColor[d]); k.onclick = () => fly(map.galaxy[d].c, map.galaxy[d].r * 2.6 + 1.2); box.append(k); } }
+  const q = m.geometry; $("how").textContent = `The model works in ${q.dims} dimensions; about ${q.for80} of them hold 80% of the differences between territories, and any three hold at most ${Math.round(100 * q.three)}%. So the map follows the taxonomy first: each domain is a galaxy, the domains of a branch lie near each other, and territories lie near their parents and siblings. The model decides the rest: the more alike two are, the closer. Threads join territories that are alike to the model but far apart in the taxonomy. Each star is one labeled text, spread around its territory as stock LaBSE sees it. Point at a territory for its true neighbors in all ${q.dims} dimensions.`;
+}
+function show(r) {
+  const out = $("out"); out.textContent = ""; out.hidden = false; out.scrollTop = 0; const i = map.index[r.best.node], n = map.nodes[i], agree = r.head[0] && r.head[0].node === r.best.node;
+  const answer = el("div", "", r.best.node); answer.id = "answer"; out.append(el("p", "note", "Answer"), answer, el("p", "path", r.best.path.join(" → ")));
+  if (truth) { const t = el("div", "box", el("b", "", truth.truth === r.best.node ? "Right. " : "Not the labeled answer. "), `The true label is ${truth.truth}.`, el("br"), `${truth.lang} · ${truth.source}`); t.id = "truth"; out.append(t); }
+  if (map.trust) out.append(el("div", "box", el("b", "", agree ? "Both opinions agree. " : "The two opinions differ. "), agree ? `On the holdout, such answers were right ${Math.round(100 * map.trust.agree)}% of the time.` : `The trained prototypes say ${r.head[0].node}. On the holdout, such answers were right only ${Math.round(100 * map.trust.differ)}% of the time.`));
+  if (n && n.twins.length) out.append(el("div", "box", el("b", "", "It has a twin. "), `${n.name} is built from the same texts as ${n.twins.map(j => map.nodes[j].name).join(", ")}, so the model cannot tell them apart.`));
+  out.append(el("h2", "", "Active territories"), el("p", "note", "How strongly the text lands in each, next to the strongest. The answer also weighs its neighbors and its path, so it need not be the longest bar."));
+  for (const a of r.active) out.append(bar(a.node, a.mass.toFixed(0) + "%", a.mass, tint(a.node)));
+  if (!r.active.some(a => a.node === r.best.node)) out.append(el("p", "note", `${r.best.node} wins on its neighborhood; it is not among the strongest alone.`));
+  out.append(el("h2", "", "Areas")); for (const a of r.areas) { const dot = el("i", "dot"); dot.style.background = css(map.domainColor[a.area] || [.5, .5, .5]); const d = el("p", "area", dot, el("b", "", a.area)); if (a.nodes.length) d.append(" ", el("span", "", a.nodes.join(", "))); out.append(d); }
+  out.append(el("h2", "", "Second opinion: the trained prototypes")); for (const h of r.head.slice(0, 3)) out.append(bar(h.node, (100 * h.p).toFixed(0) + "%", 100 * h.p, tint(h.node)));
+  out.append(el("h2", "", "Flow")); for (const [k, v] of Object.entries(r.flow.intensities).sort((a, b) => b[1] - a[1])) out.append(bar(FLOWS[k] || k, v.toFixed(2), 100 * v, "var(--rest)"));
+  const table = el("table"), head = el("tr"); for (const h of ["Territory", "Cosine", "Sigma", "Score", "Gram"]) head.append(el("th", "", h)); table.append(head);
+  for (const a of r.ranked) { const tr = el("tr"); for (const v of [a.node, a.cosine.toFixed(3), a.sigma_dist.toFixed(2), a.production.toFixed(3), a.gram === null ? "" : a.gram.toFixed(4)]) tr.append(el("td", "", v)); table.append(tr); }
+  out.append(el("details", "", el("summary", "", "The 15 closest, in numbers"), el("div", "scroll", table)));
+}
+
+// ── start ──
+(async () => {
+  try {
+    if (!gl) throw new Error("This browser cannot draw the map (no WebGL 2).");
+    initGL(); resize(); requestAnimationFrame(frame);
+    const models = await get("/api/classify/models");
+    if (!models.length) { say("No trained model yet. Train one with: python -m train fit", true); $("go").disabled = $("sample").disabled = true; return; }
+    for (const m of models) { const o = el("option", "", `Loop ${m.seq}${m.champion ? ", champion" : ""}${m.deployed ? `: ${(100 * m.deployed).toFixed(1)}% on the holdout` : ""}`); o.value = m.id; $("model").append(o); }
+    const q = new URLSearchParams(location.search); if (q.get("run")) $("model").value = q.get("run"); if (!$("model").value) $("model").selectedIndex = 0;
+    await working("Loading the model…", loadMap); if (q.get("text") && map) { $("text").value = q.get("text"); await working("Classifying…", classify); }
+  } catch (e) { say(e.message, true); }
+})();
+</script>
+</body>
+</html>

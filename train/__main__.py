@@ -7,7 +7,8 @@
   status     baseline, champion, pool and the latest loops
   report     every recorded loop next to the reference benchmark (runs/report.md, .csv)
   watch      follow the running loop live: its log and the GPU (Ctrl+C stops watching)
-  view       see the matrices being multiplied and trained, in the browser
+  view       see the matrices being trained, and use the classifier, in the browser
+  classify   the rhizome profile of a text, with the champion's model
   forever    self-training rounds with no end, until `stop`
   stop       end the endless run after the loop it is on
   testset    gather paragraphs to hand-check for the labels the holdout cannot test
@@ -29,16 +30,23 @@ def main(argv=None) -> None:
     argv = list(sys.argv[1:] if argv is None else argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
-    if not argv or argv[0] not in ("watch", "view", "forever", "stop"):
+    if not argv or argv[0] not in ("watch", "view", "classify", "forever", "stop"):
         from .cli import main as full
         return full(argv)
 
-    # watch and view stay open next to a training run, so they must not load
-    # PyTorch: it commits over a gigabyte of memory per process.
+    # These run next to a training run, so they must not load PyTorch: it
+    # commits over a gigabyte of memory per process.
     ap = argparse.ArgumentParser(prog=f"python -m train {argv[0]}")
     ap.add_argument("--runs", type=Path, default=Path("runs"))
+    if argv[0] in ("view", "classify"):
+        ap.add_argument("--data", type=Path, default=Path("data"))
     if argv[0] in ("forever", "stop"):
         pass
+    elif argv[0] == "classify":
+        ap.add_argument("text", nargs="?", help="the text (in quotes), or - to read it from standard input")
+        ap.add_argument("--run", default=None, help="a loop id (folder name) instead of the champion")
+        ap.add_argument("--json", action="store_true", help="print everything, as JSON")
+        ap.add_argument("--serve", action="store_true", help=argparse.SUPPRESS)
     elif argv[0] == "watch":
         ap.add_argument("--loop", default=None, help="a loop id (folder name) instead of the running one")
         ap.add_argument("--once", action="store_true", help="stop when the loop ends")
@@ -61,8 +69,19 @@ def main(argv=None) -> None:
     elif argv[0] == "watch":
         from .record import cmd_watch
         cmd_watch(paths, args.loop, args.once, args.gpu_every, log)
+    elif argv[0] == "classify":
+        from .classify import cmd_classify, serve
+        if args.serve:
+            for stream in (sys.stdin, sys.stdout):
+                stream.reconfigure(encoding="utf-8")
+            return serve(paths.runs, args.data.resolve())
+        text = sys.stdin.read() if args.text == "-" else args.text
+        if not text:
+            ap.error("give a text in quotes, or - to read it from standard input")
+        cmd_classify(paths.runs, args.data.resolve(), text, args.run, args.json, log)
     else:
         from .viewer import cmd_view
+        paths.data = args.data.resolve()
         cmd_view(paths, args.port, not args.no_browser, log)
 
 

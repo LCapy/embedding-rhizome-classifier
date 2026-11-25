@@ -1,17 +1,24 @@
-"""`python -m train view`: the matrices of a training loop, in the browser.
+"""`python -m train view`: the training loops and the classifier, in the browser.
 
-A read-only server on 127.0.0.1. It serves the 3D page (viewer3d.html), the
-flat one (viewer.html, at /flat) and the frames that live.LiveTap writes
-under runs/<loop>/live. A trained loop with no frames
+A server on 127.0.0.1. It writes nothing but a cache, runs/stars.npz. It serves the 3D page
+(viewer3d.html), the flat one (viewer.html, at /flat) and the frames that
+live.LiveTap writes under runs/<loop>/live. A trained loop with no frames
 (from before the capture existed, or run with --no-live) is shown as stock
 LaBSE against its saved weights.
+
+/classify is the rhizome classifier (classify.html). Its model runs in a
+process of its own, started by the first text and ended when left idle, so it
+takes no memory from a training loop in between.
 """
 from __future__ import annotations
 
 import gzip
 import json
+import os
+import queue
 import re
 import subprocess
+import sys
 import threading
 import time
 import webbrowser
@@ -22,9 +29,13 @@ from typing import Optional
 import numpy as np
 
 from .frames import describe, pack, spread
-from .record import LEDGER, loops, state
+from .record import LEDGER, REPO, loops, memory, state
 
-PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html")}
+PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html"),
+         "/classify": Path(__file__).with_name("classify.html")}
+MAX_BODY = 64 * 1024          # bytes of a request; a text may have 8,000 characters
+IDLE_MINUTES = 10             # the classifier's process ends after this long unused
+CLASSIFIER_NEEDS_GB = 1.3     # it commits about 0.9
 LOOP_ID = re.compile(r"^\d{8}-\d{6}-[a-z]+$")
 
 
@@ -88,9 +99,82 @@ def before_after(run_dir: Path, meta: dict) -> dict:
                       "series": [], "val": meta.get("history", [])}}
 
 
+class Classify:
+    """The classifier's process: started when needed, one request at a time,
+    ended when idle."""
+
+    def __init__(self, runs: Path, data: Path):
+        self.runs, self.data = runs, data
+        self.child: Optional[subprocess.Popen] = None
+        self.lines: queue.Queue = queue.Queue()
+        self.lock = threading.Lock()
+        self.used = 0.0
+
+    def _start(self) -> None:
+        free = (memory() or {}).get("commit_free_gb")
+        if free is not None and free < CLASSIFIER_NEEDS_GB:
+            raise RuntimeError(f"Only {free} GB of memory is free and the classifier needs {CLASSIFIER_NEEDS_GB}. "
+                               "Close some programs, or wait for the loop to end.")
+        self.lines = queue.Queue()
+        self.child = subprocess.Popen(
+            [sys.executable, "-m", "train", "classify", "--serve", "--runs", str(self.runs), "--data", str(self.data)],
+            cwd=str(REPO), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, encoding="utf-8", env={**os.environ, "PYTHONIOENCODING": "utf-8", "OPENBLAS_NUM_THREADS": "2"},
+            # Short bursts someone is waiting for: ahead of a browser or a loop using every core.
+            creationflags=getattr(subprocess, "ABOVE_NORMAL_PRIORITY_CLASS", 0))
+        threading.Thread(target=self._read, args=(self.child, self.lines), daemon=True).start()
+        threading.Thread(target=self._end_when_idle, args=(self.child,), daemon=True).start()
+
+    @staticmethod
+    def _read(child: subprocess.Popen, lines: queue.Queue) -> None:
+        for line in child.stdout:
+            lines.put(line)
+        lines.put(None)
+
+    def _end_when_idle(self, child: subprocess.Popen) -> None:
+        while child.poll() is None:
+            time.sleep(20)
+            with self.lock:
+                if time.time() - self.used > IDLE_MINUTES * 60:
+                    self._end(child)
+
+    @staticmethod
+    def _end(child: Optional[subprocess.Popen]) -> None:
+        if child is None or child.poll() is not None:
+            return
+        try:
+            child.stdin.close()                 # it ends by itself
+            child.wait(timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            child.kill()
+
+    def ask(self, request: dict, timeout: float = 120.0) -> dict:
+        with self.lock:
+            self.used = time.time()
+            if self.child is None or self.child.poll() is not None:
+                self._start()
+            try:
+                self.child.stdin.write(json.dumps(request) + chr(10))
+                self.child.stdin.flush()
+                line = self.lines.get(timeout=timeout)
+            except (OSError, queue.Empty):
+                line = None
+            self.used = time.time()
+            if line is None:                    # it died or hangs: a fresh one next time
+                child, self.child = self.child, None
+                child.kill()
+                raise RuntimeError("The classifier stopped unexpectedly. Try again.")
+            return json.loads(line)
+
+    def stop(self) -> None:
+        with self.lock:
+            self._end(self.child)
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "coredrill-view"
     runs: Path
+    classify: Classify
     loops_cache: Cached
     gpu_cache: Cached
     static_cache: dict = {}
@@ -114,8 +198,14 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(value, ensure_ascii=False, default=str).encode("utf-8"))
 
     def do_GET(self) -> None:  # noqa: N802
+        self._answer(self._get)
+
+    def do_POST(self) -> None:  # noqa: N802
+        self._answer(self._post)
+
+    def _answer(self, fn) -> None:
         try:
-            self._get()
+            fn()
         except (BrokenPipeError, ConnectionError):
             pass
         except Exception as e:  # noqa: BLE001 - a broken file must not take the viewer down
@@ -124,9 +214,46 @@ class Handler(BaseHTTPRequestHandler):
             except OSError:
                 pass
 
-    def _get(self) -> None:
+    def _local(self) -> bool:
         port = self.server.server_address[1]
-        if self.headers.get("Host", "") not in (f"127.0.0.1:{port}", f"localhost:{port}"):
+        hosts = (f"127.0.0.1:{port}", f"localhost:{port}")
+        origin = self.headers.get("Origin")
+        return self.headers.get("Host", "") in hosts and (origin is None or origin in [f"http://{h}" for h in hosts])
+
+    def _ask(self, request: dict) -> None:
+        run = request.get("run")
+        if run is not None and not (isinstance(run, str) and LOOP_ID.match(run)):
+            return self._json({"error": "unknown loop"}, 400)
+        try:
+            out = self.classify.ask(request)
+        except RuntimeError as e:
+            return self._json({"error": str(e)}, 503)
+        return self._json(out, 400 if "error" in out else 200)
+
+    def _post(self) -> None:
+        # Another website open in the browser can send a form here, but not
+        # JSON with this page's origin.
+        if not self._local() or self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+            return self._json({"error": "this page is only served to this machine"}, 403)
+        if self.path != "/api/classify":
+            return self._json({"error": "not found"}, 404)
+        try:
+            size = int(self.headers.get("Content-Length", ""))
+        except ValueError:
+            size = -1
+        if not 0 <= size <= MAX_BODY:
+            return self._json({"error": "the text is too long"}, 413)
+        try:
+            body = json.loads(self.rfile.read(size))
+            text, run = body.get("text"), body.get("run")
+        except (ValueError, AttributeError):
+            return self._json({"error": "not valid JSON"}, 400)
+        if not isinstance(text, str):
+            return self._json({"error": "text is missing"}, 400)
+        return self._ask({"op": "classify", "text": text, "run": run})
+
+    def _get(self) -> None:
+        if not self._local():
             return self._json({"error": "this page is only served to this machine"}, 403)
         path, _, query = self.path.partition("?")
         if path in PAGES:
@@ -135,6 +262,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self.loops_cache())
         if path == "/api/gpu":
             return self._json(self.gpu_cache())
+        if path == "/api/classify/models":
+            return self._json(list_models(self.runs))
+        m = re.match(r"^/api/classify/(map|sample|stars)$", path)
+        if m:
+            run = re.search(r"(?:^|&)run=([^&]+)", query)
+            return self._ask({"op": m.group(1), "run": run.group(1) if run else None})
         m = re.match(r"^/api/loop/([^/]+)/([a-z]+)(?:/(\d{1,9}))?$", path)
         if not m or not LOOP_ID.match(m.group(1)) or not (self.runs / m.group(1)).is_dir():
             return self._json({"error": "not found"}, 404)
@@ -184,10 +317,20 @@ def list_loops(runs: Path) -> list:
     return out[::-1]
 
 
+def list_models(runs: Path) -> list:
+    """The loops whose model can classify, the champion first."""
+    best = runs / "champion.json"
+    champion = json.loads(best.read_text(encoding="utf-8"))["run"] if best.exists() else None
+    out = [{**it, "champion": it["id"] == champion} for it in list_loops(runs)
+           if it["saved"] and (runs / it["id"] / "coredrill_hierarchical.json").exists()]
+    return sorted(out, key=lambda it: not it["champion"])
+
+
 def cmd_view(paths, port: int = 8765, open_browser: bool = True, log=print) -> None:
     runs = paths.runs
+    classify = Classify(runs, paths.data)
     handler = type("BoundHandler", (Handler,), {
-        "runs": runs, "loops_cache": Cached(lambda: list_loops(runs), 4.0), "gpu_cache": Cached(gpu, 2.0)})
+        "runs": runs, "classify": classify, "loops_cache": Cached(lambda: list_loops(runs), 4.0), "gpu_cache": Cached(gpu, 2.0)})
     server = None
     for p in range(port, port + 20):
         try:
@@ -199,6 +342,7 @@ def cmd_view(paths, port: int = 8765, open_browser: bool = True, log=print) -> N
         raise SystemExit(f"no free port from {port} to {port + 19}")
     url = f"http://127.0.0.1:{server.server_address[1]}/"
     log(f"Training view: {url}  (only this machine can open it)")
+    log(f"Classifier:    {url}classify")
     log(f"Loops from {runs / LEDGER}. Ctrl+C stops the view, not the training.")
     if open_browser:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
@@ -207,4 +351,5 @@ def cmd_view(paths, port: int = 8765, open_browser: bool = True, log=print) -> N
     except KeyboardInterrupt:
         log("View stopped. Loops keep running.")
     finally:
+        classify.stop()
         server.server_close()
