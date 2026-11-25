@@ -127,6 +127,9 @@ python -m train view                        # the matrices in 3D and the classif
 python -m train classify "a text"           # its rhizome profile, with the champion's model
 python -m train forever                     # self-training rounds with no end ...
 python -m train stop                        # ... until this; ends after the current loop
+python -m train builds --run <loop>         # ways of building the coredrill for that encoder
+python -m train math --run <loop>           # the coredrill's calculations, step by step (/math)
+python -m train density --run <loop>        # what density clustering finds; two builds from it (/density, docs/density.md)
 python -m train export --out exports/coredrill-trained
 ```
 

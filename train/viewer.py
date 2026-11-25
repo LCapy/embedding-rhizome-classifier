@@ -35,7 +35,8 @@ from .record import LEDGER, REPO, loops, memory, state
 
 PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html"),
          "/classify": Path(__file__).with_name("classify.html"), "/coredrill": Path(__file__).with_name("coredrill.html"),
-         "/loops": Path(__file__).with_name("loops.html"), "/math": Path(__file__).with_name("math.html")}
+         "/loops": Path(__file__).with_name("loops.html"), "/math": Path(__file__).with_name("math.html"),
+         "/density": Path(__file__).with_name("density.html")}
 MAX_BODY = 64 * 1024          # bytes of a request; a text may have 8,000 characters
 IDLE_MINUTES = 10             # the classifier's process ends after this long unused
 CLASSIFIER_NEEDS_GB = 1.3     # it commits about 0.9
@@ -174,6 +175,30 @@ class Classify:
             self._end(self.child)
 
 
+def density_view(runs: Path, loop: Optional[str], answers_only: bool = False) -> dict:
+    """The density loops that drew a map, and one of them (the latest unless
+    named): its map, and the test's answers so far."""
+    from .density import ANSWERS, MAP
+    found = [(r, it) for r in coredrills.roots(runs) for it in loops(r)
+             if it.get("kind") == "density" and (r / it["id"] / MAP).exists()]
+    found.sort(key=lambda f: f[1]["id"])
+    listing = [{"id": it["id"], "seq": it.get("seq"), "state": state(it), "reason": it.get("reason") or ""} for _, it in found]
+    pick = next(((r, it) for r, it in found if it["id"] == loop), None) if loop else (found[-1] if found else None)
+    if pick is None:
+        return {"loops": listing, "loop": None}
+    folder = pick[0] / pick[1]["id"]
+    out = {"loops": listing, "loop": pick[1]["id"], "state": state(pick[1])}
+    if not answers_only:
+        out["map"] = json.loads((folder / MAP).read_text(encoding="utf-8"))
+    for _ in range(3):
+        try:
+            out["answers"] = json.loads((folder / ANSWERS).read_text(encoding="utf-8"))
+            break
+        except (OSError, ValueError):
+            time.sleep(0.1)
+    return out
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "coredrill-view"
     runs: Path
@@ -275,6 +300,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(mathsteps.listing(self.runs))
             body = mathsteps.read(self.runs, loop) if LOOP_ID.match(loop) else None
             return self._send(200, body) if body else self._json({"error": "unknown loop"}, 404)
+        if path == "/api/density":
+            q = dict(p.partition("=")[::2] for p in query.split("&"))
+            loop = q.get("loop", "")
+            if loop and not LOOP_ID.match(loop):
+                return self._json({"error": "unknown loop"}, 400)
+            return self._json(density_view(self.runs, loop or None, q.get("part") == "answers"))
         if path == "/api/rhizome":
             loop = dict(p.partition("=")[::2] for p in query.split("&")).get("loop", "")
             if not LOOP_ID.match(loop):

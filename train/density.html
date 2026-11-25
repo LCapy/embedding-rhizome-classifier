@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: density</title>
+<link rel="icon" href="data:,">
+<style>
+:root { color-scheme: dark; --bg: #0c0d10; --card: #16181d; --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.08);
+        --right: #6f8fc4; --family: #b99a55; --away: #c46f88; }
+* { box-sizing: border-box; } body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+main { max-width: 1400px; margin: 0 auto; padding: 18px 24px 60px; } p { margin: 0; } h1 { font-size: 19px; margin: 0; } h2 { font-size: 15px; margin: 26px 0 6px; }
+.note { color: var(--muted); font-size: 12.5px; }
+nav { display: flex; gap: 2px; padding: 3px; margin: 0 0 14px; border: 1px solid var(--line); border-radius: 999px; width: max-content; max-width: 100%; overflow-x: auto; } nav a { color: var(--ink2); text-decoration: none; font-size: 13px; padding: 3px 12px; border-radius: 999px; } nav a[aria-current] { color: var(--ink); background: rgba(255,255,255,.08); }
+.bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+select, button { font: inherit; font-size: 12.5px; color: var(--ink2); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; max-width: 100%; } button { cursor: pointer; } button:hover { color: var(--ink); } button[aria-pressed="true"] { color: var(--ink); background: rgba(255,255,255,.09); } button[aria-pressed="false"] { opacity: .6; }
+#wrap { position: relative; height: 72vh; min-height: 480px; background: #0e0f13; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+canvas { display: block; width: 100%; height: 100%; cursor: grab; } canvas:active { cursor: grabbing; }
+#count { position: absolute; left: 14px; top: 12px; background: rgba(12,13,16,.82); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 12.5px; color: var(--ink2); pointer-events: none; }
+#count b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; } #count svg { vertical-align: -2px; margin-right: 5px; }
+#count .row { display: flex; gap: 8px; align-items: center; } #count .row span:last-child { margin-left: auto; padding-left: 12px; }
+#prog { height: 3px; background: var(--line); border-radius: 2px; margin: 6px 0 2px; overflow: hidden; } #prog i { display: block; height: 100%; background: var(--ink2); width: 0; transition: width .5s; }
+#tip { position: fixed; z-index: 3; pointer-events: none; max-width: 320px; padding: 7px 10px; border-radius: 10px; background: #0f1014; border: 1px solid var(--line); font-size: 12.5px; color: var(--ink2); } #tip[hidden] { display: none; } #tip b { color: var(--ink); font-weight: 600; }
+table { border-collapse: collapse; font-size: 12.5px; width: 100%; } th, td { padding: 4px 10px 4px 0; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; } th:first-child, td:first-child { text-align: left; } th { color: var(--muted); font-weight: 500; } tr { cursor: pointer; } tr:hover td { color: var(--ink); } td { color: var(--ink2); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+</style>
+</head>
+<body>
+<main>
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill">Coredrill</a><a href="/math">Math</a><a href="/density" aria-current="page">Density</a><a href="/loops">Loops</a></nav>
+  <h1>Density: the texts themselves, and where the answers land</h1>
+  <p class="note" id="what">Loading…</p>
+  <div class="bar">
+    <select id="loop" aria-label="Density loop"></select>
+    <span class="note">Answers of</span><span id="builds"></span>
+  </div>
+  <div class="bar">
+    <span class="note">Show</span>
+    <button id="l-tail" aria-pressed="true">Tails</button>
+    <button id="l-family" aria-pressed="true">Families (shared regions)</button>
+    <button id="l-review" aria-pressed="false">Review list</button>
+    <button id="l-test" aria-pressed="true">Test answers</button>
+    <select id="terr" aria-label="Territory"><option value="-1">Pick a territory…</option></select>
+  </div>
+  <div id="wrap">
+    <canvas id="c" tabindex="0" role="img" aria-label="Training texts placed by likeness; test texts marked by whether the coredrill answered them rightly, within their family, or elsewhere. Drag to move, scroll to zoom, click a text to pick its territory."></canvas>
+    <div id="count" role="status" aria-live="polite"></div>
+  </div>
+  <p class="note" style="margin-top:6px">Each faint point is a training text, placed by t-SNE so that alike texts sit together; brighter ones are in their territory's dense core, faint ones in its tail. Amber cores belong to a region that several territories share: a family. A test text sits among the training texts most like it. Its mark says what the coredrill answered: <span style="color:var(--right)">dot</span> right, <span style="color:var(--family)">ring</span> wrong but within the family of the right territory, <span style="color:var(--away)">cross</span> wrong and elsewhere.</p>
+  <div class="cols">
+    <section><h2>Territories that lose the most within their family</h2><p class="note">For the answers shown. Click a row to pick it on the map.</p><table id="lose"></table></section>
+    <section><h2>Families</h2><p class="note">Regions of dense texts that several territories share; the three largest territories in each.</p><table id="fams"></table></section>
+  </div>
+</main>
+<div id="tip" hidden></div>
+<script>
+const $ = id => document.getElementById(id), cv = $("c"), g = cv.getContext("2d");
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COL = { right: css("--right"), family: css("--family"), away: css("--away"), ink: css("--ink"), muted: css("--muted") };
+let M = null, A = null, loop = null, shown = null, sel = -1, view = { k: 1, x: 0, y: 0 }, lastN = {}, flash = [], seenAt = {};
+const layer = id => $(id).getAttribute("aria-pressed") === "true";
+for (const id of ["l-tail", "l-family", "l-review", "l-test"]) $(id).onclick = () => { $(id).setAttribute("aria-pressed", !layer(id)); draw(); };
+
+function fmt(n) { return n.toLocaleString("en-US"); }
+function el(tag, text, cls) { const e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+function outcome(truth, ans) { if (ans == null) return null; if (ans === truth) return "right"; const h = M.map.home; return truth >= 0 && ans >= 0 && h[truth] != null && h[truth] === h[ans] ? "family" : "away"; }
+
+// ── geometry ──
+function size() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; g.setTransform(d, 0, 0, d, 0, 0); }
+function toScreen(x, y) { const r = cv.getBoundingClientRect(), s = Math.min(r.width, r.height) * .46 * view.k; return [r.width / 2 + (x + view.x) * s, r.height / 2 + (y + view.y) * s]; }
+function fromScreen(px, py) { const r = cv.getBoundingClientRect(), s = Math.min(r.width, r.height) * .46 * view.k; return [(px - r.width / 2) / s - view.x, (py - r.height / 2) / s - view.y]; }
+let centers = [], famLabels = [];
+function prepare() {
+  const n = M.map.names.length, sx = new Float64Array(n), sy = new Float64Array(n), c = new Float64Array(n);
+  for (const [x, y, t] of M.map.train) { sx[t] += x; sy[t] += y; c[t]++; }
+  centers = [...Array(n)].map((_, i) => c[i] ? [sx[i] / c[i], sy[i] / c[i]] : null);
+  const R = M.map.regions.map(() => [0, 0, 0]);
+  for (const [x, y, , r, core] of M.map.train) if (r >= 0 && core) { R[r][0] += x; R[r][1] += y; R[r][2]++; }
+  famLabels = M.map.regions.map((r, i) => r.shared && r.texts >= 150 && R[i][2] ? { x: R[i][0] / R[i][2], y: R[i][1] / R[i][2], text: r.top.slice(0, 3).join(" · ") } : null).filter(Boolean);
+}
+
+// ── drawing ──
+function mark(kind, x, y, s, alpha) {
+  g.globalAlpha = alpha;
+  if (kind === "right") { g.fillStyle = COL.right; g.beginPath(); g.arc(x, y, s, 0, 7); g.fill(); }
+  else if (kind === "family") { g.strokeStyle = COL.family; g.lineWidth = 1.3; g.beginPath(); g.arc(x, y, s + .6, 0, 7); g.stroke(); }
+  else { g.strokeStyle = COL.away; g.lineWidth = 1.3; const d = s + .4; g.beginPath(); g.moveTo(x - d, y - d); g.lineTo(x + d, y + d); g.moveTo(x - d, y + d); g.lineTo(x + d, y - d); g.stroke(); }
+}
+function draw() {
+  if (!M) return;
+  const r = cv.getBoundingClientRect(); g.clearRect(0, 0, r.width, r.height);
+  const fam = layer("l-family"), tail = layer("l-tail"), review = layer("l-review"), home = M.map.home;
+  const famOf = t => sel >= 0 && home[sel] != null && home[t] === home[sel];
+  for (const [x, y, t, reg, core, rev] of M.map.train) {
+    if (!core && !tail && t !== sel) continue;
+    const [px, py] = toScreen(x, y), mine = t === sel;
+    let a = core ? .42 : .13, c = COL.ink;
+    if (fam && core && reg >= 0 && M.map.regions[reg].shared) { c = COL.family; a = .38; }
+    if (sel >= 0) a *= mine ? 2.2 : famOf(t) ? 1 : .35;
+    g.globalAlpha = Math.min(a, .95); g.fillStyle = mine ? COL.ink : c;
+    g.fillRect(px - (mine ? 1.3 : .9), py - (mine ? 1.3 : .9), mine ? 2.6 : 1.8, mine ? 2.6 : 1.8);
+    if (review && rev) { g.globalAlpha = .7; g.strokeStyle = COL.away; g.lineWidth = 1; g.beginPath(); g.arc(px, py, 3.2, 0, 7); g.stroke(); }
+  }
+  const B = A && A.builds[shown];
+  if (B && layer("l-test")) {
+    const now = performance.now();
+    for (let j = 0; j < B.answers.length; j++) {
+      const [x, y, truth] = M.map.test[j], o = outcome(truth, B.answers[j]); if (!o) continue;
+      if (sel >= 0 && truth !== sel) continue;
+      const [px, py] = toScreen(x, y), age = seenAt[shown] && seenAt[shown][j] ? (now - seenAt[shown][j]) / 1500 : 1;
+      mark(o, px, py, age < 1 ? 2.6 + 3 * (1 - age) : 1.7, sel >= 0 ? .9 : o === "right" ? .45 : .7);
+      if (sel >= 0 && o !== "right" && centers[B.answers[j]]) { const [qx, qy] = toScreen(...centers[B.answers[j]]); g.globalAlpha = .18; g.strokeStyle = o === "family" ? COL.family : COL.away; g.lineWidth = 1; g.beginPath(); g.moveTo(px, py); g.lineTo(qx, qy); g.stroke(); }
+    }
+  }
+  g.globalAlpha = 1; g.font = "11px system-ui, 'Segoe UI', sans-serif"; g.textAlign = "center";
+  if (fam && sel < 0) for (const f of famLabels) { const [px, py] = toScreen(f.x, f.y); g.fillStyle = "rgba(12,13,16,.7)"; const w = g.measureText(f.text).width; g.fillRect(px - w / 2 - 4, py - 9, w + 8, 14); g.fillStyle = COL.family; g.fillText(f.text, px, py + 2); }
+  if (sel >= 0 && centers[sel]) { const [px, py] = toScreen(...centers[sel]); g.font = "600 12.5px system-ui, 'Segoe UI', sans-serif"; const t = M.map.names[sel], w = g.measureText(t).width; g.fillStyle = "rgba(12,13,16,.85)"; g.fillRect(px - w / 2 - 6, py - 22, w + 12, 18); g.fillStyle = COL.ink; g.fillText(t, px, py - 9); }
+  if (B && B.answers.some((_, j) => seenAt[shown] && seenAt[shown][j] && performance.now() - seenAt[shown][j] < 1500)) requestAnimationFrame(draw);
+}
+
+// ── counts and tables ──
+function counts() {
+  const B = A && A.builds[shown], box = $("count"); box.replaceChildren();
+  if (!B) { box.append(el("span", "No answers yet")); return; }
+  const tally = { right: 0, family: 0, away: 0 }, per = M.map.names.map(() => [0, 0, 0, 0]);
+  B.answers.forEach((a, j) => { const t = M.map.test[j][2], o = outcome(t, a); if (!o) return; tally[o]++; if (t >= 0) { per[t][0]++; per[t][o === "right" ? 1 : o === "family" ? 2 : 3]++; } });
+  const n = B.answers.length, total = A.total, running = A.now === shown;
+  box.append(el("div", B.label + (running ? ": answering now" : ""), "")); box.firstChild.style.color = "var(--ink)";
+  if (running) { const p = el("div"); p.id = "prog"; const i = el("i"); i.style.width = (100 * n / total) + "%"; p.append(i); box.append(p, el("div", `${fmt(n)} of ${fmt(total)} test texts answered`, "note")); }
+  for (const [k, name] of [["right", "right"], ["family", "wrong, within the family"], ["away", "wrong, elsewhere"]]) {
+    const row = el("div", null, "row"), sw = document.createElementNS("http://www.w3.org/2000/svg", "svg"); sw.setAttribute("width", 10); sw.setAttribute("height", 10);
+    sw.innerHTML = k === "right" ? `<circle cx="5" cy="5" r="3.5" fill="${COL.right}"/>` : k === "family" ? `<circle cx="5" cy="5" r="3.5" fill="none" stroke="${COL.family}" stroke-width="1.4"/>` : `<path d="M1.5 1.5l7 7M1.5 8.5l7-7" stroke="${COL.away}" stroke-width="1.4"/>`;
+    const lab = el("span"); lab.append(sw, name); const v = el("span"); v.append(el("b", fmt(tally[k])), ` ${n ? (100 * tally[k] / n).toFixed(1) : "0"}%`); row.append(lab, v); box.append(row);
+  }
+  const lose = $("lose"); lose.replaceChildren(); const hd = el("tr"); for (const h of ["territory", "test texts", "right", "within family", "elsewhere"]) hd.append(el("th", h)); lose.append(hd);
+  per.map((p, i) => [i, ...p]).filter(p => p[1]).sort((a, b) => b[3] - a[3]).slice(0, 15).forEach(([i, all, ok, fam, away]) => {
+    const tr = el("tr"); tr.onclick = () => pick(i); tr.append(el("td", M.map.names[i]), el("td", fmt(all)), el("td", `${(100 * ok / all).toFixed(0)}%`), el("td", fmt(fam)), el("td", fmt(away))); lose.append(tr); });
+}
+function families() {
+  const t = $("fams"); t.replaceChildren(); const hd = el("tr"); hd.append(el("th", "family"), el("th", "dense texts")); t.append(hd);
+  M.map.regions.filter(r => r.shared).sort((a, b) => b.texts - a.texts).slice(0, 15).forEach(r => { const tr = el("tr"); tr.onclick = () => pick(M.map.names.indexOf(r.top[0])); tr.append(el("td", r.top.join(" · ")), el("td", fmt(r.texts))); t.append(tr); });
+}
+function pick(i) { sel = i; $("terr").value = i; if (i >= 0 && centers[i]) { view.x = -centers[i][0]; view.y = -centers[i][1]; view.k = Math.max(view.k, 2.2); } draw(); }
+$("terr").onchange = e => pick(+e.target.value);
+
+// ── interaction ──
+let drag = null;
+cv.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, moved: false }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointermove", e => {
+  if (drag) { const r = cv.getBoundingClientRect(), s = Math.min(r.width, r.height) * .46 * view.k; view.x = drag.vx + (e.clientX - drag.x) / s; view.y = drag.vy + (e.clientY - drag.y) / s; drag.moved ||= Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 3; draw(); return; }
+  hover(e);
+});
+cv.addEventListener("pointerup", e => { if (drag && !drag.moved) { const h = nearest(e); pick(h ? h.t : -1); } drag = null; });
+cv.addEventListener("wheel", e => { e.preventDefault(); const r = cv.getBoundingClientRect(), [wx, wy] = fromScreen(e.clientX - r.left, e.clientY - r.top); view.k = Math.min(40, Math.max(.6, view.k * Math.exp(-e.deltaY * .0015))); const [nx, ny] = fromScreen(e.clientX - r.left, e.clientY - r.top); view.x += nx - wx; view.y += ny - wy; draw(); }, { passive: false });
+cv.addEventListener("pointerleave", () => $("tip").hidden = true);
+cv.addEventListener("keydown", e => { const s = .08 / view.k; if (e.key === "ArrowLeft") view.x += s; else if (e.key === "ArrowRight") view.x -= s; else if (e.key === "ArrowUp") view.y += s; else if (e.key === "ArrowDown") view.y -= s; else if (e.key === "+" || e.key === "=") view.k *= 1.2; else if (e.key === "-") view.k /= 1.2; else if (e.key === "Escape") pick(-1); else return; e.preventDefault(); draw(); });
+function nearest(e) {
+  if (!M) return null; const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top; let best = null, bd = 64;
+  const B = A && A.builds[shown];
+  if (B && layer("l-test")) B.answers.forEach((a, j) => { const [x, y, t] = M.map.test[j]; if (sel >= 0 && t !== sel) return; const [px, py] = toScreen(x, y), d = (px - mx) ** 2 + (py - my) ** 2; if (d < bd) { bd = d; best = { test: j, t, a }; } });
+  if (!best) M.map.train.forEach(([x, y, t, reg, core, rev]) => { if (!core && !layer("l-tail")) return; const [px, py] = toScreen(x, y), d = (px - mx) ** 2 + (py - my) ** 2; if (d < bd) { bd = d; best = { t, reg, core, rev }; } });
+  return best;
+}
+function hover(e) {
+  const h = nearest(e), tip = $("tip"); if (!h) { tip.hidden = true; return; }
+  tip.replaceChildren(); const N = M.map.names;
+  if (h.test != null) { const o = outcome(h.t, h.a); tip.append("A test text of ", el("b", N[h.t] || "?"), el("br"), o === "right" ? "answered rightly" : `answered ${N[h.a] || "?"}, ` + (o === "family" ? "within its family" : "elsewhere")); }
+  else { const reg = h.reg >= 0 ? M.map.regions[h.reg] : null; tip.append("A training text of ", el("b", N[h.t]), el("br"), h.core ? "in its dense core" : "in its tail", el("br"), reg ? (reg.shared ? "a region shared with " + reg.top.filter(x => x !== N[h.t]).slice(0, 2).join(", ") : "a region of its own") : "in no dense region"); if (h.rev) tip.append(el("br"), "on the review list: nearer another territory"); }
+  tip.hidden = false; tip.style.left = Math.min(innerWidth - 330, e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px";
+}
+
+// ── data ──
+function buildButtons() {
+  const box = $("builds"); box.replaceChildren(); if (!A) return;
+  const names = { own: "its own build", density: "density centers", without: "without the review list" };
+  for (const k of Object.keys(A.builds)) { const b = el("button", names[k] || k); b.setAttribute("aria-pressed", k === shown); b.onclick = () => { shown = k; buildButtons(); counts(); draw(); }; box.append(b); }
+}
+function heard(d) {
+  const old = A; A = d.answers || A; if (!A) return;
+  const fresh = !old || A.now !== (old && old.now);
+  if (A.now && (shown == null || fresh)) shown = A.now; if (shown == null || !A.builds[shown]) shown = A.now || Object.keys(A.builds).pop();
+  const t = performance.now();
+  for (const [k, b] of Object.entries(A.builds)) { const was = lastN[k] ?? (old ? 0 : b.answers.length); seenAt[k] ||= {}; for (let j = was; j < b.answers.length; j++) seenAt[k][j] = t + (j - was) * (1800 / Math.max(1, b.answers.length - was)); lastN[k] = b.answers.length; }
+  buildButtons(); counts(); draw();
+}
+async function load(id) {
+  const d = await (await fetch("/api/density" + (id ? "?loop=" + id : ""))).json();
+  if (!d.loop) { $("what").textContent = "No density loop has drawn a map yet. Run: python -m train density --data data/v3 --runs runs/v3 --run <a loop>"; return; }
+  loop = d.loop; M = d; A = null; lastN = {}; seenAt = {}; shown = null; sel = -1;
+  $("loop").replaceChildren(...d.loops.slice().reverse().map(l => { const o = el("option", `${l.seq}. ${l.id}${l.state === "running" ? " (running)" : ""}`); o.value = l.id; o.selected = l.id === loop; return o; }));
+  $("terr").replaceChildren(el("option", "Pick a territory…"), ...M.map.names.map((n, i) => { const o = el("option", n); o.value = i; return o; })); $("terr").firstChild.value = -1;
+  $("what").textContent = `${fmt(M.map.train.length)} training texts (at most 40 per territory) and ${fmt(M.map.test.length)} test texts, through the encoder of ${M.map.encoder}. ${d.state === "running" ? "This loop is running: answers appear as the coredrill makes them." : ""}`;
+  prepare(); families(); size(); heard(d);
+}
+$("loop").onchange = e => load(e.target.value);
+async function poll() {
+  if (loop && M && M.state === "running") { try { const d = await (await fetch(`/api/density?loop=${loop}&part=answers`)).json(); M.state = d.state; heard(d); } catch (e) {} }
+  else { try { const d = await (await fetch("/api/density?part=answers")).json(); if (d.loop && d.loop !== loop && d.state === "running") load(d.loop); } catch (e) {} }
+}
+addEventListener("resize", () => { size(); draw(); });
+load().then(() => setInterval(poll, 2000));
+// keep the newest marks pulsing smoothly while answers arrive
+(function tick() { if (A && A.now) draw(); setTimeout(() => requestAnimationFrame(tick), 120); })();
+</script>
+</body>
+</html>

@@ -110,13 +110,16 @@ def evaluate(corpus: Corpus, train_records: List[dict], train_embs: np.ndarray, 
              test_embs: np.ndarray, head_logits: Optional[np.ndarray] = None,
              extra_systems: Optional[Dict[str, List[str]]] = None, classic: bool = True,
              blocked_titles: Optional[Set[str]] = None, log=print, node_cap: int = 0,
-             build: Optional[dict] = None) -> dict:
+             build: Optional[dict] = None, adjust: Optional[Callable[[dict], dict]] = None,
+             on_answer: Optional[Callable[[int, str], None]] = None) -> dict:
     """Scores every system on the holdout. Returns
       metrics      metrics[system][subset] = {strict, near_miss, n}; the gate reads these
       benchmark    12_by_article.py's layout, comparable with by_article.json's "by_article"
       coredrill    the deployed system's coredrill
       predictions  one row per holdout text: truth, every system's answer, ranks and profile
-    classic=False skips logistic regression and the linear head."""
+    classic=False skips logistic regression and the linear head. `adjust`, when
+    given, changes the built coredrill before it is scored, and `on_answer(j, answer)`
+    hears each deployed answer as it is made (python -m train density)."""
     labels, index = corpus.labels, corpus.label_index
     truths = [labels[corpus.y[i]] for i in test_idx]
     train_y = np.array([index[r["category"]] for r in train_records], dtype=np.int64)
@@ -125,6 +128,8 @@ def evaluate(corpus: Corpus, train_records: List[dict], train_embs: np.ndarray, 
 
     log(f"  building the coredrill from {len(train_records):,} training rows ...")
     cd = build_coredrill(train_records, X_tr, corpus.taxonomy, node_cap, build)
+    if adjust is not None:
+        cd = adjust(cd)
     eng.SKIP_NODES.clear()                       # mirror api/app.py: the coredrill's own list
     eng.SKIP_NODES.update(cd.get("skip_nodes", []))
     near = near_miss_fn(cd["taxonomy_backbone"]["parents_map"])
@@ -168,6 +173,8 @@ def evaluate(corpus: Corpus, train_records: List[dict], train_embs: np.ndarray, 
         with contextlib.redirect_stdout(io.StringIO()):
             raw = eng.analyze_text_rhizome_v2(cd, corpus.records[i]["text"], model, tau=tau, print_output=False)
         deployed.append(deployed_answer(raw))
+        if on_answer is not None:
+            on_answer(len(deployed) - 1, deployed[-1])
         profiles.append([r["node"] for r in raw.get("active_overlap_set", [])])
     answers["deployed"] = deployed
     log(f"  deployed pipeline scored {len(test_idx):,} texts ({time.perf_counter() - t0:.0f}s)")

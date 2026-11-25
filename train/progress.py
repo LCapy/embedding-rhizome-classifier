@@ -28,6 +28,11 @@ PHASES = {
     "baseline": [("Baseline:", "Preparing", .02)],
     "build": [("Ways of building", "Trying ways of building the coredrill", .02),
               ("Confirming once", "Confirming the best way on the test", .82)],
+    "density": [("Density in", "Finding dense cores inside each territory", .02),
+                ("  inside territories", "Finding dense regions across territories", .15),
+                ("  across territories", "Listing texts for review, and placing the texts on a map", .3),
+                ("Two builds", "Scoring a build from density centers", .45),
+                ("territories got several", "Scoring a build without the review list's texts", .72)],
 }
 SCORING = {"fit": (.85, .87, .9), "round": (.86, .88, .91), "score": (.6, .65, .75), "baseline": (.1, .2, .35)}
 TRAINING = {"fit": (.02, .78), "round": (.2, .8)}

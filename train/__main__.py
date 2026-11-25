@@ -3,6 +3,7 @@
   baseline   stock LaBSE on the fixed holdout (run once, first)
   score      an earlier model on this corpus and holdout, to compare with a new one
   builds     better ways of building the coredrill for an encoder; the best becomes the default
+  density    what density clustering (HDBSCAN) finds in an encoder's training texts, and two builds from it
   fit        train a model on the labeled data plus the pseudo-label pool
   round      one self-training round: harvest, pseudo-label, train, gate
   loop       rounds until they stop helping
@@ -32,7 +33,7 @@ def main(argv=None) -> None:
     argv = list(sys.argv[1:] if argv is None else argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
-    if not argv or argv[0] not in ("watch", "view", "classify", "builds", "math", "forever", "stop"):
+    if not argv or argv[0] not in ("watch", "view", "classify", "builds", "math", "density", "forever", "stop"):
         from .cli import main as full
         return full(argv)
 
@@ -40,10 +41,12 @@ def main(argv=None) -> None:
     # commits over a gigabyte of memory per process.
     ap = argparse.ArgumentParser(prog=f"python -m train {argv[0]}")
     ap.add_argument("--runs", type=Path, default=Path("runs"))
-    if argv[0] == "math":
+    if argv[0] in ("math", "density"):
         ap.add_argument("--run", required=True, help="a loop id that saved its embeddings")
-    if argv[0] in ("view", "classify", "builds", "math"):
+    if argv[0] in ("view", "classify", "builds", "math", "density"):
         ap.add_argument("--data", type=Path, default=Path("data"))
+    if argv[0] == "density":
+        ap.add_argument("--taxonomy", type=Path, default=None)
     if argv[0] == "builds":
         ap.add_argument("--run", default="stock", help="a loop id whose encoder to use, or stock (default)")
         ap.add_argument("--quick", action="store_true", help="fewer ways")
@@ -80,6 +83,10 @@ def main(argv=None) -> None:
     elif argv[0] == "math":
         from .mathsteps import measure
         measure(paths.runs, args.run, args.data.resolve(), log)
+    elif argv[0] == "density":
+        from .builds import Paths
+        from .density import cmd_density
+        cmd_density(Paths(args.data.resolve(), paths.runs, args.taxonomy), args.run, log)
     elif argv[0] == "builds":
         from .builds import Paths, cmd_builds
         cmd_builds(Paths(args.data.resolve(), paths.runs, args.taxonomy), None if args.run == "stock" else args.run,
