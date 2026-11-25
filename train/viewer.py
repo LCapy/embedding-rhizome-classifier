@@ -6,9 +6,10 @@ live.LiveTap writes under runs/<loop>/live. A trained loop with no frames
 (from before the capture existed, or run with --no-live) is shown as stock
 LaBSE against its saved weights.
 
-/classify is the rhizome classifier (classify.html). Its model runs in a
-process of its own, started by the first text and ended when left idle, so it
-takes no memory from a training loop in between.
+/classify is the rhizome classifier (classify.html) and /coredrill shows how
+the coredrill changed from loop to loop (coredrill.html). Both use a process of
+its own, started when needed and ended when left idle, so they take no memory
+from a training loop in between.
 """
 from __future__ import annotations
 
@@ -28,11 +29,12 @@ from typing import Optional
 
 import numpy as np
 
+from . import coredrills
 from .frames import describe, pack, spread
 from .record import LEDGER, REPO, loops, memory, state
 
 PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html"),
-         "/classify": Path(__file__).with_name("classify.html")}
+         "/classify": Path(__file__).with_name("classify.html"), "/coredrill": Path(__file__).with_name("coredrill.html")}
 MAX_BODY = 64 * 1024          # bytes of a request; a text may have 8,000 characters
 IDLE_MINUTES = 10             # the classifier's process ends after this long unused
 CLASSIFIER_NEEDS_GB = 1.3     # it commits about 0.9
@@ -264,14 +266,25 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self.gpu_cache())
         if path == "/api/classify/models":
             return self._json(list_models(self.runs))
+        if path == "/api/coredrills":
+            return self._json(coredrills.listing(self.runs))
+        if path == "/api/coredrills/timeline":
+            return self._ask({"op": "timeline"})
+        if path == "/api/coredrills/compare":
+            q = dict(p.partition("=")[::2] for p in query.split("&"))
+            ids = [q.get("a", ""), q.get("b", "")]
+            if not all(LOOP_ID.match(i) or i == coredrills.DEPLOYED for i in ids):
+                return self._json({"error": "unknown loop"}, 400)
+            return self._ask({"op": "compare", "a": ids[0], "b": ids[1]})
         m = re.match(r"^/api/classify/(map|sample|stars)$", path)
         if m:
             run = re.search(r"(?:^|&)run=([^&]+)", query)
             return self._ask({"op": m.group(1), "run": run.group(1) if run else None})
         m = re.match(r"^/api/loop/([^/]+)/([a-z]+)(?:/(\d{1,9}))?$", path)
-        if not m or not LOOP_ID.match(m.group(1)) or not (self.runs / m.group(1)).is_dir():
+        run = coredrills.find(self.runs, m.group(1)) if m and LOOP_ID.match(m.group(1)) else None
+        if run is None:
             return self._json({"error": "not found"}, 404)
-        run, what, n = self.runs / m.group(1), m.group(2), m.group(3)
+        what, n = m.group(2), m.group(3)
         live = run / "live"
         if what == "meta" and (live / "meta.json").exists():
             return self._send(200, (live / "meta.json").read_bytes())
@@ -307,22 +320,23 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def list_loops(runs: Path) -> list:
+    """Every loop, of every runs folder, newest first."""
     out = []
-    for it in loops(runs):
-        run = runs / it["id"]
+    for run, it in ((root / it["id"], it) for root in coredrills.roots(runs) for it in loops(root)):
         res = ((it.get("benchmark") or {}).get("results") or {}).get("all classes") or {}
         out.append({"id": it["id"], "seq": it.get("seq"), "kind": it.get("kind"), "state": state(it),
+                    "root": coredrills.root_name(runs, run),
                     "live": (run / "live" / "frame.json").exists(), "saved": (run / "weights.pt").exists(),
                     "deployed": (res.get("deployed") or {}).get("strict")})
-    return out[::-1]
+    return sorted(out, key=lambda it: it["id"], reverse=True)
 
 
 def list_models(runs: Path) -> list:
     """The loops whose model can classify, the champion first."""
-    best = runs / "champion.json"
-    champion = json.loads(best.read_text(encoding="utf-8"))["run"] if best.exists() else None
-    out = [{**it, "champion": it["id"] == champion} for it in list_loops(runs)
-           if it["saved"] and (runs / it["id"] / "coredrill_hierarchical.json").exists()]
+    best = [root / "champion.json" for root in coredrills.roots(runs)]
+    champions = {json.loads(f.read_text(encoding="utf-8"))["run"] for f in best if f.exists()}
+    out = [{**it, "champion": it["id"] in champions} for it in list_loops(runs)
+           if it["saved"] and (coredrills.find(runs, it["id"]) / coredrills.FILE).exists()]
     return sorted(out, key=lambda it: not it["champion"])
 
 

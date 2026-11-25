@@ -34,7 +34,7 @@ table { border-collapse: collapse; font-size: 12px; margin-top: 8px; width: 100%
 </head>
 <body>
 <section class="panel" id="ask" aria-label="Your text">
-  <nav aria-label="Views"><a href="/">Training</a><a href="/classify" aria-current="page">Classifier</a></nav>
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify" aria-current="page">Classifier</a><a href="/coredrill">Coredrill</a></nav>
   <h1>The rhizome classifier</h1>
   <p class="note">Any of LaBSE's 109 languages. The model runs on this machine and your text stays on it.</p>
   <label for="text">Text</label>
@@ -301,7 +301,7 @@ function show(r) {
     initGL(); resize(); requestAnimationFrame(frame);
     const models = await get("/api/classify/models");
     if (!models.length) { say("No trained model yet. Train one with: python -m train fit", true); $("go").disabled = $("sample").disabled = true; return; }
-    for (const m of models) { const o = el("option", "", `Loop ${m.seq}${m.champion ? ", champion" : ""}${m.deployed ? `: ${(100 * m.deployed).toFixed(1)}% on the holdout` : ""}`); o.value = m.id; $("model").append(o); }
+    for (const m of models) { const o = el("option", "", `${m.root ? m.root + ", loop" : "Loop"} ${m.seq}${m.champion ? ", champion" : ""}${m.deployed ? `: ${(100 * m.deployed).toFixed(1)}% on the holdout` : ""}`); o.value = m.id; $("model").append(o); }
     const q = new URLSearchParams(location.search); if (q.get("run")) $("model").value = q.get("run"); if (!$("model").value) $("model").selectedIndex = 0;
     await working("Loading the model…", loadMap); if (q.get("text") && map) { $("text").value = q.get("text"); await working("Classifying…", classify); }
   } catch (e) { say(e.message, true); }

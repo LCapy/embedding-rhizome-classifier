@@ -29,6 +29,7 @@ os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
 
 import numpy as np  # noqa: E402
 
+from . import coredrills  # noqa: E402
 from .data import eng, record_keys  # noqa: E402
 from .encoder_np import BASE_MODEL, Encoder, base_dir, read_weights  # noqa: E402
 from .evaluate import StoredEmbeddingModel, deployed_answer  # noqa: E402
@@ -38,9 +39,8 @@ MAX_CHARS = 8000        # api/app.py's limit
 
 def classifiable(runs: Path) -> List[str]:
     """Loops with a complete trained model, newest first."""
-    return sorted((p.name for p in runs.iterdir() if p.is_dir() and all(
-        (p / f).exists() for f in ("run.json", "weights.pt", "coredrill_hierarchical.json"))), reverse=True) \
-        if runs.exists() else []
+    return sorted((p.name for root in coredrills.roots(runs) for p in root.iterdir() if p.is_dir() and all(
+        (p / f).exists() for f in ("run.json", "weights.pt", "coredrill_hierarchical.json"))), reverse=True)
 
 
 def champion(runs: Path) -> Optional[str]:
@@ -155,6 +155,10 @@ class Classifier:
         self.encoder: Optional[Encoder] = None
         self.id = ""
         self.samples: Optional[List[dict]] = None
+        self.samples_of: Optional[Path] = None
+        self.coredrills: Dict[str, coredrills.Coredrill] = {}
+        self.positions: Dict[str, Dict[str, np.ndarray]] = {}
+        self.summaries: Dict[str, dict] = {}
 
     def load(self, run: Optional[str] = None) -> None:
         run = run or champion(self.runs)
@@ -164,7 +168,7 @@ class Classifier:
             return
         if run not in classifiable(self.runs):
             raise ValueError(f"{run} has no complete trained model")
-        folder = self.runs / run
+        folder = coredrills.find(self.runs, run)
         self.meta = json.loads((folder / "run.json").read_text(encoding="utf-8"))
         if self.encoder is None:
             self.encoder = Encoder(base_dir(self.meta.get("base_model", BASE_MODEL)))
@@ -179,7 +183,7 @@ class Classifier:
         eng.SKIP_NODES.update(self.cd.get("skip_nodes", []))
         self.tree: Dict[str, dict] = self.cd["tree"]
         self.paths = {n: p[0] for n, p in self.cd["taxonomy_backbone"]["lineage_paths"].items() if p}
-        self.run_loading = run
+        self.folder = folder
         self._map()
         self.id = run
 
@@ -227,7 +231,7 @@ class Classifier:
     def _trust(self) -> Optional[dict]:
         """How often the answer was right on the holdout, when the prototypes
         agreed with it and when they did not."""
-        f = self.runs / self.run_loading / "holdout_predictions.jsonl.gz"
+        f = self.folder / "holdout_predictions.jsonl.gz"
         if not f.exists():
             return None
         count = {True: [0, 0], False: [0, 0]}
@@ -246,8 +250,9 @@ class Classifier:
         """Every labeled text as a star near its territory. Where it stands in
         its cloud is its own stock LaBSE embedding, on the three axes along
         which its territory's texts differ most. Computed once and kept."""
-        cache, source = self.runs / "stars.npz", self.data / "embeddings.npz"
-        stamp = f"{source.stat().st_mtime_ns} {(self.data / 'sentences.json').stat().st_mtime_ns}"
+        data = self._data()
+        cache, source = self.folder.parent / "stars.npz", data / "embeddings.npz"
+        stamp = f"{source.stat().st_mtime_ns} {(data / 'sentences.json').stat().st_mtime_ns}"
         if cache.exists():
             with np.load(cache) as z:
                 kept = {k: z[k] for k in z.files}
@@ -256,7 +261,7 @@ class Classifier:
         else:
             kept = None
         if kept is None:
-            labels = [r["category"] for r in json.loads((self.data / "sentences.json").read_text(encoding="utf-8"))]
+            labels = [r["category"] for r in json.loads((data / "sentences.json").read_text(encoding="utf-8"))]
             with np.load(source) as z:
                 E = z[z.files[0]]
             names = sorted(set(labels))
@@ -353,11 +358,39 @@ class Classifier:
                for a, rs in groups.items()]
         return sorted(out, key=lambda a: (a["area"] != mine, -a["mass"]))
 
+    def _data(self) -> Path:
+        """The folder of the corpus the loaded model was trained on."""
+        f = self.folder / "record.json"
+        info = (json.loads(f.read_text(encoding="utf-8")).get("data") or {}).get("sentences") if f.exists() else None
+        folder = Path(info["path"]).parent if info else self.data
+        return folder if (folder / "sentences.json").exists() else self.data
+
+    def coredrill(self, which: str) -> "coredrills.Coredrill":
+        if which not in self.coredrills:
+            if len(self.coredrills) > 5:         # about 20 MB each
+                self.coredrills.clear()
+            self.coredrills[which] = coredrills.Coredrill(coredrills.path_of(self.runs, which))
+        return self.coredrills[which]
+
+    def compare(self, a: str, b: str) -> dict:
+        left, right = self.coredrill(a), self.coredrill(b)
+        if b not in self.positions:
+            self.positions[b] = universe(right.tree, right.paths)
+        return {"from": a, "to": b, **coredrills.compare(left, right, self.positions[b])}
+
+    def timeline(self) -> List[dict]:
+        for item in coredrills.listing(self.runs):
+            if item["id"] not in self.summaries:
+                self.summaries[item["id"]] = coredrills.Coredrill(coredrills.path_of(self.runs, item["id"])).summary()
+        return [{**item, **self.summaries[item["id"]]} for item in coredrills.listing(self.runs)]
+
     def sample(self) -> dict:
         """A random holdout text and its true label: the model never trained on it."""
-        if self.samples is None:
-            keys = set(json.loads((self.runs / "holdout.json").read_text(encoding="utf-8"))["keys"])
-            records = json.loads((self.data / "sentences.json").read_text(encoding="utf-8"))
+        root = self.folder.parent
+        if self.samples is None or self.samples_of != root:
+            keys = set(json.loads((root / "holdout.json").read_text(encoding="utf-8"))["keys"])
+            records = json.loads((self._data() / "sentences.json").read_text(encoding="utf-8"))
+            self.samples_of = root
             self.samples = [{"text": r["text"], "truth": r["category"], "lang": r.get("lang") or "en",
                              "source": r.get("article_title") or r.get("source") or ""}
                             for r, k in zip(records, record_keys(records))
@@ -368,6 +401,10 @@ class Classifier:
 
     def handle(self, request: dict) -> dict:
         op = request.get("op")
+        if op == "compare":                      # these need no encoder
+            return self.compare(request.get("a", ""), request.get("b", ""))
+        if op == "timeline":
+            return {"coredrills": self.timeline()}
         self.load(request.get("run"))
         if op == "classify":
             return self.classify(request.get("text", ""))

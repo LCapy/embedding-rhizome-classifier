@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: what changed</title>
+<link rel="icon" href="data:,">
+<style>
+:root { color-scheme: dark; --bg: #0b0c0f; --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.09); --panel: rgba(19,21,26,.93); --before: #737986; --after: #a98d80; --good: #7d9a94; --bad: #a98d80; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+#map, #over { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; } #map { touch-action: none; cursor: grab; outline: none; } #map.drag { cursor: grabbing !important; } #over { pointer-events: none; }
+.panel { position: fixed; z-index: 2; top: 20px; width: 350px; max-height: calc(100vh - 40px); overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 20px; scrollbar-width: thin; scrollbar-color: #34373f transparent; }
+#left { left: 20px; width: 320px; } #right { right: 20px; width: 372px; } #right[hidden] { display: none; }
+nav { display: flex; gap: 2px; padding: 3px; margin: 0 0 14px; border: 1px solid var(--line); border-radius: 999px; width: max-content; }
+nav a { color: var(--ink2); text-decoration: none; font-size: 13px; padding: 3px 11px; border-radius: 999px; } nav a[aria-current] { color: var(--ink); background: rgba(255,255,255,.08); }
+h1 { font-size: 15px; font-weight: 600; margin: 0 0 2px; } h2 { font-size: 12px; font-weight: 600; color: var(--muted); margin: 18px 0 4px; }
+p { margin: 0; } .note { color: var(--muted); font-size: 12.5px; } label { display: block; font-size: 12px; color: var(--muted); margin: 11px 0 4px; }
+button, select { font: inherit; font-size: 13px; color: var(--ink2); background: rgba(38,41,50,.55); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; min-height: 34px; cursor: pointer; } select { width: 100%; } select option { color: #14161b; background: #d8d6d0; } button:hover, select:hover { color: var(--ink); }
+:focus-visible { outline: 2px solid #7888a6; outline-offset: 2px; } .row { display: flex; gap: 8px; margin: 10px 0 0; align-items: center; flex-wrap: wrap; }
+input[type=range] { flex: 1; min-width: 120px; accent-color: #7888a6; } .ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+#status { min-height: 20px; margin-top: 8px; font-size: 13px; color: var(--ink2); } #status.bad { color: #c3a394; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; } .tile { padding: 8px 11px; border-radius: 12px; background: rgba(255,255,255,.04); } .tile b { display: block; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; } .tile b small { font-size: 12.5px; font-weight: 400; color: var(--muted); } .tile span { font-size: 12px; color: var(--ink2); line-height: 1.35; display: block; }
+svg { display: block; width: 100%; height: auto; overflow: visible; } svg text { fill: var(--muted); font: 11px system-ui, "Segoe UI", sans-serif; } .key { display: flex; gap: 14px; font-size: 12px; color: var(--ink2); margin: 2px 0 4px; } .key i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.list button { display: grid; grid-template-columns: 1fr auto; gap: 8px; width: 100%; text-align: left; background: none; border: 0; border-radius: 8px; padding: 3px 8px; min-height: 28px; margin: 0 -8px; } .list button:hover { background: rgba(255,255,255,.05); } .list span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); }
+#legend { display: grid; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink2); } #legend span { display: flex; align-items: center; gap: 8px; } #legend i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.ramp { height: 8px; border-radius: 4px; margin-top: 8px; } details { margin-top: 14px; } summary { cursor: pointer; color: var(--ink2); font-size: 13px; } details p { margin-top: 6px; }
+#tip { position: fixed; z-index: 3; pointer-events: none; width: 296px; padding: 9px 12px; border-radius: 12px; background: rgba(15,16,20,.96); border: 1px solid var(--line); font-size: 12.5px; line-height: 1.45; color: var(--ink2); } #tip b { display: block; color: var(--ink); font-weight: 600; } #tip[hidden] { display: none; } #tip table { border-collapse: collapse; margin-top: 5px; width: 100%; } #tip td { padding: 1px 0; font-variant-numeric: tabular-nums; } #tip td + td { text-align: right; padding-left: 10px; } #tip th { font-weight: 500; color: var(--muted); text-align: right; padding-left: 10px; } #tip em { font-style: normal; color: #c3a394; display: block; margin-top: 4px; }
+@media (max-width: 1080px) { html, body { overflow: auto; height: auto; } #stage { position: relative; } #map { position: relative; width: 100%; height: 60vh; touch-action: pan-y; } #over { position: absolute; width: 100%; height: 60vh; inset: auto; left: 0; top: 0; } #left.panel, #right.panel { position: relative; inset: auto; width: auto; max-height: none; margin: 12px; } }
+</style>
+</head>
+<body>
+<section class="panel" id="left" aria-label="Which coredrills">
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill" aria-current="page">Coredrill</a></nav>
+  <h1>What changed in the coredrill</h1>
+  <p class="note">Each ball is a territory: where its center is, and how wide it is. Play it to see them move.</p>
+  <label for="a">From</label><select id="a"></select>
+  <label for="b">To</label><select id="b"></select>
+  <div class="row"><button id="play" aria-pressed="false">Play</button><input type="range" id="t" min="0" max="1" step="0.002" value="1" aria-label="From before to after"></div>
+  <div class="ends"><span>before</span><span>after</span></div>
+  <label for="by">Color by</label>
+  <select id="by"><option value="gap">Distance to the nearest territory: gained or lost</option><option value="texts">Texts behind it: more or fewer</option><option value="right">Right answers on the test: more or fewer</option><option value="domain">Domain</option></select>
+  <div id="scale"></div>
+  <p id="status" role="status" aria-live="polite">Loading…</p>
+  <div class="row"><button id="whole">Whole universe</button></div>
+  <details><summary>How to read this</summary><p class="note">A territory's center is the average of its texts; its radius (sigma) is how far they spread from it. Two territories answer well when their centers are apart: below a distance of 0.1 a text between them is close to a coin toss, and at 0 they are one territory under two names. The taxonomy decides where things stand; the move of a ball is the change in the model's own distances inside its domain, and the thin trail shows where it came from. The whole space may turn between two trainings; that turn is taken out before anything is compared.</p></details>
+</section>
+<div id="stage"><canvas id="map" tabindex="0" role="img" aria-label="The coredrill's territories before and after. Drag or use the arrow keys to turn, scroll to zoom, hold shift to move, Escape for the whole."></canvas><canvas id="over"></canvas></div>
+<section class="panel" id="right" aria-label="The change in numbers" hidden></section>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), canvas = $("map"), over = $("over"), g = over.getContext("2d");
+const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "low-power" }), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let data = null, list = [], time = null, mix = 1, playing = null, hover = -1, by = "gap";
+function oklch(L, C, h) {
+  const a = C * Math.cos(h * Math.PI / 180), b = C * Math.sin(h * Math.PI / 180), l = (L + .3963377774 * a + .2158037573 * b) ** 3, m = (L - .1055613458 * a - .0638541728 * b) ** 3, s = (L - .0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + .2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - .3413193965 * s, -.0041960863 * l - .7034186147 * m + 1.707614701 * s].map(v => Math.max(0, Math.min(1, v <= .0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - .055)));
+}
+const css = (c, a = 1) => `rgba(${c.map(v => Math.round(v * 255)).join(",")},${a})`, INK = [.79, .78, .75], GRAY = [.4, .41, .43], WORSE = oklch(.6, .065, 45), BETTER = oklch(.6, .06, 195), blend = (a, b, k) => a.map((v, i) => v * (1 - k) + b[i] * k), soft = (c, k) => blend(c, INK, k);
+const diverge = v => v === null ? [.26, .27, .29] : blend(GRAY, v < 0 ? WORSE : BETTER, Math.min(1, Math.abs(v)));     // -1 worse, 0 the same, 1 better
+const SCORE = {
+  gap: n => !n.b ? null : !n.a ? 1 : (n.b.gap - n.a.gap) / .2,
+  texts: n => !n.b && !n.a ? null : Math.log2((1 + (n.b ? n.b.used : 0)) / (1 + (n.a ? n.a.used : 0))) / 3,
+  right: n => n.a && n.b && n.a.tested && n.b.tested ? (n.b.right / n.b.tested - n.a.right / n.a.tested) / .4 : null,
+};
+const WORDS = { gap: ["closer to its neighbor", "further from it"], texts: ["fewer texts", "more texts"], right: ["fewer right", "more right"] };
+function color(n) { if (by !== "domain") return diverge(SCORE[by](n)); const i = data.domains.indexOf(n.domain); return n.domain ? oklch(.555, n.b ? .06 : .02, 205 + i * 360 / data.domains.length) : [.44, .44, .43]; }
+
+// ── camera ──
+const FOV = 46 * Math.PI / 180, HOME = 34, cam = { t: [0, 0, 0], d: 46, yaw: .2, pitch: .5 }, goal = { t: [0, 0, 0], d: HOME, yaw: .5, pitch: .38 };
+let W = 1, H = 1, off = 0, A, seen = [];
+function resize() { const r = Math.min(devicePixelRatio || 1, 2), b = canvas.getBoundingClientRect(); W = b.width; H = b.height; for (const c of [canvas, over]) { c.width = Math.round(W * r); c.height = Math.round(H * r); } g.setTransform(r, 0, 0, r, 0, 0); }
+addEventListener("resize", resize);
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+function axes() { const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), f = [-sy * cp, -sp, -cy * cp]; return { f, r: [cy, 0, -sy], u: [-sy * sp, cp, -cy * sp], e: cam.t.map((v, i) => v - f[i] * cam.d) }; }
+function project(p) { const v = [p[0] - A.e[0], p[1] - A.e[1], p[2] - A.e[2]], z = dot(v, A.f), k = H / 2 / Math.tan(FOV / 2) / Math.max(z, .05); return { x: W / 2 + off + dot(v, A.r) * k, y: H / 2 - dot(v, A.u) * k, z, k }; }
+function matrix() {
+  const c = 1 / Math.tan(FOV / 2), n = .05, f = 160, e = A.e, o = 2 * off / W, row = (v, s) => [v[0] * s, v[1] * s, v[2] * s, -dot(v, e) * s], X = row(A.r, c * H / W), Y = row(A.u, c), Z = row(A.f, 1);
+  for (let i = 0; i < 4; i++) X[i] += o * Z[i]; const q = (f + n) / (f - n), w = -2 * f * n / (f - n), D = Z.map((v, i) => v * q + (i === 3 ? w : 0));
+  return new Float32Array([X[0], Y[0], D[0], Z[0], X[1], Y[1], D[1], Z[1], X[2], Y[2], D[2], Z[2], X[3], Y[3], D[3], Z[3]]);
+}
+function fly(t, d) { goal.t = t.slice(); goal.d = d; }
+const home = () => fly([0, 0, 0], HOME), size = s => .06 + 1.7 * (s ? s.sigma : 0), at = n => n.from.map((v, i) => v + (n.to[i] - v) * mix);
+
+// ── WebGL: the graphics card does the morph ──
+let P = {}, balls = null, lines = null, trails = null;
+function program(v, f) { const p = gl.createProgram(); for (const [t, s] of [[gl.VERTEX_SHADER, v], [gl.FRAGMENT_SHADER, f]]) { const x = gl.createShader(t); gl.shaderSource(x, "#version 300 es\nprecision highp float;\n" + s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); gl.attachShader(p, x); } gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}; for (let i = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS) - 1; i >= 0; i--) { const n = gl.getActiveUniform(p, i).name; u[n] = gl.getUniformLocation(p, n); } return { p, u }; }
+function initGL() {
+  P.ball = program("layout(location=0) in vec2 q; layout(location=1) in vec3 a; layout(location=2) in vec3 b; layout(location=3) in vec2 r; layout(location=4) in vec4 c; uniform mat4 M; uniform vec3 R, U; uniform float t, K, cap; out vec2 v; out vec4 k; void main() { vec3 p = mix(a, b, t); float w = (M * vec4(p, 1.0)).w, s = max(mix(r.x, r.y, t), 0.04); s *= min(1.0, cap / (s * K / max(w, 0.05))); gl_Position = M * vec4(p + (R * q.x + U * q.y) * s, 1.0); v = q; k = c; k.a *= smoothstep(0.25, 1.2, gl_Position.w); }",
+    "in vec2 v; in vec4 k; out vec4 o; void main() { float d = dot(v, v); if (d > 1.0) discard; float rim = smoothstep(0.62, 0.98, d) * smoothstep(1.0, 0.985, d), lit = 0.72 + 0.28 * dot(normalize(vec3(v, sqrt(1.0 - d))), normalize(vec3(-0.4, 0.7, 0.6))), core = smoothstep(0.02, 0.012, d); float a = k.a * (0.13 + 0.26 * rim + 0.6 * core); o = vec4(k.rgb * lit * a, a); }");
+  P.line = program("layout(location=0) in vec3 a; layout(location=1) in vec3 b; layout(location=2) in vec4 c; layout(location=3) in float w; uniform mat4 M; uniform float t; out vec4 v; void main() { gl_Position = M * vec4(mix(a, b, w < 0.0 ? t : min(t, w)), 1.0); v = vec4(c.rgb, c.a * smoothstep(80.0, 10.0, gl_Position.w)); }", "in vec4 v; out vec4 o; void main() { o = vec4(v.rgb * v.a, 0.0); }");
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.disable(gl.DEPTH_TEST);
+}
+function mesh(parts, quad) { const a = gl.createVertexArray(); gl.bindVertexArray(a); const b = []; const put = (i, d, n, div) => { const x = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, x); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(d), gl.STATIC_DRAW); gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, 0, 0); if (div) gl.vertexAttribDivisor(i, 1); b.push(x); }; let k = 0; if (quad) put(k++, [-1, -1, 1, -1, -1, 1, 1, 1], 2); for (const [d, n] of parts) put(k++, d, n, quad); gl.bindVertexArray(null); return { a, b }; }
+function drop(m) { if (m) { gl.deleteVertexArray(m.a); m.b.forEach(b => gl.deleteBuffer(b)); } }
+function build() {
+  [balls, lines, trails].forEach(drop); const N = data.nodes, C = N.map(color), flat = a => a.flat();
+  balls = { ...mesh([[flat(N.map(n => n.from)), 3], [flat(N.map(n => n.to)), 3], [flat(N.map(n => [n.a ? size(n.a) : 0, n.b ? size(n.b) : 0])), 2], [flat(C.map((c, i) => [...c, N[i].b || N[i].a ? .95 : .35])), 4]], true), n: N.length };
+  const l = { a: [], b: [], c: [], w: [] }; for (const [i, j] of data.tree) for (const k of [i, j]) { l.a.push(N[k].from); l.b.push(N[k].to); l.c.push([.42, .43, .46, .22]); l.w.push(-1); } lines = { ...mesh([[flat(l.a), 3], [flat(l.b), 3], [flat(l.c), 4], [l.w, 1]]), n: l.w.length };
+  const s = { a: [], b: [], c: [], w: [] }; N.forEach((n, i) => { if (n.a && n.b) for (const w of [0, 1]) { s.a.push(n.from); s.b.push(n.to); s.c.push([...C[i], w ? .75 : .15]); s.w.push(w ? -1 : 0); } }); trails = { ...mesh([[flat(s.a), 3], [flat(s.b), 3], [flat(s.c), 4], [s.w, 1]]), n: s.w.length };
+}
+
+// ── labels ──
+let boxes = [];
+function label(text, p, c, alpha, px, weight, dy, must) { if (p.z < .1 || alpha < .04 || p.x < -90 || p.x > W + 90 || p.y < -20 || p.y > H + 20) return false; g.font = `${weight} ${px}px system-ui, "Segoe UI", sans-serif`; const w = g.measureText(text).width / 2 + 5, h = px * .62, y = p.y + dy; if (!must && boxes.some(b => Math.abs(b.x - p.x) < b.w + w && Math.abs(b.y - y) < b.h + h)) return false; boxes.push({ x: p.x, y, w, h }); g.lineWidth = 3.5; g.strokeStyle = `rgba(12,13,17,${.8 * alpha})`; g.fillStyle = css(c, alpha); g.strokeText(text, p.x, y); g.fillText(text, p.x, y); return true; }
+function labels() {
+  g.clearRect(0, 0, W, H); if (!data) return; g.textAlign = "center"; g.lineJoin = "round"; boxes = []; const N = data.nodes, Q = seen = N.map(n => project(at(n)));
+  const rad = i => Math.min(92, Math.max(7, size(mix < .5 ? N[i].a : N[i].b) * Q[i].k));
+  if (hover >= 0 && Q[hover].z > .1) { g.beginPath(); g.arc(Q[hover].x, Q[hover].y, rad(hover) + 3, 0, 7); g.lineWidth = 1.3; g.strokeStyle = css(INK, .7); g.stroke(); label(N[hover].name, Q[hover], INK, 1, 13, 600, -rad(hover) - 8, true); }
+  const named = new Set(); for (const d of data.domains) { const m = N.map((n, i) => n.domain === d ? i : -1).filter(i => i >= 0), p = project([0, 1, 2].map(k => m.reduce((s, i) => s + at(N[i])[k], 0) / m.length)); if (label(d, p, [.62, .62, .64], Math.max(0, Math.min(.9, (cam.d - 7) / 8)), 13.5, 600, -Math.min(46, 1.6 * p.k), false)) named.add(d); }
+  const order = N.map((_, i) => i).filter(i => i !== hover).sort((a, b) => (N[a].level - N[b].level) || (Q[a].z - Q[b].z));
+  for (const i of order) { const n = N[i], k = Q[i].k, need = n.level <= 1 ? 66 : n.level === 2 ? 50 : n.level === 3 ? 92 : 125; if (named.has(n.name) || k <= need) continue; label(n.name, Q[i], soft(color(n), .35), Math.min(.85, (k - need) / 40), 12, n.level <= 2 ? 600 : 400, -rad(i) * .5 - 9, false); }
+}
+
+// ── frame ──
+let dragging = null, last = null, moved = 0, before = 0;
+function frame(t) {
+  requestAnimationFrame(frame); if (document.hidden || t - before < 15) return; const dt = Math.min(.5, (t - before) / 1000); before = t;
+  if (playing !== null) { playing += dt / 4.2; const u = playing % 2, v = u < 1 ? u : 2 - u; mix = v * v * (3 - 2 * v); $("t").value = mix; if (playing > 4) { playing = null; mix = 1; $("t").value = 1; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); } }
+  const e = still ? 1 : 1 - Math.exp(-3.2 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt); for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q; if (!still && !dragging && playing === null) goal.yaw += .03 * dt;
+  off += ((W > 1080 ? ($("right").hidden ? 170 : -22) : 0) - off) * e; A = axes(); const M = matrix(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .05, .06, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (data) {
+    const use = p => { gl.useProgram(p.p); gl.uniformMatrix4fv(p.u.M, false, M); gl.uniform1f(p.u.t, mix); };
+    use(P.line); gl.bindVertexArray(lines.a); gl.drawArrays(gl.LINES, 0, lines.n); gl.bindVertexArray(trails.a); gl.drawArrays(gl.LINES, 0, trails.n);
+    use(P.ball); gl.uniform1f(P.ball.u.K, H / 2 / Math.tan(FOV / 2)); gl.uniform1f(P.ball.u.cap, 92); gl.uniform3fv(P.ball.u.R, A.r); gl.uniform3fv(P.ball.u.U, A.u); gl.bindVertexArray(balls.a); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, balls.n); gl.bindVertexArray(null);
+  }
+  labels();
+}
+canvas.addEventListener("pointerdown", e => { dragging = e.shiftKey || e.button === 2 ? "pan" : "turn"; last = [e.clientX, e.clientY]; moved = 0; canvas.classList.add("drag"); canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("pointermove", e => {
+  if (dragging) { const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true; if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(-1.45, Math.min(1.45, goal.pitch + dy * .005)); } else { const k = cam.d * Math.tan(FOV / 2) * 2 / H; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return; }
+  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 16, w = -1; seen.forEach((p, i) => { if (p.z > .1) { const d = Math.hypot(p.x - x, p.y - y); if (d < best) { best = d; w = i; } } }); hover = w; canvas.style.cursor = w >= 0 ? "pointer" : ""; tip(w, e.clientX, e.clientY);
+});
+addEventListener("pointerup", () => { if (dragging && moved < 5 && hover >= 0) fly(at(data.nodes[hover]), 6); dragging = null; canvas.classList.remove("drag"); });
+canvas.addEventListener("pointerleave", () => { if (!dragging) { hover = -1; $("tip").hidden = true; } });
+canvas.addEventListener("wheel", e => { e.preventDefault(); goal.d = Math.max(.8, Math.min(70, goal.d * Math.exp(e.deltaY * .0011))); }, { passive: false });
+canvas.addEventListener("dblclick", home);
+canvas.addEventListener("keydown", e => { const k = { ArrowLeft: [-.14, 0], ArrowRight: [.14, 0], ArrowUp: [0, .1], ArrowDown: [0, -.1] }[e.key]; if (k) { goal.yaw += k[0]; goal.pitch = Math.max(-1.45, Math.min(1.45, goal.pitch + k[1])); e.preventDefault(); } if (e.key === "+" || e.key === "=") goal.d = Math.max(.8, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(70, goal.d * 1.2); if (e.key === "Escape" || e.key === "Home") home(); });
+
+// ── words and numbers ──
+function el(tag, cls, ...kids) { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids); return e; }
+const num = (v, d = 0) => v === null || v === undefined ? "none" : v.toLocaleString("en", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = s => s && s.tested ? `${Math.round(100 * s.right / s.tested)}% of ${s.tested}` : "not tested";
+function tip(i, x, y) {
+  const t = $("tip"); t.hidden = i < 0; if (i < 0) return; const n = data.nodes[i]; t.textContent = ""; t.append(el("b", "", n.name), n.path.join(" → "));
+  const tb = el("table"), r = (k, a, b) => tb.append(el("tr", "", el("td", "", k), el("td", "", a), el("td", "", b))); tb.append(el("tr", "", el("td", "", ""), el("th", "", "before"), el("th", "", "after")));
+  const f = (s, k, d) => s ? num(s[k], d) : "none"; r("texts it has", f(n.a, "texts"), f(n.b, "texts")); r("texts it is built from", f(n.a, "used"), f(n.b, "used")); r("radius", f(n.a, "sigma", 3), f(n.b, "sigma", 3)); r("to its nearest", f(n.a, "gap", 3), f(n.b, "gap", 3)); r("nearest", n.a ? n.a.near : "none", n.b ? n.b.near : "none"); r("right on the test", pct(n.a), pct(n.b)); t.append(tb);
+  if (n.a && n.a.twin && n.b && !n.b.twin) t.append(el("em", "", "It was one with another territory, and now stands alone.")); else if (n.b && n.b.twin) t.append(el("em", "", "It still has the same center as another territory.")); if (!n.a && n.b) t.append(el("em", "", "It had no texts before.")); if (n.a && !n.b) t.append(el("em", "", "It has no texts any more: what it had did not belong to it."));
+  t.style.left = Math.max(8, Math.min(x + 16, innerWidth - 312)) + "px"; t.style.top = Math.max(8, Math.min(y + 16, innerHeight - t.offsetHeight - 10)) + "px";
+}
+function tile(title, a, b, d = 0, unit = "") { return el("div", "tile", el("b", "", num(b, d) + unit, " ", el("small", "", `was ${num(a, d)}${unit}`)), el("span", "", title)); }
+const NS = "http://www.w3.org/2000/svg"; function sv(tag, at, text) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (text !== undefined) e.textContent = text; return e; }
+function chart(series, o) {                                    // series: [{c, y: [...]}], evenly spaced along x
+  const w = 330, h = 104, L = 34, B = 16, T = 6, all = series.flatMap(s => s.y).filter(v => v !== null), hi = o.max ?? Math.max(...all, 1e-9), lo = o.min ?? 0, f = o.log ? v => Math.log10(Math.max(v, 1)) / Math.log10(Math.max(hi, 10)) : v => (v - lo) / (hi - lo || 1);
+  const svg = sv("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": o.label }), X = (i, n) => L + i * (w - L - 4) / Math.max(1, n - 1), Y = v => h - B - f(v) * (h - B - T);
+  for (const t of o.ticks) { svg.append(sv("line", { x1: L, x2: w - 4, y1: Y(t), y2: Y(t), stroke: "rgba(255,255,255,.07)" }), sv("text", { x: L - 6, y: Y(t) + 3.5, "text-anchor": "end" }, o.fmt ? o.fmt(t) : t)); }
+  for (const s of series) { let d = "", pen = false; s.y.forEach((v, i) => { if (v === null) { pen = false; return; } d += `${pen ? "L" : "M"}${X(i, s.y.length).toFixed(1)} ${Y(v).toFixed(1)}`; pen = true; }); svg.append(sv("path", { d, fill: "none", stroke: s.c, "stroke-width": 2, "stroke-linejoin": "round" })); if (s.dots) s.y.forEach((v, i) => { if (v !== null) { const c = sv("circle", { cx: X(i, s.y.length), cy: Y(v), r: 4, fill: s.c, stroke: "#13151a", "stroke-width": 2 }); c.append(sv("title", {}, s.dots[i])); svg.append(c); } }); }
+  svg.append(sv("text", { x: L, y: h - 2 }, o.from), sv("text", { x: w - 4, y: h - 2, "text-anchor": "end" }, o.to)); return svg;
+}
+const key = () => { const a = el("i"), b = el("i"); a.style.background = "var(--before)"; b.style.background = "var(--after)"; return el("div", "key", el("span", "", a, "before"), el("span", "", b, "after")); };
+function listing(title, note, items, value) { const d = el("div", "list"); for (const n of items) { const b = el("button", "", el("span", "", n.name), el("span", "", value(n))); b.onclick = () => fly(at(n), 6); d.append(b); } return items.length ? [el("h2", "", title), el("p", "note", note), d] : []; }
+function report() {
+  const R = $("right"), N = data.nodes, a = data.a, b = data.b; R.textContent = ""; R.hidden = false; const same = N.filter(n => n.a && n.b);
+  R.append(el("h1", "", "The change in numbers"), el("div", "tiles", tile("territories that share a center with another", a.twins, b.twins), tile("too close to a neighbor (under 0.1)", a.crowded, b.crowded), tile("distance to the nearest territory, median", a.separation, b.separation, 3), tile("territories with texts", a.territories, b.territories), tile("biggest to smallest, in texts used", a.used_spread, b.used_spread, 0, "×"), tile("radius, median", a.radius, b.radius, 3)));
+  if (a.strict !== null && b.strict !== null) R.append(el("p", "note", `Right on the test: ${(100 * b.strict).toFixed(1)}%, was ${(100 * a.strict).toFixed(1)}%${a.tested !== b.tested ? `. The tests differ (${a.tested} and ${b.tested} territories), so these do not compare` : ""}.`));
+  const desc = (k, s) => N.filter(n => n[s]).map(n => n[s][k]).sort((x, y) => y - x), fit = (v, n = 80) => Array.from({ length: n }, (_, i) => v.length ? v[Math.min(v.length - 1, Math.round(i * (v.length - 1) / (n - 1)))] : 0);
+  const pairOf = (k, s1) => [{ c: "var(--before)", y: fit(desc(k, "a")) }, { c: "var(--after)", y: fit(desc(k, "b")) }];
+  R.append(el("h2", "", "Texts each territory is built from"), key(), chart(pairOf("used"), { log: true, ticks: [1, 10, 100, 1000], fmt: t => t === 1000 ? "1k" : t, max: Math.max(1000, ...desc("used", "a"), ...desc("used", "b")), from: "the most", to: "the fewest", label: "Texts behind each territory, sorted, before and after" }));
+  R.append(el("h2", "", "Distance to the nearest territory"), key(), chart(pairOf("gap"), { ticks: [0, .2, .4, .6], max: Math.max(.6, ...desc("gap", "a"), ...desc("gap", "b")), from: "the most apart", to: "the closest", label: "Distance to the nearest territory, sorted, before and after" }));
+  R.append(el("h2", "", "Radius"), key(), chart(pairOf("sigma"), { ticks: [0, .2, .4], max: Math.max(.4, ...desc("sigma", "a"), ...desc("sigma", "b")), from: "the widest", to: "the tightest", label: "Radius of each territory, sorted, before and after" }));
+  if (time) { const v = k => time.map(t => t[k]), line = (k, title, o) => R.append(el("h2", "", title), chart([{ c: "#7888a6", y: v(k), dots: time.map(t => `${where(t)}: ${o.say(t[k])}`) }], { from: "first", to: "latest", label: title, ...o })); R.append(el("h1", "", "Every coredrill so far")); R.querySelector("h1:last-of-type").style.marginTop = "24px"; line("separation", "Distance to the nearest, median", { ticks: [0, .1, .2, .3], max: Math.max(.3, ...v("separation")), say: x => num(x, 3) }); line("twins", "Territories with a twin", { ticks: [0, 40, 80], max: Math.max(80, ...v("twins")), say: x => num(x) }); line("strict", "Right on its test", { ticks: [0, .25, .5], fmt: t => 100 * t + "%", max: .75, say: x => x === null ? "none" : (100 * x).toFixed(1) + "%" }); }
+  R.append(...listing("Moved most", "how far the center turned (0 the same, 1 unrelated)", [...same].sort((x, y) => y.moved - x.moved).slice(0, 8), n => n.moved.toFixed(2)));
+  R.append(...listing("Further from their neighbor", "distance to the nearest, gained", [...same].sort((x, y) => (y.b.gap - y.a.gap) - (x.b.gap - x.a.gap)).filter(n => n.b.gap - n.a.gap > .02).slice(0, 8), n => "+" + (n.b.gap - n.a.gap).toFixed(2)));
+  R.append(...listing("Closer to their neighbor", "distance to the nearest, lost", [...same].sort((x, y) => (x.b.gap - x.a.gap) - (y.b.gap - y.a.gap)).filter(n => n.b.gap - n.a.gap < -.02).slice(0, 8), n => (n.b.gap - n.a.gap).toFixed(2)));
+  R.append(...listing("New in the coredrill", "they had no texts before", N.filter(n => !n.a && n.b), n => num(n.b.used) + " texts")); R.append(...listing("Left out now", "what they had did not belong to them", N.filter(n => n.a && !n.b), n => num(n.a.texts) + " before"));
+}
+function scale() { const s = $("scale"); s.textContent = ""; if (by === "domain") return; const r = el("div", "ramp"); r.style.background = `linear-gradient(90deg, ${css(WORSE)}, ${css(GRAY)}, ${css(BETTER)})`; s.append(r, el("div", "ends", el("span", "", WORDS[by][0]), el("span", "", WORDS[by][1]))); }
+
+// ── start ──
+function say(t, bad) { $("status").textContent = t; $("status").classList.toggle("bad", !!bad); }
+async function get(u) { let r; try { r = await fetch(u); } catch { throw new Error("The view is not running any more. Start it with: python -m train view"); } const v = await r.json(); if (!r.ok) throw new Error(v.error || `error ${r.status}`); return v; }
+const where = c => `${c.root ? c.root + ", " : ""}${c.name.toLowerCase().startsWith("loop") && c.root ? c.name.toLowerCase() : c.name}`;
+let turn = 0;
+async function load() {
+  const me = ++turn; say("Comparing…"); try { const d = await get(`/api/coredrills/compare?a=${$("a").value}&b=${$("b").value}`); if (me !== turn) return; data = d; build(); scale(); report(); say(`${d.nodes.filter(n => n.a && n.b).length} territories in both, ${d.nodes.filter(n => !n.a && n.b).length} new, ${d.nodes.filter(n => n.a && !n.b).length} gone.`); if (!time) get("/api/coredrills/timeline").then(t => { time = t.coredrills; if (me === turn) report(); }).catch(() => {}); } catch (e) { say(e.message, true); }
+}
+$("a").onchange = $("b").onchange = load; $("by").onchange = () => { by = $("by").value; scale(); if (data) build(); }; $("whole").onclick = home; $("t").oninput = () => { playing = null; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); mix = +$("t").value; };
+$("play").onclick = () => { const on = playing === null; playing = on ? 0 : null; $("play").textContent = on ? "Stop" : "Play"; $("play").setAttribute("aria-pressed", String(on)); if (on) { mix = 0; } };
+(async () => {
+  try {
+    if (!gl) throw new Error("This browser cannot draw the map (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); list = await get("/api/coredrills"); if (list.length < 2) { say("There is nothing to compare yet: a second coredrill appears with the next training.", true); return; }
+    for (const s of ["a", "b"]) for (const c of list) { const o = el("option", "", where(c) + (c.champion ? ", champion" : "") + (c.strict ? `: ${(100 * c.strict).toFixed(1)}%` : "")); o.value = c.id; $(s).append(o); }
+    const q = new URLSearchParams(location.search), champs = list.filter(c => c.champion); $("a").value = q.get("a") || list[0].id; $("b").value = q.get("b") || (champs.at(-1) || list.at(-1)).id; if (!$("a").value) $("a").selectedIndex = 0; if (!$("b").value) $("b").selectedIndex = list.length - 1; await load(); if (q.get("play")) $("play").click();
+  } catch (e) { say(e.message, true); }
+})();
+</script>
+</body>
+</html>
