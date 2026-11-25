@@ -29,12 +29,13 @@ from typing import Optional
 
 import numpy as np
 
-from . import coredrills
+from . import coredrills, progress
 from .frames import describe, pack, spread
 from .record import LEDGER, REPO, loops, memory, state
 
 PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html"),
-         "/classify": Path(__file__).with_name("classify.html"), "/coredrill": Path(__file__).with_name("coredrill.html")}
+         "/classify": Path(__file__).with_name("classify.html"), "/coredrill": Path(__file__).with_name("coredrill.html"),
+         "/loops": Path(__file__).with_name("loops.html")}
 MAX_BODY = 64 * 1024          # bytes of a request; a text may have 8,000 characters
 IDLE_MINUTES = 10             # the classifier's process ends after this long unused
 CLASSIFIER_NEEDS_GB = 1.3     # it commits about 0.9
@@ -266,6 +267,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self.gpu_cache())
         if path == "/api/classify/models":
             return self._json(list_models(self.runs))
+        if path == "/api/progress":
+            return self._json(self.progress_cache())
         if path == "/api/coredrills":
             return self._json(coredrills.listing(self.runs))
         if path == "/api/coredrills/live":
@@ -352,7 +355,7 @@ def cmd_view(paths, port: int = 8765, open_browser: bool = True, log=print) -> N
     runs = paths.runs
     classify = Classify(runs, paths.data)
     handler = type("BoundHandler", (Handler,), {
-        "runs": runs, "classify": classify, "loops_cache": Cached(lambda: list_loops(runs), 4.0), "gpu_cache": Cached(gpu, 2.0)})
+        "runs": runs, "classify": classify, "progress_cache": Cached(lambda: progress.cmd_progress(runs), 1.5), "loops_cache": Cached(lambda: list_loops(runs), 4.0), "gpu_cache": Cached(gpu, 2.0)})
     server = None
     for p in range(port, port + 20):
         try:

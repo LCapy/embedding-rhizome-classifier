@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: loops</title>
+<link rel="icon" href="data:,">
+<style>
+:root { color-scheme: dark; --bg: #0f1014; --card: #16181d; --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.08); --good: #7d9a94; --rest: #696e79; --bad: #a98d80; --blue: #7888a6; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 22px 24px 60px; }
+nav { display: flex; gap: 2px; padding: 3px; margin: 0 0 18px; border: 1px solid var(--line); border-radius: 999px; width: max-content; }
+nav a { color: var(--ink2); text-decoration: none; font-size: 13px; padding: 3px 12px; border-radius: 999px; } nav a[aria-current] { color: var(--ink); background: rgba(255,255,255,.08); }
+h1 { font-size: 19px; font-weight: 600; margin: 0; } h2 { font-size: 15px; font-weight: 600; margin: 30px 0 4px; } h3 { font-size: 14px; font-weight: 600; margin: 0; }
+p { margin: 0; } .note { color: var(--muted); font-size: 12.5px; } a { color: #9aaccb; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-top: 12px; }
+.phase { font-size: 16px; font-weight: 600; margin: 6px 0 8px; }
+.bar { height: 10px; border-radius: 5px; background: rgba(255,255,255,.06); overflow: hidden; } .bar i { display: block; height: 100%; background: var(--good); border-radius: 5px; transition: width .8s ease; }
+.row { display: flex; gap: 6px 18px; flex-wrap: wrap; margin-top: 8px; color: var(--ink2); font-size: 13px; font-variant-numeric: tabular-nums; } .row b { color: var(--ink); font-weight: 600; }
+.log { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(0,0,0,.28); font: 12px/1.55 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--ink2); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 190px; overflow: auto; }
+.links { display: flex; gap: 8px; margin-top: 12px; } .links a { font-size: 13px; color: var(--ink2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; text-decoration: none; } .links a:hover { color: var(--ink); }
+.idle { color: var(--muted); }
+.chart { margin-top: 10px; } svg { display: block; width: 100%; height: auto; overflow: visible; } svg text { fill: var(--muted); font: 11px system-ui, "Segoe UI", sans-serif; }
+.key { display: flex; gap: 16px; font-size: 12px; color: var(--ink2); margin-top: 6px; flex-wrap: wrap; } .key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.scroll { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; } th, td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; } th { color: var(--muted); font-weight: 500; white-space: nowrap; } td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; } th.n { text-align: right; }
+td.why { color: var(--ink2); font-size: 12.5px; min-width: 260px; } tr.now td { background: rgba(125,154,148,.07); }
+.st { white-space: nowrap; } .st i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+#tip { position: fixed; z-index: 3; pointer-events: none; max-width: 300px; padding: 7px 10px; border-radius: 10px; background: rgba(15,16,20,.96); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink2); } #tip b { color: var(--ink); font-weight: 600; } #tip[hidden] { display: none; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill">Coredrill</a><a href="/loops" aria-current="page">Loops</a></nav>
+  <div class="top"><h1>Loops</h1><p class="note" id="clock" role="status" aria-live="polite">Loading…</p></div>
+  <p class="note">Every training, scoring and coredrill search, as it runs and as it ended. It updates by itself.</p>
+  <h2>Running now</h2>
+  <div id="now"></div>
+  <div id="folders"></div>
+</main>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+function el(tag, cls, ...kids) { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids.filter(k => k !== null && k !== undefined)); return e; }
+const KIND = { baseline: "Plain LaBSE, scored", score: "An earlier model, scored", fit: "Training", round: "Self-training round", build: "Coredrill build search" };
+const STATE = { promoted: ["Promoted", "var(--good)"], ok: ["Done", "var(--rest)"], not_promoted: ["Not promoted", "var(--rest)"], running: ["Running", "var(--blue)"], failed: ["Failed", "var(--bad)"], killed: ["Stopped", "var(--bad)"], interrupted: ["Stopped", "var(--bad)"], nothing_accepted: ["Nothing new to learn", "var(--rest)"], no_candidates: ["Found nothing", "var(--rest)"] };
+const pct = v => v === null || v === undefined ? "" : (100 * v).toFixed(1) + "%";
+function mins(s) { if (s === null || s === undefined) return ""; s = Math.round(s); return s < 60 ? `${s} s` : s < 3600 ? `${Math.round(s / 60)} min` : `${Math.floor(s / 3600)} h ${Math.round(s % 3600 / 60)} min`; }
+function when(iso) { if (!iso) return ""; const d = new Date(iso), today = new Date().toDateString() === d.toDateString(); return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + (today ? "" : " " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })); }
+function state(l) { const [w, c] = STATE[l.state] || [l.state, "var(--rest)"], i = el("i"); i.style.background = c; return el("span", "st", i, l.kind === "build" && l.state === "promoted" ? "Adopted" : w); }
+const folderName = r => r.root ? `runs/${r.root}` : "runs";
+
+function card(r) {
+  const bar = el("div", "bar"), fill = el("i"); fill.style.width = (100 * r.done).toFixed(1) + "%"; bar.append(fill); bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuenow", Math.round(100 * r.done)); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-label", "How far along");
+  let phase = r.phase; if (r.epoch) phase += `: epoch ${r.epoch} of ${r.epochs}, step ${r.step.toLocaleString("en")} of ${r.steps.toLocaleString("en")}`; if (r.tried !== undefined) phase += `: ${r.tried} of ${r.planned} ways tried`; if (r.searched) phase += `: ${r.searched}`;
+  const row = el("div", "row", el("span", "", el("b", "", Math.round(100 * r.done) + "%"), " done"), r.left_s ? el("span", "", "about ", el("b", "", mins(r.left_s)), " left") : null, el("span", "", "running for ", el("b", "", mins(r.elapsed_s))),
+    r.loss ? el("span", "", "loss ", el("b", "", r.loss.toFixed(3))) : null, r.rate ? el("span", "", el("b", "", r.rate.toFixed(1)), " steps a second") : null,
+    r.val && r.val.length ? el("span", "", "right on its own check, by epoch: ", el("b", "", r.val.map(v => Math.round(100 * v.val_acc) + "%").join(" → "))) : null);
+  const links = el("div", "links"); if (["fit", "round"].includes(r.kind)) { const a = el("a", "", "Watch the matrices"); a.href = "/"; const b = el("a", "", "Watch the territories move"); b.href = "/coredrill"; links.append(a, b); }
+  return el("section", "card", el("h3", "", `Loop ${r.seq}: ${KIND[r.kind] || r.kind}`, el("span", "note", `  in ${r.root ? "runs/" + r.root : "runs"}, started ${when(r.started)}`)), el("p", "phase", phase), bar, row, el("div", "log", r.log.join("\n")), links.childElementCount ? links : null);
+}
+function gathering(g) {
+  const bar = el("div", "bar"), fill = el("i"); fill.style.width = (100 * Math.min(1, g.territories / g.listed)).toFixed(1) + "%"; bar.append(fill);
+  return el("section", "card", el("h3", "", "Gathering text for thin territories", el("span", "note", g.active ? "  from Wikipedia, now" : "  stopped")),
+    el("p", "phase", `${g.territories} of ${g.listed} listed territories reached`), bar,
+    el("div", "row", el("span", "", el("b", "", g.articles.toLocaleString("en")), " articles"), el("span", "", el("b", "", g.texts.toLocaleString("en")), " texts"), el("span", "", "last: ", el("b", "", g.last), ` for ${g.for}, ${when(g.at)}`)));
+}
+
+const NS = "http://www.w3.org/2000/svg"; function sv(tag, at, text) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (text !== undefined) e.textContent = text; return e; }
+function chart(r) {
+  const pts = r.loops.filter(l => l.strict !== null && l.strict !== undefined).slice().reverse(); if (pts.length < 1) return null;
+  const w = 760, h = 170, L = 44, B = 22, T = 10, R = 10, lo = Math.max(0, Math.floor(20 * Math.min(...pts.map(p => p.strict))) / 20 - .05), hi = Math.min(1, Math.ceil(20 * Math.max(...pts.map(p => p.strict))) / 20 + .02);
+  const X = i => L + (pts.length === 1 ? (w - L - R) / 2 : i * (w - L - R) / (pts.length - 1)), Y = v => h - B - (v - lo) / (hi - lo) * (h - B - T), svg = sv("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": `Right answers on the test, loop by loop, in ${folderName(r)}` });
+  for (let v = Math.ceil(lo * 20) / 20; v <= hi + 1e-9; v += .05) svg.append(sv("line", { x1: L, x2: w - R, y1: Y(v), y2: Y(v), stroke: "rgba(255,255,255,.06)" }), sv("text", { x: L - 8, y: Y(v) + 4, "text-anchor": "end" }, Math.round(100 * v) + "%"));
+  let best = -1, path = ""; pts.forEach((p, i) => { if (["promoted", "ok"].includes(p.state) && p.kind !== "build" && p.kind !== "score") { best = Math.max(best, p.strict); } if (best >= 0) path += `${path ? "L" : "M"}${X(i).toFixed(1)} ${Y(best).toFixed(1)}`; });
+  if (path) svg.append(sv("path", { d: path, fill: "none", stroke: "var(--good)", "stroke-width": 1.6, "stroke-dasharray": "4 4", opacity: .7 }));
+  pts.forEach((p, i) => { const good = p.state === "promoted", c = sv("circle", { cx: X(i), cy: Y(p.strict), r: 5.5, fill: good ? "var(--good)" : p.kind === "baseline" || p.kind === "score" ? "var(--blue)" : "var(--rest)", stroke: "#16181d", "stroke-width": 2, tabindex: 0 });
+    const say = `Loop ${p.seq}, ${(KIND[p.kind] || p.kind).toLowerCase()}: ${pct(p.strict)} right, ${pct(p.near_miss)} right or one step away. ${(STATE[p.state] || [p.state])[0]}${p.reason ? ": " + p.reason : ""}`; c.append(sv("title", {}, say));
+    c.addEventListener("pointerenter", e => tip(say, e)); c.addEventListener("pointerleave", () => $("tip").hidden = true); c.addEventListener("focus", e => { const b = c.getBoundingClientRect(); tip(say, { clientX: b.right, clientY: b.bottom }); }); c.addEventListener("blur", () => $("tip").hidden = true); svg.append(c);
+    if (pts.length <= 40 || i % Math.ceil(pts.length / 20) === 0) svg.append(sv("text", { x: X(i), y: h - 6, "text-anchor": "middle" }, p.seq)); });
+  const key = el("div", "key"); for (const [c, t] of [["var(--good)", "promoted"], ["var(--rest)", "not promoted"], ["var(--blue)", "a model scored, no training"]]) { const i = el("i"); i.style.background = c; key.append(el("span", "", i, t)); } const dash = el("span", "", "dashed: the best so far"); key.append(dash);
+  return el("div", "chart", svg, key);
+}
+function tip(text, e) { const t = $("tip"); t.textContent = text; t.hidden = false; t.style.left = Math.min(e.clientX + 14, innerWidth - 310) + "px"; t.style.top = (e.clientY + 14) + "px"; }
+function table(r) {
+  const t = el("table"), head = el("tr"); for (const [k, n] of [["#", 1], ["What", 0], ["Outcome", 0], ["Right", 1], ["Right or near", 1], ["Took", 1], ["Started", 1], ["Why", 0]]) { const th = el("th", n ? "n" : "", k); th.scope = "col"; head.append(th); } t.append(el("thead", "", head));
+  const body = el("tbody"); for (const l of r.loops) { const tr = el("tr", l.state === "running" ? "now" : "", el("td", "n", String(l.seq ?? "")), el("td", "", (KIND[l.kind] || l.kind) + (l.id === r.champion ? " (champion)" : "")), el("td", "", state(l)), el("td", "n", pct(l.strict)), el("td", "n", pct(l.near_miss)), el("td", "n", mins(l.seconds)), el("td", "n", when(l.started)), el("td", "why", l.error || l.reason || (l.accepted ? `${l.accepted} new self-labeled texts` : ""))); body.append(tr); } t.append(body);
+  return el("div", "scroll", t);
+}
+let lastFolders = "";
+async function tick() {
+  let d; try { const res = await fetch("/api/progress"); d = await res.json(); if (!res.ok) throw new Error(d.error); } catch (e) { $("clock").textContent = "The view is not running any more. Start it with: python -m train view"; return; }
+  $("clock").textContent = "Updated " + new Date().toLocaleTimeString("en-GB");
+  const now = $("now"); now.replaceChildren(...d.running.map(card), ...(d.gathering && d.gathering.active ? [gathering(d.gathering)] : [])); if (!now.childElementCount) now.append(el("p", "idle card", "Nothing is running now."));
+  const sig = JSON.stringify(d.roots); if (sig !== lastFolders) { lastFolders = sig; $("folders").replaceChildren(...d.roots.filter(r => r.loops.length).map(r => { const n = (r.loops.find(l => l.n) || {}).n; return el("section", "", el("h2", "", r.name), el("p", "note", `${folderName(r)}: ${r.loops.length} loops${n ? `, scored on a test of ${n.toLocaleString("en")} texts` : ""}. Scores compare only within one folder: each has its own test.`), chart(r), table(r)); })); }
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

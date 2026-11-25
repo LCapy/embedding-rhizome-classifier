@@ -84,7 +84,9 @@ def encoder_embeddings(paths: Paths, corpus, holdout, run: Optional[str]) -> Tup
 
 
 def cmd_builds(paths: Paths, run: Optional[str], quick: bool = False, log=print) -> dict:
-    with LoopRecord(paths, "build", {"encoder": run or "stock LaBSE", "radii": RADII, "centers": CENTERS}) as rec:
+    planned = 5 if quick else len(RADII) + len(CENTERS) - 1
+    with LoopRecord(paths, "build", {"encoder": run or "stock LaBSE", "radii": RADII, "centers": CENTERS, "quick": quick,
+                                     "planned": planned}) as rec:
         corpus = load_corpus(paths.data, paths.taxonomy)
         holdout = load_or_create_holdout(corpus, paths.holdout, rec.log)
         rows, X_tr, test_idx, X_te, n_corpus = encoder_embeddings(paths, corpus, holdout, run)
