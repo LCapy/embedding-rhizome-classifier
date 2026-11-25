@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coredrill: math</title>
+<link rel="icon" href="data:,">
+<style>
+:root { color-scheme: dark; --bg: #0c0d10; --card: #16181d; --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.08); --good: #7d9a94; --rest: #696e79; --bad: #a98d80; --blue: #7888a6; --run: #aaa79e; }
+* { box-sizing: border-box; } body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+main { max-width: 1240px; margin: 0 auto; padding: 18px 24px 70px; } p { margin: 0; } .note { color: var(--muted); font-size: 12.5px; } h1 { font-size: 19px; margin: 0; } h2 { font-size: 16px; margin: 34px 0 2px; } h3 { font-size: 14px; margin: 0 0 2px; }
+nav { display: flex; gap: 2px; padding: 3px; margin: 0 0 16px; border: 1px solid var(--line); border-radius: 999px; width: max-content; max-width: 100%; overflow-x: auto; } nav a { color: var(--ink2); text-decoration: none; font-size: 13px; padding: 3px 12px; border-radius: 999px; } nav a[aria-current] { color: var(--ink); background: rgba(255,255,255,.08); }
+.bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+select, button { font: inherit; font-size: 13px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px; max-width: 100%; } button { cursor: pointer; } button[aria-pressed="true"] { background: rgba(255,255,255,.1); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr)); gap: 12px; margin-top: 10px; } .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; min-width: 0; } .wide { grid-column: 1 / -1; }
+.f { font: 13px/1.6 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--run); margin: 4px 0 8px; overflow-wrap: anywhere; } svg { display: block; width: 100%; height: auto; overflow: visible; } svg text { fill: var(--muted); font: 11px system-ui, "Segoe UI", sans-serif; } svg text.v { fill: var(--ink2); } svg text.hot { fill: var(--ink); font-weight: 600; }
+.text { border-left: 2px solid var(--line); padding: 2px 12px; color: var(--ink2); margin: 8px 0; } .scroll { overflow-x: auto; } table { border-collapse: collapse; font-size: 12.5px; width: 100%; } th, td { padding: 4px 8px 4px 0; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; } th:first-child, td:first-child { text-align: left; } th { color: var(--muted); font-weight: 500; } tr.win td { color: var(--ink); font-weight: 600; } tr.true td:first-child::after { content: " (true)"; color: var(--good); font-weight: 400; }
+#tip { position: fixed; z-index: 3; pointer-events: none; max-width: 300px; padding: 7px 10px; border-radius: 10px; background: #0f1014; border: 1px solid var(--line); font-size: 12.5px; color: var(--ink2); } #tip[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill">Coredrill</a><a href="/math" aria-current="page">Math</a><a href="/loops">Loops</a></nav>
+  <h1>How the coredrill is calculated</h1>
+  <p class="note" id="check">Loading…</p>
+  <section class="card" style="margin-top:12px"><h3>What each step adds, on the whole test</h3><p class="note">Share of test texts right if the answer were taken at that step, and if one factor of the final score were left out. This describes the test; nothing was chosen with it.</p><div class="grid" style="margin-top:6px"><div id="ladder"></div><div id="ablation"></div></div></section>
+
+  <h2>Part 1: building a territory</h2>
+  <div class="bar"><label for="terr" class="note">Territory</label><select id="terr"></select><span class="note" id="terrnote"></span></div>
+  <div class="grid" id="build"></div>
+
+  <h2>Part 2: answering a text</h2>
+  <div class="bar"><span id="kinds"></span><button id="prev">Previous</button><button id="next">Next text</button><span class="note" id="exn"></span></div>
+  <p class="text" id="extext"></p>
+  <p class="note" id="exsay"></p>
+  <div class="grid" id="answer"></div>
+</main>
+<div id="tip" hidden></div>
+<script>
+"use strict";
+const $ = id => document.getElementById(id), NS = "http://www.w3.org/2000/svg", C = { good: "#7d9a94", rest: "#696e79", bad: "#a98d80", blue: "#7888a6", run: "#aaa79e", line: "rgba(255,255,255,.08)" }, HUES = ["#7d9a94", "#a98d80", "#7888a6", "#a99a72", "#8a82a6", "#8f9399"];
+function el(t, c, ...k) { const e = document.createElement(t); if (c) e.className = c; e.append(...k.filter(x => x !== null)); return e; }
+function sv(t, o = {}, s) { const e = document.createElementNS(NS, t); for (const k in o) e.setAttribute(k, o[k]); if (s !== undefined) e.textContent = s; return e; }
+function svg(w, h, say) { return sv("svg", { viewBox: `0 0 ${w} ${h}`, role: "img", "aria-label": say }); }
+function hint(e, s) { e.addEventListener("pointermove", v => { const t = $("tip"); t.textContent = s; t.hidden = false; t.style.left = Math.min(v.clientX + 14, innerWidth - 310) + "px"; t.style.top = Math.min(v.clientY + 14, innerHeight - t.offsetHeight - 8) + "px"; }); e.addEventListener("pointerleave", () => $("tip").hidden = true); return e; }
+const card = (n, title, f, say, ...kids) => el("section", "card", el("h3", "", (n ? n + ". " : "") + title), el("p", "f", f), el("p", "note", say), ...kids), wide = c => (c.classList.add("wide"), c), pc = v => (100 * v).toFixed(1) + "%", f3 = v => v.toFixed(3);
+const sgn = v => v >= 0 ? `rgba(125,154,148,${Math.min(.95, .08 + Math.abs(v))})` : `rgba(169,141,128,${Math.min(.95, .08 + Math.abs(v))})`;
+function strip(vals, k) { const s = svg(384, 22, "The first 96 of 768 numbers"); const m = Math.max(...vals.map(Math.abs)) || 1; vals.forEach((v, i) => s.append(hint(sv("rect", { x: i * 4, y: 2, width: 3.4, height: 18, fill: sgn(v / m * .9) }), `number ${i + 1} of 768: ${f3(v)}`))); return s; }
+// rows: [name, value, color, right-hand words]
+function bars(rows, { w = 390, left = 138, lo = null, hot = -1, say = "" } = {}) {
+  const h = rows.length * 19 + 4, s = svg(w, h, say), vals = rows.map(r => r[1]), a = lo ?? Math.min(0, ...vals), b = Math.max(...vals, a + 1e-9), X = v => left + (v - a) / (b - a) * (w - left - 92);
+  rows.forEach(([n, v, c, t, tip], i) => { const y = i * 19 + 3, z = X(Math.max(a, Math.min(b, 0))), x = X(v); s.append(sv("text", { x: left - 8, y: y + 11, "text-anchor": "end", class: i === hot ? "hot" : "v" }, n.length > 22 ? n.slice(0, 21) + "…" : n), hint(sv("rect", { x: Math.min(z, x), y, width: Math.max(1, Math.abs(x - z)), height: 13, rx: 2.5, fill: c }), tip || `${n}: ${t}`), sv("text", { x: w - 4, y: y + 11, "text-anchor": "end", class: i === hot ? "hot" : "v" }, t)); }); return s; }
+let M = null, kind = "rescued", at = 0;
+function over() {
+  const c = M.check, a = M.answers; $("check").textContent = `Loop ${M.loop}. Redone step by step and checked: ${a.same_as_engine.toLocaleString("en")} of ${a.n.toLocaleString("en")} test answers are identical to the engine's; every center within ${c.centroids_off_by_at_most.toExponential(0)}, every radius within ${c.radii_off_by_at_most.toExponential(0)}.`;
+  const L = Object.entries(M.ladder), top = M.ladder["final score"]; $("ladder").replaceChildren(el("p", "note", "Answer taken at this step"), bars(L.map(([k, v]) => [k, v, k === "final score" ? C.good : C.blue, pc(v)]), { lo: 0 }));
+  const N = { without_alpha: "without α (overlap)", without_s: "without s (cosine)", without_NS: "without NS (neighbors)", without_PC: "without PC (path)", without_SW: "without SW (tightness)", without_mass: "without √mass", alpha_only: "α alone" };
+  $("ablation").replaceChildren(el("p", "note", "Final score, one factor left out"), bars(Object.entries(M.ablation).map(([k, v]) => [N[k], v, v > top + 1e-9 ? C.bad : C.rest, pc(v) + ` (${v >= top ? "+" : ""}${(100 * (v - top)).toFixed(1)})`]), { lo: 0 }));
+}
+function scatter(t, many) { const w = 360, h = 250, all = [...t.points, ...t.heads, [0, 0]], m = Math.max(...all.map(p => Math.max(Math.abs(p[0]), Math.abs(p[1])))) * 1.1, X = v => w / 2 + v / m * w / 2 * .7, Y = v => h / 2 - v / m * h / 2, s = svg(w, h, "The territory's texts around its center");
+  t.points.forEach(([a, b, o], i) => { const c = many ? HUES[o % 6] : C.blue, H = many ? t.heads[o] || [0, 0] : [0, 0]; s.append(sv("line", { x1: X(H[0]), y1: Y(H[1]), x2: X(a), y2: Y(b), stroke: c, opacity: .16 }), hint(sv("circle", { cx: X(a), cy: Y(b), r: 3.2, fill: c, opacity: .75 }), t.texts[i])); });
+  (many ? t.heads : [[0, 0]]).forEach(([a, b], i) => s.append(sv("circle", { cx: X(a), cy: Y(b), r: 7, fill: many ? HUES[i % 6] : C.good, stroke: "#0c0d10", "stroke-width": 2 }))); return s; }
+function build() {
+  const t = M.territories.find(t => t.name === $("terr").value), box = $("build"), S = M.sigmas, b = M.build || {}; $("terrnote").textContent = `${t.path.slice(0, -1).join(" › ") || "a top branch"}; ${t.right[0]} of ${t.right[1]} test texts right`;
+  if (!t.points) { box.replaceChildren(card("", "Built from its children", "μ = Σ nₖ μₖ / ‖Σ nₖ μₖ‖", "It has fewer than 5 texts of its own, so its center is its children's, weighted by how many texts each used.")); return; }
+  const c1 = card(1, "A text becomes a direction", "x = LaBSE(text) / ‖LaBSE(text)‖,  x ∈ ℝ⁷⁶⁸,  ‖x‖ = 1", `One of its texts, first 96 of 768 numbers: “${t.texts[0]}”. Sage is positive, clay negative.`, strip(t.first));
+  const c2 = card(2, "Choose the texts", "at most 400 per source, 3,000 in all", `${t.rows.toLocaleString("en")} training texts, ${t.used.toLocaleString("en")} used.`, bars(t.sources.map(([n, a, u]) => [n, u, u < a ? C.bad : C.blue, `${u} of ${a}`]), { lo: 0 }));
+  const c3 = card(3, "Average them into a center", "m = (1/n) Σ xᵢ,   μ = m / ‖m‖", `Each dot is a text, the large dot the center, flattened onto the two directions they differ in most. The mean is ${f3(t.length)} long: 1 would mean identical texts.`, scatter(t, false), strip(t.mean));
+  const w = 360, h = 130, s = svg(w, h, "How far the texts are from the center"), mx = Math.max(...t.hist.n), X = v => v / t.hist.to * w; t.hist.n.forEach((n, i) => s.append(hint(sv("rect", { x: i * w / 24 + .5, y: 105 - n / mx * 90, width: w / 24 - 1.5, height: n / mx * 90, fill: C.blue, opacity: .65 }), `${n} texts at distance ${(i * t.hist.to / 24).toFixed(2)} to ${((i + 1) * t.hist.to / 24).toFixed(2)}`)));
+  s.append(sv("line", { x1: X(t.sigma_raw), x2: X(t.sigma_raw), y1: 4, y2: 108, stroke: C.good, "stroke-width": 2 }), sv("text", { x: X(t.sigma_raw) + 5, y: 12, class: "hot" }, "σ " + f3(t.sigma_raw)), sv("text", { x: 0, y: 124 }, "at the center"), sv("text", { x: w, y: 124, "text-anchor": "end" }, "far: " + t.hist.to));
+  const c4 = card(4, "Measure its radius", "σ = 1 − (1/n) Σ xᵢ·μ  = 1 − ‖m‖", `The mean distance of its texts. With ${t.used} texts it reads ${f3(t.sigma_raw)}; corrected for the sample's size it would be ${t.sigma_unbiased === null ? "unknown" : f3(t.sigma_unbiased)}. The concentration κ (${t.kappa}) is stored but not used in answers.`, s);
+  const r = svg(360, 120, "Radii before and after the pull"), lo = Math.min(...S.raw, ...S.used) - .01, hi = Math.max(...S.raw) + .01, Q = v => 12 + (v - lo) / (hi - lo) * 336; S.raw.forEach((v, i) => { const me = M.territories[i].name === t.name; r.append(sv("line", { x1: Q(v), y1: 26, x2: Q(S.used[i]), y2: 84, stroke: me ? C.run : C.rest, opacity: me ? 1 : .18, "stroke-width": me ? 2 : 1 })); if (me) r.append(sv("circle", { cx: Q(v), cy: 26, r: 4, fill: C.run }), sv("circle", { cx: Q(S.used[i]), cy: 84, r: 4, fill: C.good })); });
+  r.append(sv("text", { x: 0, y: 14 }, "measured"), sv("text", { x: 0, y: 102 }, "used"), sv("line", { x1: Q(.25), x2: Q(.25), y1: 18, y2: 92, stroke: C.bad, "stroke-dasharray": "3 3" }), sv("text", { x: Q(.25) + 3, y: 114 }, "floor .25"), sv("line", { x1: Q(.3), x2: Q(.3), y1: 18, y2: 92, stroke: C.bad, "stroke-dasharray": "3 3" }), sv("text", { x: Q(.3) + 22, y: 102 }, "floor .30"));
+  const p = b.radius_pull || 0, c5 = card(5, "Pull the radius toward the common one", `σ′ = median^${p} · σ^${(1 - p).toFixed(2)} = ${S.median}^${p} · ${f3(t.sigma_raw)}^${(1 - p).toFixed(2)} = ${f3(t.sigma)}`, `A wide territory otherwise claims texts that are not its own. After this, distances use σ′ between .25 and .45; tightness (SW) uses a floor of .30, which ${S.under_floor_final} of ${S.n} territories are under.`, r);
+  const c6 = card(6, "Give it several centers", `k = min(${b.centers_max || 1}, ⌊n / ${b.centers_per || "∞"}⌋);  spherical k-means: c = mean / ‖mean‖`, t.centers > 1 ? `${t.centers} centers; a text is compared with its nearest. The single center stays for the overlap matrix below.` : "Too few texts for more than one center.", scatter(t, t.centers > 1));
+  const c7 = card(7, "Join it to its neighbors", "Sᵢⱼ = μᵢ·μⱼ,  keep the 6 highest, at least .45", "The rhizome: its most similar territories, wherever the taxonomy puts them.", bars(t.near.map(([n, v]) => [n, v, C.good, f3(v)]), { lo: 0 }));
+  box.replaceChildren(c1, c2, c3, c4, c5, c6, c7);
+}
+function answer() {
+  const list = M.examples.filter(e => e.kind === kind); at = (at + list.length) % Math.max(1, list.length); const e = list[at], box = $("answer"); if (!e) { box.replaceChildren(); $("extext").textContent = "None of this kind."; return; }
+  const first = e.names[0], win = e.R.indexOf(Math.max(...e.R)), top = 10, ok = e.answer === e.truth; $("exn").textContent = `${at + 1} of ${list.length}`; $("extext").textContent = e.text;
+  $("exsay").textContent = `True territory: ${e.truth}. Best before the final score: ${first}. Answer: ${e.answer} (${ok ? "right" : "wrong"}).` + (e.names.includes(e.truth) ? "" : " The true one is not among the 20 candidates, so it cannot win.");
+  const col = n => n === e.truth ? C.good : C.blue, idx = [...e.names.keys()], by = v => [...idx].sort((a, b) => v[b] - v[a]).slice(0, top), row = (v, o, t) => o.map(i => [e.names[i], v[i], col(e.names[i]), t ? t(i) : f3(v[i])]);
+  const c1 = card(1, "The text becomes a direction", "x = LaBSE(text) / ‖·‖", "First 96 of 768 numbers.", strip(e.x));
+  const c2 = card(2, "Cosine with each territory", "s = maxₖ  x·cₖ", "Against the nearest of its centers. Sage marks the true territory.", bars(row(e.cos, by(e.cos)), { lo: 0 }));
+  const oz = [...idx].sort((a, b) => e.z[a] - e.z[b]).slice(0, top), c3 = card(3, "Distance in radii", "z = (1 − s) / σ′", "Smaller is nearer: a wide territory reaches further.", bars(oz.map(i => [e.names[i], e.z[i], col(e.names[i]), `${e.z[i].toFixed(2)}  (σ′ ${f3(e.sigma[i])})`]), { lo: 0 }));
+  const c4 = card(4, "Production score", "P = −.80 z − .05 z² + .173 s − .031 ln σ − .6 max(0, σ − .40)", "The engine writes this as a mix of four scores; they collapse to this one line, almost all of it z. The best 20 go on.", bars(by(e.prod).map(i => [e.names[i], e.prod[i] - Math.min(...e.prod), col(e.names[i]), f3(e.prod[i]), `distance ${f3(e.parts.distance[i])}, cosine ${f3(e.parts.cosine[i])}, radius ${f3(e.parts.radius[i])}`]), { lo: 0 }));
+  const c5 = card(5, "Closeness to the best", "√mass = e^((P − P₁)/0.2)", "How close to the best production score, P₁. It falls off steeply: a gap of 0.1 leaves 61%, a gap of 0.5 leaves 8%.", bars(by(e.mass).map(i => [e.names[i], e.mass[i], col(e.names[i]), f3(e.mass[i])]), { lo: 0 }));
+  const n = e.names.length, q = 15, g = svg(150 + n * q, n * q + 4, "Overlap of the candidates"); e.G.forEach((r, i) => { g.append(sv("text", { x: 144, y: i * q + 11, "text-anchor": "end", class: e.names[i] === e.truth ? "hot" : "v" }, e.names[i].slice(0, 24))); r.forEach((v, j) => g.append(hint(sv("rect", { x: 150 + j * q, y: i * q, width: q - 1, height: q - 1, fill: v >= 0 ? `rgba(125,154,148,${(.05 + .85 * v * v).toFixed(3)})` : `rgba(169,141,128,${Math.min(.9, -v * 2).toFixed(3)})` }), `${e.names[i]} and ${e.names[j]}: ${f3(v)}`))); });
+  const c6 = card(6, "How the candidates overlap", "G = M Mᵀ,  Gᵢⱼ = μᵢ·μⱼ", "The 20 candidates against each other: bright blocks are near copies of one another.", g);
+  const sm = e.sv[0], sg = svg(360, 120, "Singular values"); e.sv.forEach((v, i) => sg.append(hint(sv("rect", { x: i * 18, y: 100 - v / sm * 92, width: 14, height: Math.max(1, v / sm * 92), fill: i < e.kept ? C.good : C.bad, opacity: .85 }), `singular value ${i + 1}: ${f3(v)}${i < e.kept ? "" : ", dropped"}`))); sg.append(sv("line", { x1: 0, x2: 360, y1: 100 - .05 * 92, y2: 100 - .05 * 92, stroke: C.run, "stroke-dasharray": "4 4" }), sv("text", { x: 0, y: 117 }, `${e.kept} of ${n} directions kept, the rest under 5% of the first`));
+  const c7 = card(7, "Share the text out among them", "α = G⁺ s,  G⁺ from the SVD, singular values under 5% dropped", "α is how much of the text each candidate explains once the overlap is taken out. Below zero: it counts against the text's position, and cannot win.", sg, bars([...idx].sort((a, b) => e.alpha[b] - e.alpha[a]).map(i => [e.names[i], e.alpha[i], e.alpha[i] < 0 ? C.bad : col(e.names[i]), f3(e.alpha[i])])));
+  const tb = el("table"), hd = el("tr"); ["Candidate", "α", "× s", "× NS", "× PC", "× SW", "× √mass", "= R"].forEach(x => hd.append(el("th", "", x))); tb.append(el("thead", "", hd)); const body = el("tbody"), F = ["alpha", "cos", "NS", "PC", "SW", "mass"], mxs = F.map(f => Math.max(...e[f].map(Math.abs)) || 1), mR = Math.max(...e.R.map(Math.abs));
+  by(e.R).forEach(i => { const tr = el("tr", (i === win ? "win " : "") + (e.names[i] === e.truth ? "true" : ""), el("td", "", e.names[i])); F.forEach((f, k) => { const td = el("td", "", f3(e[f][i])); td.style.background = sgn(e[f][i] / mxs[k] * .4); tr.append(td); }); const td = el("td", "", e.R[i].toFixed(4)); td.style.background = sgn(e.R[i] / mR * .5); tr.append(td); body.append(tr); }); tb.append(body);
+  const c8 = wide(card(8, "The final score", "R = α · s · NS · PC · SW · √mass,  highest wins", "NS: how well its neighbors among the candidates match (cosine over .50, within one level). PC: how well its ancestors match. SW = σ^−½, over its mean: tighter counts a little more. If a top branch wins, the smallest z is the answer instead.", el("div", "scroll", tb)));
+  box.replaceChildren(c1, c2, c3, c4, c5, c6, c7, c8);
+}
+(async () => { try { const ls = await (await fetch("/api/math")).json(); if (!ls.length) throw new Error("No calculations written yet. Run: python -m train math --data data/v3 --runs runs/v3 --run <loop>"); const res = await fetch("/api/math?loop=" + encodeURIComponent(ls[0].id)); M = await res.json(); if (!res.ok) throw new Error(M.error); over();
+  for (const t of [...M.territories].sort((a, b) => a.name.localeCompare(b.name))) { const o = el("option", "", `${t.name} (${t.used})`); o.value = t.name; $("terr").append(o); } $("terr").value = M.territories.some(t => t.name === "Climate Change") ? "Climate Change" : M.territories[0].name; $("terr").onchange = build; build();
+  const K = { right: "Right from the start", rescued: "Rescued by the final score", lost: "Lost by the final score", wrong: "Wrong both times" }; for (const k in K) { const b = el("button", "", K[k]); b.setAttribute("aria-pressed", k === kind); b.onclick = () => { kind = k; at = 0; [...$("kinds").children].forEach(x => x.setAttribute("aria-pressed", x === b)); answer(); }; b.style.marginRight = "6px"; $("kinds").append(b); }
+  $("next").onclick = () => { at++; answer(); }; $("prev").onclick = () => { at--; answer(); }; answer(); } catch (e) { $("check").textContent = e.message; } })();
+</script>
+</body>
+</html>

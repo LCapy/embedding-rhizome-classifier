@@ -29,13 +29,13 @@ from typing import Optional
 
 import numpy as np
 
-from . import coredrills, progress, rhizome
+from . import coredrills, mathsteps, progress, rhizome
 from .frames import describe, pack, spread
 from .record import LEDGER, REPO, loops, memory, state
 
 PAGES = {"/": Path(__file__).with_name("viewer3d.html"), "/flat": Path(__file__).with_name("viewer.html"),
          "/classify": Path(__file__).with_name("classify.html"), "/coredrill": Path(__file__).with_name("coredrill.html"),
-         "/loops": Path(__file__).with_name("loops.html")}
+         "/loops": Path(__file__).with_name("loops.html"), "/math": Path(__file__).with_name("math.html")}
 MAX_BODY = 64 * 1024          # bytes of a request; a text may have 8,000 characters
 IDLE_MINUTES = 10             # the classifier's process ends after this long unused
 CLASSIFIER_NEEDS_GB = 1.3     # it commits about 0.9
@@ -269,6 +269,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(list_models(self.runs))
         if path == "/api/progress":
             return self._json(self.progress_cache())
+        if path == "/api/math":
+            loop = dict(p.partition("=")[::2] for p in query.split("&")).get("loop", "")
+            if not loop:
+                return self._json(mathsteps.listing(self.runs))
+            body = mathsteps.read(self.runs, loop) if LOOP_ID.match(loop) else None
+            return self._send(200, body) if body else self._json({"error": "unknown loop"}, 404)
         if path == "/api/rhizome":
             loop = dict(p.partition("=")[::2] for p in query.split("&")).get("loop", "")
             if not LOOP_ID.match(loop):
