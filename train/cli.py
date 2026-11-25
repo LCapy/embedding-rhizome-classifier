@@ -43,6 +43,9 @@ FIT_HELP = {
     "pseudo_weight": "loss weight of a pseudo-label, times its confidence",
     "balance": "1: every label weighs the same in all, whatever its size; 0: by its rows",
     "node_cap": "the coredrill uses at most this many rows per node, evenly over its articles (0: no cap)",
+    "radius_pull": "the coredrill: 0 to 1, how far each node's radius moves toward the median one",
+    "centers_per": "the coredrill: one center per this many rows of a node (0: one center)",
+    "centers_max": "the coredrill: centers per node, at most",
     "patience": "epochs without validation gain before stopping",
     "seed": "random seed",
 }
@@ -95,8 +98,12 @@ def _add_gate_flags(p: argparse.ArgumentParser) -> None:
                    help="required McNemar z of the gain over the champion, text by text (1.645: one-sided 95%%)")
 
 
-def _fit_config(args, base: dict | None, device) -> FitConfig:
+def _fit_config(args, base: dict | None, device, runs: Path | None = None) -> FitConfig:
     cfg = FitConfig(**base) if base else FitConfig()
+    if runs is not None:                         # the adopted way of building the coredrill (python -m train builds)
+        from .builds import default_build
+        for k, v in default_build(runs).items():
+            setattr(cfg, k, v)
     for f in fields(FitConfig):
         value = getattr(args, f.name, None)
         if value is not None:
@@ -184,13 +191,13 @@ def main(argv=None) -> None:
     elif args.cmd == "score":
         cmd_score(paths, args.run, device, args.node_cap)
     elif args.cmd == "fit":
-        cmd_fit(paths, _fit_config(args, None, device),
+        cmd_fit(paths, _fit_config(args, None, device, paths.runs),
                 Gate(args.select_metric, args.min_delta, min_z=args.min_z), device,
                 use_pool=not args.no_pool)
     elif args.cmd in ("round", "loop"):
         champ = read_champion(paths)
         base = json.loads((paths.runs / champ["run"] / "run.json").read_text(encoding="utf-8"))["fit"] if champ else None
-        cfg, rcfg = _fit_config(args, base, device), _round_config(args)
+        cfg, rcfg = _fit_config(args, base, device, paths.runs), _round_config(args)
         gate = Gate(args.select_metric, args.min_delta, min_z=args.min_z)
         if args.cmd == "round":
             cmd_round(paths, rcfg, cfg, gate, device)

@@ -4,8 +4,10 @@ and how far its nearest neighbor is. For the view's Coredrill page; NumPy only.
 """
 from __future__ import annotations
 
+import base64
 import gzip
 import json
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -39,9 +41,27 @@ def root_name(runs: Path, folder: Path) -> str:
     return "" if folder.parent == runs else folder.parent.name
 
 
+def live_meta(folder: Path) -> Optional[dict]:
+    f = folder / "live" / "meta.json"
+    if not f.exists():
+        return None
+    meta = json.loads(f.read_text(encoding="utf-8"))
+    return meta if "protos0" in meta else None
+
+
 def listing(runs: Path) -> List[dict]:
-    """Every coredrill, oldest first."""
+    """Every coredrill, oldest first, and every training whose territories were
+    captured as it ran (live: true)."""
     out = []
+    from .record import state
+    for root in roots(runs):
+        for it in loops(root):
+            folder = root / it["id"]
+            if it.get("kind") in ("fit", "round") and (folder / "live" / "meta.json").exists() and live_meta(folder):
+                running = state(it) == "running"
+                out.append({"id": it["id"], "live": True, "running": running, "root": root_name(runs, folder),
+                            "seq": it.get("seq"), "kind": it.get("kind"),
+                            "name": f"Training {'now' if running else 'as it ran'}: loop {it.get('seq')}"})
     deployed = REPO / "coredrill" / FILE
     if deployed.exists():
         out.append({"id": DEPLOYED, "name": "The one this began with", "root": "", "seq": 0, "champion": False, "strict": None})
@@ -177,3 +197,68 @@ def compare(a: Coredrill, b: Coredrill, at: Dict[str, np.ndarray]) -> dict:
     tree = [[index[n], index[p[-2]]] for n in b.tree if len(p := b.paths.get(n, [n])) > 1 and p[-2] in index]
     return {"nodes": nodes, "tree": tree, "domains": [n for n in b.tree if len(b.paths.get(n, [n])) == 2],
             "a": a.summary(), "b": b.summary()}
+
+
+_LAYOUTS: Dict[str, tuple] = {}
+_LOCK = threading.Lock()
+
+
+def _bytes_to(meta_or_frame: str, dtype: str, shape: tuple) -> np.ndarray:
+    return np.frombuffer(base64.b64decode(meta_or_frame), dtype=dtype).reshape(shape)
+
+
+def live(runs: Path, loop: str) -> dict:
+    """A training's territories: where they started, where they are now."""
+    from .classify import universe
+    folder = find(runs, loop)
+    meta = live_meta(folder) if folder else None
+    if meta is None:
+        raise ValueError("this training did not record its territories (it began before they were captured)")
+    labels, paths = meta["labels"], meta["taxonomy_paths"]
+    with _LOCK:
+        if loop not in _LAYOUTS:
+            P0 = _bytes_to(meta["protos0"], "<f2", (len(labels), -1)).astype(np.float64)
+            P0 /= np.linalg.norm(P0, axis=1, keepdims=True) + 1e-12
+            row = {l: i for i, l in enumerate(labels)}
+            tree = {n: {"centroid": P0[row[n]].tolist() if n in row else None} for n in paths}
+            _LAYOUTS[loop] = (universe(tree, paths), P0 @ P0.T)
+        at, G0 = _LAYOUTS[loop]
+    frame_f = folder / "live" / "frame.json"
+    frame = json.loads(frame_f.read_text(encoding="utf-8")) if frame_f.exists() else {}
+    q = frame.get("protos_cos")
+    G = _bytes_to(q["q"], "i1", (q["n"], q["n"])).astype(np.float64) / 127 if q else G0
+    row = {l: i for i, l in enumerate(labels)}
+    domain = {n: p[1] if len(p) > 1 else None for n, p in paths.items()}
+    now = {n: np.asarray(p, dtype=np.float64) for n, p in at.items()}
+    for d in {v for v in domain.values() if v}:
+        ns = [n for n in labels if domain.get(n) == d]
+        if len(ns) >= 3:
+            ix = [row[n] for n in ns]
+            dist = lambda M: np.sqrt(np.maximum(2.0 - 2.0 * M[np.ix_(ix, ix)], 0.0))  # noqa: E731
+            now.update(zip(ns, _follow(np.array([at[n] for n in ns]), dist(G0), dist(G))))
+
+    def side(M: np.ndarray, n: str) -> Optional[dict]:
+        if n not in row:
+            return None
+        s = M[row[n]].copy()
+        s[row[n]] = -1.0
+        j = int(s.argmax())
+        return {"sigma": 0.11, "texts": None, "used": None, "near": labels[j], "gap": round(1.0 - float(s[j]), 4),
+                "twin": bool(s[j] >= TWIN), "right": None, "tested": None}
+
+    def summary(M: np.ndarray) -> dict:
+        S = M.copy()
+        np.fill_diagonal(S, -1.0)
+        gap = 1.0 - S.max(axis=1)
+        return {"territories": len(labels), "twins": int((S.max(axis=1) >= TWIN).sum()), "crowded": int((gap < 0.1).sum()),
+                "separation": round(float(np.median(gap)), 4), "texts_spread": None, "used_spread": None, "radius": None,
+                "strict": None, "tested": 0}
+    index = {n: i for i, n in enumerate(paths)}
+    nodes = [{"name": n, "level": len(p) - 1, "path": p, "branch": p[0], "domain": domain[n],
+              "from": [round(float(v), 3) for v in at[n]], "to": [round(float(v), 3) for v in now[n]],
+              "a": side(G0, n), "b": side(G, n), "moved": None} for n, p in paths.items()]
+    tree = [[index[n], index[p[-2]]] for n, p in paths.items() if len(p) > 1 and p[-2] in index]
+    return {"from": "start", "to": loop, "live": {"epoch": frame.get("epoch"), "step": frame.get("step"),
+            "steps": meta.get("steps"), "epochs": meta.get("epochs"), "loss": frame.get("loss"), "t": frame.get("t")},
+            "nodes": nodes, "tree": tree, "domains": [n for n, p in paths.items() if len(p) == 2],
+            "a": summary(G0), "b": summary(G)}

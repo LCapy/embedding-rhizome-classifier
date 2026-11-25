@@ -14,6 +14,7 @@ runs/ and a start and an end line in runs/ledger.jsonl, whatever happens.
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import time
 from collections import Counter
@@ -24,7 +25,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
-from .data import (Corpus, Holdout, load_corpus, load_extra_labeled, load_or_create_holdout, neighborhood,
+from .data import (Corpus, Holdout, eng, load_corpus, load_extra_labeled, load_or_create_holdout, neighborhood,
                    soft_target_matrix, split_indices, text_key)
 from .evaluate import evaluate, format_metrics, load_predictions, metric_value, paired_test, save_predictions
 from .fit import FitConfig, TrainSet, embed_trainset, fit
@@ -248,6 +249,22 @@ def assemble(corpus: Corpus, holdout: Holdout, extra: List[dict], pseudo: List[d
     return ts, records, test_idx
 
 
+def build_of(cfg: FitConfig) -> dict:
+    """The coredrill build settings in a training config."""
+    return {"radius_pull": cfg.radius_pull, "centers_per": cfg.centers_per, "centers_max": cfg.centers_max}
+
+
+def save_embeddings(folder: Path, records: List[dict], train_embs: np.ndarray, test_idx: np.ndarray,
+                    test_embs: np.ndarray) -> None:
+    """What a later `python -m train builds` needs to try coredrills on this
+    encoder without embedding again: the rows, their labels and groups."""
+    keep = ("category", "source", "lang", "source_article", "article_title", "conversation")
+    np.savez(folder / "embeddings.npz", train=train_embs.astype(np.float16), test=test_embs.astype(np.float16),
+             test_idx=np.asarray(test_idx, dtype=np.int64))
+    with gzip.open(folder / "train_rows.json.gz", "wt", encoding="utf-8") as f:
+        json.dump([{k: r[k] for k in keep if k in r} for r in records], f)
+
+
 def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitConfig, rec: LoopRecord,
                        pool: Pool, pending: Optional[Tuple[List[dict], np.ndarray]], device) -> dict:
     """Trains a model from stock LaBSE, scores it, and saves it into the loop's folder."""
@@ -285,7 +302,9 @@ def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitC
         init[k] = ts.f0[rows].mean(axis=0) if rows.any() else np.random.default_rng(k).normal(size=init.shape[1])
     targets = soft_target_matrix(corpus.labels, corpus.parents, cfg.ancestor_eps)
 
-    tap = LiveTap(rec.dir / "live", corpus.labels, log=log) if paths.live else None
+    memo: dict = {}
+    lineage = {n["name"]: eng.taxonomy_lineage_paths(n["name"], corpus.parents, memo)[0] for n in corpus.taxonomy}
+    tap = LiveTap(rec.dir / "live", corpus.labels, log=log, paths=lineage) if paths.live else None
     result = fit(ts, st, init, targets, cfg, device, log, tap)
     fit_seconds = time.perf_counter() - t0
     head = result["head"]
@@ -307,11 +326,12 @@ def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitC
     log(f"  embedding {len(ts.texts):,} training and {len(test_idx):,} holdout texts with the trained encoder ...")
     train_embs = embed_trainset(st, ts, result, device)
     test_embs = encode(st, [corpus.records[i]["text"] for i in test_idx], device)
+    save_embeddings(rec.dir, records, train_embs, test_idx, test_embs)
     protos = head.protos.detach().cpu().numpy()
     head_logits = head.scale * test_embs @ (protos / np.linalg.norm(protos, axis=1, keepdims=True)).T
     log("  scoring the holdout: deployed pipeline, centroid, linear head, logistic regression, prototype head")
     ev = evaluate(corpus, records, train_embs, test_idx, test_embs, head_logits,
-                  blocked_titles=holdout.blocked_titles, log=log, node_cap=cfg.node_cap)
+                  blocked_titles=holdout.blocked_titles, log=log, node_cap=cfg.node_cap, build=build_of(cfg))
     metrics, bench, cd = ev["metrics"], ev["benchmark"], ev["coredrill"]
     bench.update({"n_labeled": n_corpus, "n_hand_added": len(extra), "n_pseudo": len(pseudo)})
     meta.update({"metrics": metrics, "benchmark": bench, "seconds": round(time.perf_counter() - t0, 1)})

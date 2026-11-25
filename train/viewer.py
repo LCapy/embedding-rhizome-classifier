@@ -268,6 +268,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(list_models(self.runs))
         if path == "/api/coredrills":
             return self._json(coredrills.listing(self.runs))
+        if path == "/api/coredrills/live":
+            loop = dict(p.partition("=")[::2] for p in query.split("&")).get("loop", "")
+            if not LOOP_ID.match(loop):
+                return self._json({"error": "unknown loop"}, 400)
+            try:
+                return self._json(coredrills.live(self.runs, loop))
+            except ValueError as e:
+                return self._json({"error": str(e)}, 404)
         if path == "/api/coredrills/timeline":
             return self._ask({"op": "timeline"})
         if path == "/api/coredrills/compare":

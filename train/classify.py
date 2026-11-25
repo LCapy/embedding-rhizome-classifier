@@ -105,11 +105,16 @@ def universe(tree: Dict[str, dict], paths: Dict[str, List[str]]) -> Dict[str, np
 
     middle = []
     for d in domains:
-        v = np.mean([centroid[n] for n in members[d] if n in centroid], axis=0)
-        middle.append(v / np.linalg.norm(v))
-    D = apart(np.array(middle))
+        vs = [centroid[n] for n in members[d] if n in centroid]
+        middle.append(np.mean(vs, axis=0) / np.linalg.norm(np.mean(vs, axis=0)) if vs else None)
+    have = [i for i, m in enumerate(middle) if m is not None]
+    D = np.ones((len(domains), len(domains)))   # a domain with no texts: as far as a typical one
+    if len(have) > 1:
+        sub = apart(np.array([middle[i] for i in have]))
+        D *= float(np.median(sub[np.triu_indices(len(have), 1)])) / max(float(sub.max()), 1e-9)
+        D[np.ix_(have, have)] = sub / max(float(sub.max()), 1e-9)
     other = np.array([[paths[a][0] != paths[b][0] for b in domains] for a in domains])
-    D = D / D.max() + 0.45 * other
+    D = D + 0.45 * other
     np.fill_diagonal(D, 0.0)
     X = _turned(layout(D), 0.55) * 11.0
     radius = np.array([0.55 * np.sqrt(len(members[d])) for d in domains])
@@ -379,10 +384,10 @@ class Classifier:
         return {"from": a, "to": b, **coredrills.compare(left, right, self.positions[b])}
 
     def timeline(self) -> List[dict]:
-        for item in coredrills.listing(self.runs):
+        for item in (c for c in coredrills.listing(self.runs) if not c.get("live")):
             if item["id"] not in self.summaries:
                 self.summaries[item["id"]] = coredrills.Coredrill(coredrills.path_of(self.runs, item["id"])).summary()
-        return [{**item, **self.summaries[item["id"]]} for item in coredrills.listing(self.runs)]
+        return [{**item, **self.summaries[item["id"]]} for item in coredrills.listing(self.runs) if not item.get("live")]
 
     def sample(self) -> dict:
         """A random holdout text and its true label: the model never trained on it."""

@@ -52,7 +52,7 @@ svg { display: block; width: 100%; height: auto; overflow: visible; } svg text {
 "use strict";
 const $ = id => document.getElementById(id), canvas = $("map"), over = $("over"), g = over.getContext("2d");
 const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "low-power" }), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let data = null, list = [], time = null, mix = 1, playing = null, hover = -1, by = "gap";
+let data = null, list = [], time = null, mix = 1, playing = null, hover = -1, by = "gap", tween = null, liveTimer = null;
 function oklch(L, C, h) {
   const a = C * Math.cos(h * Math.PI / 180), b = C * Math.sin(h * Math.PI / 180), l = (L + .3963377774 * a + .2158037573 * b) ** 3, m = (L - .1055613458 * a - .0638541728 * b) ** 3, s = (L - .0894841775 * a - 1.291485548 * b) ** 3;
   return [4.0767416621 * l - 3.3077115913 * m + .2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - .3413193965 * s, -.0041960863 * l - .7034186147 * m + 1.707614701 * s].map(v => Math.max(0, Math.min(1, v <= .0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - .055)));
@@ -117,6 +117,7 @@ function labels() {
 let dragging = null, last = null, moved = 0, before = 0;
 function frame(t) {
   requestAnimationFrame(frame); if (document.hidden || t - before < 15) return; const dt = Math.min(.5, (t - before) / 1000); before = t;
+  if (tween !== null) { tween = Math.min(1, tween + dt / 1.4); mix = tween * tween * (3 - 2 * tween); if (tween >= 1) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); mix = 1; } $("t").value = mix; }
   if (playing !== null) { playing += dt / 4.2; const u = playing % 2, v = u < 1 ? u : 2 - u; mix = v * v * (3 - 2 * v); $("t").value = mix; if (playing > 4) { playing = null; mix = 1; $("t").value = 1; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); } }
   const e = still ? 1 : 1 - Math.exp(-3.2 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt); for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q; if (!still && !dragging && playing === null) goal.yaw += .03 * dt;
   off += ((W > 1080 ? ($("right").hidden ? 170 : -22) : 0) - off) * e; A = axes(); const M = matrix(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .05, .06, 1); gl.clear(gl.COLOR_BUFFER_BIT);
@@ -163,6 +164,16 @@ const key = () => { const a = el("i"), b = el("i"); a.style.background = "var(--
 function listing(title, note, items, value) { const d = el("div", "list"); for (const n of items) { const b = el("button", "", el("span", "", n.name), el("span", "", value(n))); b.onclick = () => fly(at(n), 6); d.append(b); } return items.length ? [el("h2", "", title), el("p", "note", note), d] : []; }
 function report() {
   const R = $("right"), N = data.nodes, a = data.a, b = data.b; R.textContent = ""; R.hidden = false; const same = N.filter(n => n.a && n.b);
+  if (data.live) {
+    const L = data.live, desc = s => N.filter(n => n[s]).map(n => n[s].gap).sort((x, y) => y - x), fit = (v, k = 80) => Array.from({ length: k }, (_, i) => v.length ? v[Math.min(v.length - 1, Math.round(i * (v.length - 1) / (k - 1)))] : 0);
+    R.append(el("h1", "", "The territories as it trains"), el("p", "note", L.epoch ? `Epoch ${L.epoch} of ${L.epochs}, step ${num(L.step)} of ${num(L.steps)}, loss ${num(L.loss, 3)}. "Was" is where training started.` : "Training has just started."),
+      el("div", "tiles", tile("territories that share a center with another", a.twins, b.twins), tile("too close to a neighbor (under 0.1)", a.crowded, b.crowded), tile("distance to the nearest territory, median", a.separation, b.separation, 3), tile("territories", a.territories, b.territories)),
+      el("p", "note", "What moves are the centers the model learns for each territory. Radii, and the coredrill itself, are built when training ends."));
+    R.append(el("h2", "", "Distance to the nearest territory"), key(), chart([{ c: "var(--before)", y: fit(desc("a")) }, { c: "var(--after)", y: fit(desc("b")) }], { ticks: [0, .2, .4, .6], max: Math.max(.6, ...desc("a"), ...desc("b")), from: "the most apart", to: "the closest", label: "Distance to the nearest territory, sorted, at the start and now" }));
+    R.append(...listing("Further from their neighbor", "distance to the nearest, gained since the start", [...same].sort((x, y) => (y.b.gap - y.a.gap) - (x.b.gap - x.a.gap)).filter(n => n.b.gap - n.a.gap > .01).slice(0, 10), n => "+" + (n.b.gap - n.a.gap).toFixed(2)));
+    R.append(...listing("Closer to their neighbor", "distance to the nearest, lost since the start", [...same].sort((x, y) => (x.b.gap - x.a.gap) - (y.b.gap - y.a.gap)).filter(n => n.b.gap - n.a.gap < -.01).slice(0, 10), n => (n.b.gap - n.a.gap).toFixed(2)));
+    return;
+  }
   R.append(el("h1", "", "The change in numbers"), el("div", "tiles", tile("territories that share a center with another", a.twins, b.twins), tile("too close to a neighbor (under 0.1)", a.crowded, b.crowded), tile("distance to the nearest territory, median", a.separation, b.separation, 3), tile("territories with texts", a.territories, b.territories), tile("biggest to smallest, in texts used", a.used_spread, b.used_spread, 0, "×"), tile("radius, median", a.radius, b.radius, 3)));
   if (a.strict !== null && b.strict !== null) R.append(el("p", "note", `Right on the test: ${(100 * b.strict).toFixed(1)}%, was ${(100 * a.strict).toFixed(1)}%${a.tested !== b.tested ? `. The tests differ (${a.tested} and ${b.tested} territories), so these do not compare` : ""}.`));
   const desc = (k, s) => N.filter(n => n[s]).map(n => n[s][k]).sort((x, y) => y - x), fit = (v, n = 80) => Array.from({ length: n }, (_, i) => v.length ? v[Math.min(v.length - 1, Math.round(i * (v.length - 1) / (n - 1)))] : 0);
@@ -183,16 +194,31 @@ function say(t, bad) { $("status").textContent = t; $("status").classList.toggle
 async function get(u) { let r; try { r = await fetch(u); } catch { throw new Error("The view is not running any more. Start it with: python -m train view"); } const v = await r.json(); if (!r.ok) throw new Error(v.error || `error ${r.status}`); return v; }
 const where = c => `${c.root ? c.root + ", " : ""}${c.name.toLowerCase().startsWith("loop") && c.root ? c.name.toLowerCase() : c.name}`;
 let turn = 0;
-async function load() {
-  const me = ++turn; say("Comparing…"); try { const d = await get(`/api/coredrills/compare?a=${$("a").value}&b=${$("b").value}`); if (me !== turn) return; data = d; build(); scale(); report(); say(`${d.nodes.filter(n => n.a && n.b).length} territories in both, ${d.nodes.filter(n => !n.a && n.b).length} new, ${d.nodes.filter(n => n.a && !n.b).length} gone.`); if (!time) get("/api/coredrills/timeline").then(t => { time = t.coredrills; if (me === turn) report(); }).catch(() => {}); } catch (e) { say(e.message, true); }
+const chosen = () => list.find(c => c.id === $("b").value) || {};
+function liveMode(on) { let o = $("a").querySelector("option[value=start]"); if (on && !o) { o = el("option", "", "Where training started"); o.value = "start"; $("a").prepend(o); } if (on) $("a").value = "start"; else if (o) { o.remove(); if (!$("a").value) $("a").selectedIndex = 0; } $("a").disabled = on; for (const o of $("by").options) o.disabled = on && !["gap", "domain"].includes(o.value); if (on && !["gap", "domain"].includes(by)) { by = "gap"; $("by").value = "gap"; scale(); } }
+async function follow(me) {
+  const c = chosen(); try {
+    const d = await get(`/api/coredrills/live?loop=${c.id}`); if (me !== turn) return;
+    d.nodes.forEach(n => n.start = n.from);
+    const moved = data && data.to === d.to && data.live && JSON.stringify(data.live) !== JSON.stringify(d.live);
+    if (moved && playing === null && tween === null && mix === 1) { const prev = data.nodes.map(n => n.to); d.nodes.forEach((n, i) => n.from = prev[i] || n.from); data = d; build(); mix = 0; tween = 0; }
+    else if (!data || data.to !== d.to || moved) { data = d; build(); }
+    report(); const L = d.live; say(L.epoch ? `${c.running ? "Training now" : "Training ended"}: epoch ${L.epoch} of ${L.epochs}, step ${num(L.step)} of ${num(L.steps)}.` : "Waiting for the first capture…");
+  } catch (e) { if (me === turn) say(e.message, true); }
+  if (me === turn && c.running) liveTimer = setTimeout(() => follow(me), 2500);
 }
-$("a").onchange = $("b").onchange = load; $("by").onchange = () => { by = $("by").value; scale(); if (data) build(); }; $("whole").onclick = home; $("t").oninput = () => { playing = null; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); mix = +$("t").value; };
-$("play").onclick = () => { const on = playing === null; playing = on ? 0 : null; $("play").textContent = on ? "Stop" : "Play"; $("play").setAttribute("aria-pressed", String(on)); if (on) { mix = 0; } };
+async function load() {
+  const me = ++turn; clearTimeout(liveTimer); tween = null; if (chosen().live) { liveMode(true); say("Following the training…"); return follow(me); } liveMode(false); say("Comparing…"); try { const d = await get(`/api/coredrills/compare?a=${$("a").value}&b=${$("b").value}`); if (me !== turn) return; data = d; build(); scale(); report(); say(`${d.nodes.filter(n => n.a && n.b).length} territories in both, ${d.nodes.filter(n => !n.a && n.b).length} new, ${d.nodes.filter(n => n.a && !n.b).length} gone.`); if (!time) get("/api/coredrills/timeline").then(t => { time = t.coredrills; if (me === turn) report(); }).catch(() => {}); } catch (e) { say(e.message, true); }
+}
+$("a").onchange = $("b").onchange = load; $("by").onchange = () => { by = $("by").value; scale(); if (data) build(); }; $("whole").onclick = home; $("t").oninput = () => { if (data && data.live && tween !== null) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); } playing = null; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); mix = +$("t").value; };
+$("play").onclick = () => { if (data && data.live) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); } const on = playing === null; playing = on ? 0 : null; $("play").textContent = on ? "Stop" : "Play"; $("play").setAttribute("aria-pressed", String(on)); if (on) { mix = 0; } };
 (async () => {
   try {
-    if (!gl) throw new Error("This browser cannot draw the map (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); list = await get("/api/coredrills"); if (list.length < 2) { say("There is nothing to compare yet: a second coredrill appears with the next training.", true); return; }
-    for (const s of ["a", "b"]) for (const c of list) { const o = el("option", "", where(c) + (c.champion ? ", champion" : "") + (c.strict ? `: ${(100 * c.strict).toFixed(1)}%` : "")); o.value = c.id; $(s).append(o); }
-    const q = new URLSearchParams(location.search), champs = list.filter(c => c.champion); $("a").value = q.get("a") || list[0].id; $("b").value = q.get("b") || (champs.at(-1) || list.at(-1)).id; if (!$("a").value) $("a").selectedIndex = 0; if (!$("b").value) $("b").selectedIndex = list.length - 1; await load(); if (q.get("play")) $("play").click();
+    if (!gl) throw new Error("This browser cannot draw the map (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); list = await get("/api/coredrills"); if (list.filter(c => !c.live).length < 2 && !list.some(c => c.live)) { say("There is nothing to compare yet: a second coredrill appears with the next training.", true); return; }
+    const built = list.filter(c => !c.live), runs = list.filter(c => c.live).reverse();
+    for (const c of built) for (const s of ["a", "b"]) { const o = el("option", "", where(c) + (c.champion ? ", champion" : "") + (c.strict ? `: ${(100 * c.strict).toFixed(1)}%` : "")); o.value = c.id; $(s).append(o); }
+    if (runs.length) { const g = el("optgroup"); g.label = "Training, as it moves"; for (const c of runs) { const o = el("option", "", `${c.name}${c.root ? " (" + c.root + ")" : ""}`); o.value = c.id; g.append(o); } $("b").prepend(g); }
+    const q = new URLSearchParams(location.search), champs = built.filter(c => c.champion), running = runs.find(c => c.running); $("a").value = q.get("a") || built[0].id; $("b").value = q.get("b") || (running || champs.at(-1) || built.at(-1)).id; if (!$("a").value) $("a").selectedIndex = 0; if (!$("b").value) $("b").selectedIndex = list.length - 1; await load(); if (q.get("play")) $("play").click();
   } catch (e) { say(e.message, true); }
 })();
 </script>

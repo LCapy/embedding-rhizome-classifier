@@ -251,6 +251,8 @@ def environment() -> dict:
         except metadata.PackageNotFoundError:
             pass
     try:
+        if "torch" not in sys.modules:       # a loop without PyTorch does not load it for this
+            raise RuntimeError("not used by this loop")
         import torch
         env["cuda"] = torch.version.cuda
         env["gpu"] = torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
@@ -338,6 +340,8 @@ class LoopRecord:
                      "a fit needs about 8. Close other programs if it fails with out of memory.")
         self.entry["data"] = data_fingerprint(self.paths)
         try:
+            if "torch" not in sys.modules:
+                raise RuntimeError
             import torch
             if torch.cuda.is_available():
                 torch.cuda.reset_peak_memory_stats()
@@ -367,6 +371,8 @@ class LoopRecord:
         self.entry.update({"status": status, "finished": now(),
                            "seconds": round(time.perf_counter() - self._t0, 1)})
         try:
+            if "torch" not in sys.modules:
+                raise RuntimeError
             import torch
             if torch.cuda.is_available():
                 self.entry["peak_vram_mb"] = round(torch.cuda.max_memory_allocated() / 2 ** 20)

@@ -33,6 +33,9 @@ class FitConfig:
     pseudo_weight: float = 0.5      # loss weight of a pseudo-label, times its confidence
     balance: float = 0.0            # 1: every label weighs the same in all, whatever its size; 0: by its rows
     node_cap: int = 0               # the coredrill uses at most this many rows per node (0: no cap)
+    radius_pull: float = 0.0        # the coredrill: how far each node's radius moves toward the median (0 to 1)
+    centers_per: int = 0            # the coredrill: one center per this many rows of a node (0: one center)
+    centers_max: int = 1            # the coredrill: centers per node, at most
     val_frac: float = 0.1
     patience: int = 3
     seed: int = 42

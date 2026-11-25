@@ -18,6 +18,7 @@ capture off instead of stopping the training.
 """
 from __future__ import annotations
 
+import base64
 import gzip
 import json
 import os
@@ -55,8 +56,9 @@ class LiveTap:
     after_step() when armed, and step(); epoch() and close() at the ends."""
 
     def __init__(self, folder: Path, labels: List[str], every: float = 1.5, archive_every: float = 60.0,
-                 log=print):
+                 log=print, paths: Optional[dict] = None):
         self.folder, self.labels, self.every, self.archive_every, self.log = folder, labels, every, archive_every, log
+        self.paths = paths or {}         # every taxonomy node's path, for the Coredrill page
         self.armed = False
         self.disabled = False
         self.feats: Optional[dict] = None
@@ -144,7 +146,11 @@ class LiveTap:
                 "dim": int(head.protos.shape[1]), "dims_drawn": sample(head.protos.shape[1], DIMS).tolist(),
                 "matrices": [{"name": n, **describe(n), "shape": list(p.shape), "rows": ri.tolist(),
                               "cols": ci.tolist()} for n, p, ri, ci in self.mats],
-                "w0": [pack(w) for w in self.w0]}
+                "w0": [pack(w) for w in self.w0],
+                # the territories' centers as training starts (each label's prototype, from its centroid)
+                "taxonomy_paths": self.paths,
+                "protos0": base64.b64encode(F.normalize(head.protos.detach().float(), dim=1).cpu().numpy()
+                                            .astype("<f2").tobytes()).decode()}
         write_atomic(self.folder / "meta.json", json.dumps(meta, ensure_ascii=False).encode("utf-8"))
 
     def _keeper(self, key: str):
@@ -210,6 +216,13 @@ class LiveTap:
         self._cur = cur
 
     @torch.no_grad()
+    def _centers(self) -> dict:
+        """How alike every two territories' centers are now: cosines, in 1/127ths."""
+        P = F.normalize(self.head.protos.detach().float(), dim=1)
+        G = (P @ P.T).clamp(-1, 1).mul(127).round().to(torch.int8).cpu().numpy()
+        return {"n": int(G.shape[0]), "q": base64.b64encode(G.tobytes()).decode()}
+
+    @torch.no_grad()
     def _after(self, epoch: int, step: int) -> None:
         if self._cur is None:
             return
@@ -226,6 +239,7 @@ class LiveTap:
             "total": [pack(a - b) for a, b in zip(new, self.w0)],
             "total_rms": [float(np.sqrt(np.mean((a - b) ** 2))) for a, b in zip(new, self.w0)],
             "w_rms": [float(np.sqrt(np.mean(a ** 2))) for a in new],
+            "protos_cos": self._centers(),
         })
         data = json.dumps(frame, ensure_ascii=False).encode("utf-8")
         write_atomic(self.folder / "frame.json", data)

@@ -43,7 +43,7 @@ USAGE
 """
 from __future__ import annotations
 
-import argparse, ast, json, logging, re, sys, time, urllib.parse, warnings
+import argparse, ast, json, logging, re, sys, time, urllib.parse, warnings, zlib
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -408,6 +408,39 @@ def record_group(r: dict) -> str:
     """What a record shares with others of its kind: its article or its
     conversation, else its source."""
     return str(r.get("source_article") or r.get("article_title") or r.get("conversation") or r.get("source") or "unknown")
+
+
+def spherical_kmeans(X: np.ndarray, k: int, seed: int, min_size: int = 8, steps: int = 25) -> Optional[np.ndarray]:
+    """k unit centers for the unit rows of X, dropping groups under min_size.
+    None when fewer than two are left: one center is the node's centroid."""
+    X = X / (np.linalg.norm(X, axis=1, keepdims=True) + 1e-12)
+    rng = np.random.default_rng(seed)
+    M = X[rng.choice(len(X), k, replace=False)]
+    for _ in range(steps):
+        owner = (X @ M.T).argmax(axis=1)
+        M = np.array([X[owner == j].mean(axis=0) if (owner == j).any() else M[j] for j in range(k)])
+        M /= np.linalg.norm(M, axis=1, keepdims=True) + 1e-12
+    size = np.bincount((X @ M.T).argmax(axis=1), minlength=k)
+    M = M[size >= min_size]
+    return M if len(M) >= 2 else None
+
+
+_CENTERS: Dict[int, tuple] = {}
+
+
+def node_centers(stats: dict) -> Optional[np.ndarray]:
+    """A node's several centers as an array, or None if it has one. Cached by
+    the list object, which the cache keeps alive so its id cannot be reused."""
+    lst = stats.get("centers")
+    if not lst:
+        return None
+    hit = _CENTERS.get(id(lst))
+    if hit is None or hit[0] is not lst:
+        if len(_CENTERS) > 4096:
+            _CENTERS.clear()
+        hit = (lst, np.asarray(lst, dtype=np.float32))
+        _CENTERS[id(lst)] = hit
+    return hit[1]
 
 
 def _clip_indices(indices: np.ndarray, cap: int) -> np.ndarray:
@@ -1836,7 +1869,10 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                     rhizome_min_sim: float = 0.45,
                     min_direct: int = 5,
                     skip_nodes: Optional[Set[str]] = None,
-                    per_node_cap: int = 0) -> dict:
+                    per_node_cap: int = 0,
+                    radius_pull: float = 0.0,
+                    centers_per: int = 0,
+                    centers_max: int = 1) -> dict:
     """Build the coredrill.
 
     Every node with at least `min_direct` records of its own gets a centroid
@@ -1860,6 +1896,16 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
     `per_node_cap` > 0 builds every node from at most that many of its records,
     taken evenly from its articles and conversations, so that a node with ten
     times the data does not get a ten times better-placed centroid and radius.
+
+    `radius_pull` (0 to 1) moves every node's sigma that far toward the median
+    one, geometrically: at 0 each keeps its own, at 1 all are the same. A wide
+    node otherwise claims texts that are not its own. The measured value stays
+    in `sigma_raw`.
+
+    `centers_per` > 0 gives a node one center per that many of its records, at
+    most `centers_max` (spherical k-means): a node built from several articles
+    or kinds of text does not sit around one point. Scoring takes a text's
+    nearest center; `centroid` stays the mean, for everything else.
     """
     skip_nodes = set(skip_nodes or ())
     nrm = np.linalg.norm(embeddings, axis=1, keepdims=True)
@@ -2050,6 +2096,24 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                    "lineage_paths": lineage_paths.get(n, []), "top_branches": top_branch_map.get(n, [])}
         print(f"    {n:<38} n={tree[n]['n']:>6,}  direct={direct_counts.get(n,0):>5,}  support={len(idx):>5,}  sigma={sigma:.4f}  recall={recall:.1%}  mode={centroid_mode.get(n,'direct')}")
 
+    if radius_pull > 0:
+        measured = [s["sigma"] for s in tree.values() if s.get("sigma") is not None]
+        middle = float(np.median(measured))
+        for s in tree.values():
+            if s.get("sigma") is not None:
+                s["sigma_raw"] = s["sigma"]
+                s["sigma"] = round(middle ** radius_pull * max(s["sigma"], 1e-6) ** (1 - radius_pull), 6)
+    if centers_per > 0 and centers_max > 1:
+        for n, s in tree.items():
+            idx = support_indices.get(n)
+            if s.get("centroid") is None or idx is None or centroid_mode.get(n) not in ("leaf_direct", "parent_direct"):
+                continue
+            k = int(min(centers_max, len(idx) // centers_per))
+            if k >= 2:
+                M = spherical_kmeans(embeddings[idx].astype(np.float64), k, seed=zlib.crc32(n.encode("utf-8")))
+                if M is not None:
+                    s["centers"] = M.round(6).tolist()
+
     populated = [n for n in tree if tree[n].get("centroid") is not None and n not in skip_nodes]
     rhizome_overlay: Dict[str, List[dict]] = {n: [] for n in tree}
     if len(populated) > 1:
@@ -2111,6 +2175,8 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
             "tau": tau, "flat_prototype_accuracy": round(nc / nt if nt > 0 else 0, 4),
             "build_direction": "bottom_up", "levels": {str(lv): names for lv, names in levels.items()},
             "hierarchy": children_map, "tree": tree,
+            "build": {"per_node_cap": int(per_node_cap), "radius_pull": float(radius_pull),
+                      "centers_per": int(centers_per), "centers_max": int(centers_max)},
             "skip_nodes": sorted(skip_nodes),
             "taxonomy_backbone": {"roots": roots, "parents_map": parents_map, "primary_parent_map": primary_parent_map,
                                   "lineage_paths": lineage_paths, "top_branches": top_branch_map},
@@ -2902,7 +2968,10 @@ def cmd_build(args) -> None:
                          parent_child_cap=args.parent_child_cap,
                          rhizome_top_k=args.rhizome_top_k,
                          rhizome_min_sim=args.rhizome_min_sim,
-                         per_node_cap=args.per_node_cap)
+                         per_node_cap=args.per_node_cap,
+                         radius_pull=args.radius_pull,
+                         centers_per=args.centers_per,
+                         centers_max=args.centers_max)
     p  = out_dir / "coredrill_hierarchical.json"
     p.write_text(json.dumps(to_native(cd), indent=2), encoding="utf-8")
     kb = p.stat().st_size / 1024
@@ -2967,6 +3036,9 @@ def _score_node_analysis(node_name: str, stats: dict, x: np.ndarray,
     if raw is not None:
         mu    = np.array(raw, dtype=np.float32)
         score = float(x @ mu)
+        several = node_centers(stats)
+        if several is not None:              # the text's nearest center of the node
+            score = float((several @ x.astype(np.float32)).max())
     else:
         mu    = np.zeros(x.shape[0], dtype=np.float32)
         score = 0.0
@@ -3229,6 +3301,11 @@ def main():
     p_b.add_argument("--rhizome-min-sim", type=float, default=0.45)
     p_b.add_argument("--per-node-cap", type=int, default=0,
                      help="build every node from at most this many records, evenly over its articles (0: no cap)")
+    p_b.add_argument("--radius-pull", type=float, default=0.0,
+                     help="0 to 1: how far every node's sigma moves toward the median one")
+    p_b.add_argument("--centers-per", type=int, default=0,
+                     help="one center per this many records of a node (0: one center)")
+    p_b.add_argument("--centers-max", type=int, default=1, help="centers per node, at most")
 
     p_p = sub.add_parser("predict")
     p_p.add_argument("--coredrill", required=True)
