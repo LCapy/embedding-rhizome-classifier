@@ -85,21 +85,27 @@ def running(folder: Path, it: dict) -> dict:
         done = .02 + .8 * min(1.0, tried / planned)
         out.update({"tried": tried, "planned": planned})
     started = time.mktime(time.strptime(it["started"], "%Y-%m-%dT%H:%M:%S"))
-    elapsed = time.time() - started
+    elapsed = (it.get("seconds") or 0) if state(it) != "running" else time.time() - started
     out.update({"done": round(min(done, .99), 3), "elapsed_s": round(elapsed), "log": tail(folder / "log.txt")})
     if "left_s" not in out and done > .05:
         out["left_s"] = round(elapsed * (1 - done) / done)
     return out
 
 
-def summary(it: dict) -> dict:
+def summary(root: Path, it: dict) -> dict:
     m = ((it.get("metrics") or {}).get("deployed") or {}).get("all") or {}
     test = it.get("paired_test") or {}
     error = (it.get("error") or "").strip().splitlines()
-    return {"id": it["id"], "seq": it.get("seq"), "kind": it.get("kind"), "state": state(it), "started": it.get("started"),
+    st = state(it)
+    # how far round the pipeline it got: all the way, to the new text, or where its log stops
+    reach = (1.0 if st in ("promoted", "not_promoted", "ok") else .16 if st in ("nothing_accepted", "no_candidates")
+             else None if st == "running" else running(root / it["id"], it)["done"] if (root / it["id"]).exists() else 0.0)
+    rows = it.get("rows") or {}
+    return {"id": it["id"], "seq": it.get("seq"), "kind": it.get("kind"), "state": st, "started": it.get("started"),
             "seconds": it.get("seconds"), "strict": m.get("strict"), "near_miss": m.get("near_miss"),
             "n": (it.get("metrics") or {}).get("n"), "reason": it.get("reason") or "", "accepted": it.get("accepted"),
-            "z": test.get("z"), "error": error[-1] if error else None}
+            "z": test.get("z"), "error": error[-1] if error else None, "reach": reach,
+            "val_acc": (it.get("training") or {}).get("val_acc"), "labeled": rows.get("labeled"), "pseudo": rows.get("pseudo")}
 
 
 def gathering() -> Optional[dict]:
@@ -126,9 +132,9 @@ def cmd_progress(runs: Path) -> dict:
         items = loops(root)
         for it in items:
             if state(it) == "running":
-                now.append({**summary(it), "root": name, **running(root / it["id"], it)})
+                now.append({**summary(root, it), "root": name, **running(root / it["id"], it)})
         champion = json.loads(best.read_text(encoding="utf-8"))["run"] if best.exists() else None
         folders.append({"root": name, "name": NAMES.get(name, name), "champion": champion,
-                        "loops": [summary(it) for it in items][::-1]})
+                        "loops": [summary(root, it) for it in items][::-1]})
     folders.sort(key=lambda r: r["loops"][0]["id"] if r["loops"] else "", reverse=True)
     return {"time": time.time(), "running": now, "roots": folders, "gathering": gathering()}

@@ -47,6 +47,10 @@ class Paths:
     def holdout(self) -> Path:
         return self.runs / "holdout.json"
 
+    @property
+    def labeled(self) -> Path:
+        return self.data / "labeled"
+
     # what LoopRecord's fingerprint reads; builds change none of them
     pool_records = pool_f0 = rejected = pending_records = property(lambda self: self.runs / "-")
 
@@ -78,6 +82,7 @@ def encoder_embeddings(paths: Paths, corpus, holdout, run: Optional[str]) -> Tup
     if not np.array_equal(saved_test, test_idx) or [r["category"] for r in rows[:len(train_idx)]] != \
             [corpus.records[i]["category"] for i in train_idx]:
         raise SystemExit(f"{run} was trained on another corpus or holdout than {paths.data}")
+    rows = [corpus.records[i] for i in train_idx] + [{"text": "", **r} for r in rows[len(train_idx):]]
     for norm in (X_tr, X_te):                     # float16 on disk: unit length again
         norm /= np.linalg.norm(norm, axis=1, keepdims=True) + 1e-12
     return rows, X_tr, test_idx, X_te, len(train_idx)

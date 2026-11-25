@@ -36,22 +36,22 @@ td.why { color: var(--ink2); font-size: 12.5px; min-width: 260px; } tr.now td { 
 </head>
 <body>
 <div id="stage">
-  <canvas id="gl" tabindex="0" role="img" aria-label="Every loop as a pillar, as tall as its share of right answers on the test, one lane per corpus. Drag or use the arrow keys to turn, scroll to zoom, click a pillar to find it in the list below."></canvas>
+  <canvas id="gl" tabindex="0" role="img" aria-label="The pipeline as a loop of six stations: texts, new text, training, coredrill, test, gate. Every loop is a ring through them, stacked into a tower per corpus; the running one draws itself as it goes. Drag or use the arrow keys to turn, scroll to zoom, click a ring to find it in the list below."></canvas>
   <canvas id="over"></canvas>
   <section class="hud" id="head">
     <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill">Coredrill</a><a href="/loops" aria-current="page">Loops</a></nav>
     <h1>Loops</h1>
-    <p class="note">Each pillar is a loop, as tall as its share of right answers on its test. One lane per corpus; scores compare only within a lane.</p>
+    <p class="note">The pipeline is a loop: texts, new text, training, coredrill, test, gate, and a new champion labels the next text. Each ring is one loop through it, oldest at the bottom; one tower per corpus.</p>
     <div id="mini"></div>
     <p class="note" id="clock" role="status" aria-live="polite">Loading…</p>
   </section>
   <section class="hud" id="legend" aria-label="Colors">
-    <span><i style="background:var(--good)"></i>promoted, or adopted</span>
-    <span><i style="background:var(--rest)"></i>not promoted</span>
+    <span><i style="background:var(--good)"></i>promoted: a spoke joins the champions' column</span>
+    <span><i style="background:var(--rest)"></i>not promoted: the ring fades after the gate</span>
     <span><i style="background:var(--blue)"></i>a model scored, no training</span>
-    <span><i style="background:var(--bad)"></i>failed or stopped</span>
-    <span><i style="background:var(--run);opacity:.75"></i>running: filling up as it goes</span>
-    <span><i style="background:transparent;border-top:2px solid var(--good);border-radius:0;height:0"></i>the best so far</span>
+    <span><i style="background:var(--bad)"></i>failed or stopped: the ring breaks off</span>
+    <span><i style="background:var(--run)"></i>running: the ring draws itself</span>
+    <span><i style="background:transparent;border:1.5px solid var(--ink2)"></i>bead at Test: bigger is more right</span>
   </section>
 </div>
 <main>
@@ -74,59 +74,96 @@ function when(iso) { if (!iso) return ""; const d = new Date(iso), today = new D
 function state(l) { const [w, c] = STATE[l.state] || [l.state, "var(--rest)"], i = el("i"); i.style.background = c; return el("span", "st", i, l.kind === "build" && l.state === "promoted" ? "Adopted" : w); }
 const folderName = r => r.root ? `runs/${r.root}` : "runs";
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
-const COL = { good: hex("#7d9a94"), rest: hex("#696e79"), blue: hex("#7888a6"), bad: hex("#a98d80"), run: hex("#aaa79e"), lane: hex("#1b1e24"), grid: hex("#3a3e47") };
+const COL = { good: hex("#7d9a94"), rest: hex("#696e79"), blue: hex("#7888a6"), bad: hex("#a98d80"), run: hex("#bdb9ad"), station: hex("#5d6371"), grid: hex("#3a3e47") };
+const blend = (a, b, k) => a.map((v, i) => v * (1 - k) + b[i] * k);
 
-// ── the scene ──
-let data = null, run = new Map(), pillars = [], lanes = [], hover = -1, picked = null;
-const H = 10, STEP = 1.25, GAP = 10;        // height of 100%, a loop's width along its lane, the space between lanes
+let data = null, run = new Map(), hover = -1, picked = null;
+// ── the pipeline as a loop: six stations round a circle; every loop is a ring through them ──
+const STATIONS = [
+  { name: "Texts", say: "The corpus: training texts, and a test kept apart" },
+  { name: "New text", say: "Self-training: Wikipedia articles the champion labels" },
+  { name: "Training", say: "LaBSE's top layers and the territories' centers learn" },
+  { name: "Coredrill", say: "Every text embedded; territories built: centers and radii" },
+  { name: "Test", say: "Every test text answered; the bead is the share right" },
+  { name: "Gate", say: "Promoted only when clearly better than the champion" },
+];
+// how far round a loop is, from how far along it is, for each kind of loop
+const ANCHORS = {
+  fit: [[0, 0], [.02, 2 / 6], [.78, 3 / 6], [.9, 4 / 6], [.98, 5 / 6], [1, 1]],
+  round: [[0, 0], [.15, 1 / 6], [.2, 2 / 6], [.8, 3 / 6], [.91, 4 / 6], [.98, 5 / 6], [1, 1]],
+  score: [[0, 0], [.6, 3 / 6], [.75, 4 / 6], [.98, 5 / 6], [1, 1]],
+  baseline: [[0, 0], [.1, 3 / 6], [.35, 4 / 6], [.98, 5 / 6], [1, 1]],
+  build: [[0, 0], [.02, 3 / 6], [.82, 4 / 6], [.98, 5 / 6], [1, 1]],
+};
+const SKIPS = { fit: [1], round: [], score: [1, 2], baseline: [1, 2], build: [1, 2] };      // stations a kind passes by
+function turnOf(kind, done) { const a = ANCHORS[kind] || ANCHORS.fit; for (let i = 1; i < a.length; i++) if (done <= a[i][0]) { const [d0, t0] = a[i - 1], [d1, t1] = a[i]; return t0 + (t1 - t0) * (done - d0) / Math.max(1e-9, d1 - d0); } return 1; }
+const R = 3.2, DY = .42, TOWER = 17;
+let towers = [], rings = [], seenTower = null;
 function scene() {
-  pillars = []; lanes = []; if (!data) return;
-  const rs = data.roots.filter(r => r.loops.length), widest = Math.max(1, ...rs.map(r => r.loops.length));
+  towers = []; rings = []; if (!data) return;
+  const rs = data.roots.filter(r => r.loops.length);
   rs.forEach((r, k) => {
-    const list = [...r.loops].reverse(), z = ((rs.length - 1) / 2 - k) * GAP, x0 = (widest - list.length) * STEP - widest * STEP / 2; let best = null;   // lanes end together: the latest loops side by side
-    lanes.push({ r, z, x0, len: list.length * STEP + STEP, champ: (r.loops.find(l => l.id === r.champion) || {}).strict });
-    list.forEach((l, i) => {
-      const x = x0 + STEP * (i + 1), scored = l.strict !== null && l.strict !== undefined, live = run.get(l.id);
-      let c = COL.rest, h = .12, a = 1;
-      if (scored) { h = l.strict * H; c = l.state === "promoted" ? COL.good : ["baseline", "score"].includes(l.kind) ? COL.blue : COL.rest; }
-      else if (["failed", "killed", "interrupted"].includes(l.state)) c = COL.bad;
-      if (scored && ["promoted", "ok"].includes(l.state) && !["score", "build"].includes(l.kind)) best = Math.max(best ?? 0, l.strict);
-      pillars.push({ l, r, x, z, h, c, a, live, best });
-    });
+    const list = [...r.loops].reverse(), T = { r, cx: 0, cz: 0, top: list.length * DY, rings: [] };
+    T.cx = k === 0 ? 0 : (k % 2 ? -1 : 1) * Math.ceil(k / 2) * TOWER;                      // the newest corpus in the middle
+    list.forEach((l, i) => { const g = { l, T, y: (i + .6) * DY, i, champion: l.id === r.champion }; T.rings.push(g); rings.push(g); });
+    towers.push(T);
   });
 }
-// ── WebGL ──
-let P, cube, inst, n = 0;
+// Texts sits at the front left; the loop runs round from there
+function colorOf(l) { return l.state === "promoted" ? COL.good : ["failed", "killed", "interrupted"].includes(l.state) ? COL.bad : ["baseline", "score"].includes(l.kind) ? COL.blue : COL.rest; }
+const at = (T, turn, y, rad = R) => { const a = .75 * Math.PI - 2 * Math.PI * turn; return [T.cx + Math.cos(a) * rad, y, T.cz + Math.sin(a) * rad]; };
+function beads(time) {                              // [x, y, z, radius, r, g, b, alpha, glow]
+  const solid = [], soft = [];
+  for (const T of towers) {
+    for (let s = 0; s < 6; s++) {                      // the stations: a glowing post at the base, a faint column up
+      const b = at(T, s / 6, 0); soft.push([...b, .34, ...COL.station, .55, .5]);
+      for (let y = .4; y < T.top + DY; y += .5) soft.push([...at(T, s / 6, y), .03, ...COL.grid, .5, 0]);
+    }
+    for (let y = .5; y < T.top + DY; y += .9) soft.push([T.cx, y, T.cz, .025, ...COL.grid, .4, 0]);
+  }
+  for (const g of rings) {
+    const l = g.l, T = g.T, live = run.get(l.id), lit = g === rings[hover] || l.id === picked, c = colorOf(l);
+    const reach = live ? turnOf(l.kind, live.shown) : turnOf(l.kind, l.reach ?? 1), skip = SKIPS[l.kind] || [];
+    const steps = Math.max(2, Math.round(reach * 150));
+    for (let j = 0; j <= steps; j++) {
+      const t = reach * j / steps, station = Math.floor(t * 6 + 1e-9), passing = skip.includes(station) && t * 6 - station > .02;
+      const after = t > 5 / 6 + .005, faded = after && l.state !== "promoted" && !live;
+      if ((faded || passing) && j % 3) continue;
+      const p = at(T, t, g.y), rad = (passing ? .028 : faded ? .03 : .052) * (lit ? 1.35 : 1);
+      (passing || faded ? soft : solid).push([...p, rad, ...(live ? COL.run : c), passing || faded ? .45 : lit ? 1 : .93, lit ? .4 : 0]);
+    }
+    if (l.strict !== null && l.strict !== undefined) solid.push([...at(T, 4 / 6, g.y, R + .02), .05 + .5 * Math.max(0, l.strict - .25), ...blend(c, COL.run, .35), 1, lit ? .5 : .15]);
+    if (l.val_acc) solid.push([...at(T, 2 / 6, g.y), .045 + .35 * Math.max(0, l.val_acc - .6), ...c, .95, 0]);
+    if (l.accepted) solid.push([...at(T, 1 / 6, g.y), .045 + .05 * Math.log10(1 + l.accepted), ...c, .95, 0]);
+    if (l.state === "promoted") {                     // the champion's lineage: a spoke to the center, the center column
+      for (let k = 0; k <= 12; k++) soft.push([...at(T, 5 / 6, g.y, R * (1 - k / 12)), .035, ...COL.good, .75, .3]);
+      solid.push([T.cx, g.y, T.cz, g.champion ? .16 : .1, ...COL.good, 1, g.champion ? .8 : .2]);
+    }
+    if (live) {                                       // the head, and text flowing into the step it is on
+      const head = at(T, reach, g.y), pulse = .5 + .5 * Math.sin(time * 3);
+      solid.push([...head, .13, ...COL.run, 1, 1]); soft.push([...head, .42 + .08 * pulse, ...COL.run, .28, 1]);
+      const from = Math.floor(reach * 6) / 6;
+      for (let k = 0; k < 7; k++) { const f = ((time * .35 + k / 7) % 1), t = from + (reach - from) * f; soft.push([...at(T, t, g.y + .02), .06, ...COL.run, .8 * (1 - f) + .2, .6]); }
+    }
+  }
+  return { solid, soft };
+}
+// ── WebGL: every bead a small lit sphere ──
+let P, quad, inst;
 function program(v, f) { const p = gl.createProgram(); for (const [t, s] of [[gl.VERTEX_SHADER, v], [gl.FRAGMENT_SHADER, f]]) { const x = gl.createShader(t); gl.shaderSource(x, "#version 300 es\nprecision highp float;\n" + s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); gl.attachShader(p, x); } gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}; for (let i = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS) - 1; i >= 0; i--) { const nm = gl.getActiveUniform(p, i).name; u[nm] = gl.getUniformLocation(p, nm); } return { p, u }; }
 function initGL() {
-  P = program(`layout(location=0) in vec3 v; layout(location=1) in vec3 nrm; layout(location=2) in vec3 at; layout(location=3) in vec3 sz; layout(location=4) in vec4 c; layout(location=5) in float glow;
-    uniform mat4 M; uniform float t; out vec3 n; out vec4 k; out float y; void main() { vec3 p = at + v * sz; gl_Position = M * vec4(p, 1.0); n = nrm; k = c; k.rgb *= 1.0 + glow * (0.18 + 0.18 * sin(t * 2.6)); y = v.y; }`,
-    `in vec3 n; in vec4 k; in float y; out vec4 o; void main() { float lit = 0.5 + 0.38 * max(dot(n, normalize(vec3(-0.45, 0.85, 0.5))), 0.0) + 0.12 * max(n.y, 0.0); vec3 c = k.rgb * lit; o = vec4(c * k.a, k.a); }`);
-  const f = [[0, 1, 0, [0, 1, 0]], [0, -1, 0, [0, -1, 0]], [1, 0, 0, [1, 0, 0]], [-1, 0, 0, [-1, 0, 0]], [0, 0, 1, [0, 0, 1]], [0, 0, -1, [0, 0, -1]]], vs = [];
-  for (const [ax, ay, az, nn] of f) { const nv = [ax, ay, az], u = Math.abs(ay) ? [1, 0, 0] : [0, 1, 0], w = [nv[1] * u[2] - nv[2] * u[1], nv[2] * u[0] - nv[0] * u[2], nv[0] * u[1] - nv[1] * u[0]];
-    const corner = (s1, s2) => [0, 1, 2].map(i => .5 * nv[i] + .5 * s1 * u[i] + .5 * s2 * w[i]); for (const [s1, s2] of [[-1, -1], [1, -1], [1, 1], [-1, -1], [1, 1], [-1, 1]]) { const p = corner(s1, s2); vs.push(p[0], p[1] + .5, p[2], ...nn); } }
-  cube = gl.createVertexArray(); gl.bindVertexArray(cube); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vs), gl.STATIC_DRAW);
-  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 24, 0); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 24, 12);
-  inst = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, inst); const S = 44; [[2, 3, 0], [3, 3, 12], [4, 4, 24], [5, 1, 40]].forEach(([i, k, o]) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, k, gl.FLOAT, false, S, o); gl.vertexAttribDivisor(i, 1); });
-  gl.bindVertexArray(null); gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  P = program(`layout(location=0) in vec2 q; layout(location=1) in vec3 a; layout(location=2) in float r; layout(location=3) in vec4 c; layout(location=4) in float glow;
+    uniform mat4 M; uniform vec3 RR, UU; uniform float soft; out vec2 v; out vec4 k; out float gl0; void main() { gl_Position = M * vec4(a + (RR * q.x + UU * q.y) * r, 1.0); v = q; k = c; gl0 = glow; }`,
+    `in vec2 v; in vec4 k; in float gl0; uniform float soft; out vec4 o; void main() { float d = dot(v, v); if (d > 1.0) discard;
+      if (soft > 0.5) { float a = k.a * exp(-d * 3.0) * (1.0 - d); o = vec4(k.rgb * a, a); return; }
+      vec3 n = vec3(v, sqrt(1.0 - d)); float lit = 0.45 + 0.45 * max(dot(n, normalize(vec3(-0.4, 0.65, 0.65))), 0.0) + 0.25 * gl0; float a = k.a; o = vec4(k.rgb * lit * a, a); }`);
+  quad = gl.createVertexArray(); gl.bindVertexArray(quad); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  inst = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, inst); [[1, 3, 0], [2, 1, 12], [3, 4, 16], [4, 1, 32]].forEach(([i, n, o]) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, 36, o); gl.vertexAttribDivisor(i, 1); });
+  gl.bindVertexArray(null); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 }
-function boxes() {                                 // [x, y, z, w, h, d, r, g, b, a, glow]
-  const solid = [], glass = [];
-  for (const L of lanes) {
-    solid.push([L.x0 + L.len / 2, -.06, L.z, L.len + 1.4, .06, 3.2, ...COL.lane, 1, 0]);
-    for (const v of [.2, .4, .6]) glass.push([L.x0 + L.len / 2, v * H, L.z - 1.55, L.len + 1.4, .012, .03, ...COL.grid, .55, 0]);
-  }
-  for (const p of pillars) {
-    const w = .78;
-    if (p.live) { const L = lanes.find(L => L.r === p.r), target = (L.champ ?? .5) * H, fill = target * Math.max(.02, p.live.shown);
-      glass.push([p.x, 0, p.z, w, target, w, ...COL.run, .16, 0]); solid.push([p.x, 0, p.z, w * .9, fill, w * .9, ...COL.run, .95, 1]); }
-    else solid.push([p.x, 0, p.z, w, p.h, w, ...p.c, p === pillars[hover] || (picked && p.l.id === picked) ? 1 : .92, p === pillars[hover] ? .6 : 0]);
-    if (p.best !== null && p.best !== undefined) glass.push([p.x, p.best * H, p.z + .62, STEP, .04, .05, ...COL.good, .7, 0]);
-  }
-  return { solid, glass };
-}
+function draw(list, soft) { if (!list.length) return; gl.uniform1f(P.u.soft, soft ? 1 : 0); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(list.flat()), gl.DYNAMIC_DRAW); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, list.length); }
 // ── camera ──
-const FOV = 42 * Math.PI / 180, cam = { t: [0, 2.5, 0], d: 60, yaw: .5, pitch: .5 }, goal = { t: [0, 2.5, 0], d: 40, yaw: .28, pitch: .36 };
+const FOV = 42 * Math.PI / 180, cam = { t: [0, 4, 0], d: 34, yaw: .8, pitch: .5 }, goal = { t: [0, 4, 0], d: 26, yaw: .35, pitch: .34 };
 let Wd = 1, Ht = 1, A, off = 0;
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 function resize() { const r = Math.min(devicePixelRatio || 1, 2), b = canvas.getBoundingClientRect(); Wd = b.width; Ht = b.height; for (const c of [canvas, over]) { c.width = Math.round(Wd * r); c.height = Math.round(Ht * r); } g.setTransform(r, 0, 0, r, 0, 0); }
@@ -134,46 +171,59 @@ addEventListener("resize", resize);
 function axes() { const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), f = [-sy * cp, -sp, -cy * cp]; return { f, r: [cy, 0, -sy], u: [-sy * sp, cp, -cy * sp], e: cam.t.map((v, i) => v - f[i] * cam.d) }; }
 function project(p) { const v = [p[0] - A.e[0], p[1] - A.e[1], p[2] - A.e[2]], z = dot(v, A.f), k = Ht / 2 / Math.tan(FOV / 2) / Math.max(z, .05); return { x: Wd / 2 + off + dot(v, A.r) * k, y: Ht / 2 - dot(v, A.u) * k, z, k }; }
 function matrix() { const c = 1 / Math.tan(FOV / 2), nr = .1, fr = 400, e = A.e, row = (v, s) => [v[0] * s, v[1] * s, v[2] * s, -dot(v, e) * s], X = row(A.r, c * Ht / Wd), Y = row(A.u, c), Z = row(A.f, 1), o = 2 * off / Wd, q = (fr + nr) / (fr - nr), w = -2 * fr * nr / (fr - nr), D = Z.map((v, i) => v * q + (i === 3 ? w : 0)); for (let i = 0; i < 4; i++) X[i] += o * Z[i]; return new Float32Array([X[0], Y[0], D[0], Z[0], X[1], Y[1], D[1], Z[1], X[2], Y[2], D[2], Z[2], X[3], Y[3], D[3], Z[3]]); }
-function fit() { if (!lanes.length) return; const end = Math.max(...lanes.map(L => L.x0 + L.len)), span = Math.min(Math.max(...lanes.map(L => L.len)), 20 * STEP), deep = (lanes.length - 1) * GAP + 4; goal.t = [end - span / 2 + 1.5, 2.2, 0]; goal.yaw = .22; goal.pitch = .56; goal.d = Math.max(20, Math.min(95, Math.max(span * 1.35, deep * 2.1))); }
-// ── labels ──
-function text(s, p, px, alpha, weight = 500, align = "center", dy = 0) { if (p.z < .1) return; g.font = `${weight} ${px}px system-ui, "Segoe UI", sans-serif`; g.textAlign = align; g.lineWidth = 3.5; g.lineJoin = "round"; g.strokeStyle = `rgba(12,13,16,${.85 * alpha})`; g.fillStyle = `rgba(200,198,190,${alpha})`; g.strokeText(s, p.x, p.y + dy); g.fillText(s, p.x, p.y + dy); }
-let seen = [];
+function focus(T) { seenTower = T; goal.t = [T.cx, Math.max(1.5, T.top * .5), T.cz]; goal.d = Math.max(16, Math.min(70, T.top * 1.7 + 10)); }
+function fit() { if (towers.length) focus(towers[0]); goal.yaw = .35; goal.pitch = .34; }
+// ── words ──
+function text(s, p, px, alpha, weight = 500, align = "center", dy = 0, rgb = "200,198,190") { if (p.z < .1 || alpha < .03) return; g.font = `${weight} ${px}px system-ui, "Segoe UI", sans-serif`; g.textAlign = align; g.lineWidth = 3.5; g.lineJoin = "round"; g.strokeStyle = `rgba(12,13,16,${.85 * alpha})`; g.fillStyle = `rgba(${rgb},${alpha})`; g.strokeText(s, p.x, p.y + dy); g.fillText(s, p.x, p.y + dy); }
+let marks = [];
 function labels() {
-  g.clearRect(0, 0, Wd, Ht); seen = pillars.map(p => project([p.x, (p.live ? (lanes.find(L => L.r === p.r).champ ?? .5) * H * p.live.shown : p.h) + .1, p.z]));
-  lanes.forEach((L, k) => { const end = L.x0 + L.len + .9; text(NAME[L.r.root] ?? L.r.root, project([end, 0, L.z + 1.6]), 13.5, .92, 600, "left"); if (k === 0) for (const v of [.2, .4, .6]) text(Math.round(100 * v) + "%", project([end, v * H, L.z - 1.55]), 11, .6, 400, "left", 4); });
-  pillars.forEach((p, i) => { const b = project([p.x, 0, p.z + .9]), k = b.k * STEP; if (k > 16 && b.z > .1) text(String(p.l.seq), b, 11, Math.min(.75, (k - 16) / 20), 400, "center", 6); });
-  for (const p of pillars) if (p.live) { const q = seen[pillars.indexOf(p)]; text(`${Math.round(100 * p.live.shown)}%`, q, 13, .95, 600, "center", -10); }
-  if (hover >= 0) { const p = pillars[hover], q = seen[hover]; g.beginPath(); g.arc(q.x, q.y, 6, 0, 7); g.strokeStyle = "rgba(200,198,190,.8)"; g.lineWidth = 1.3; g.stroke(); }
+  g.clearRect(0, 0, Wd, Ht); marks = [];
+  for (const T of towers) {
+    const near = T === (seenTower || towers[0]) ? 1 : .3;
+    STATIONS.forEach((s, i) => text(s.name, project(at(T, i / 6, -.15, R + 1.15)), 12.5, .85 * near, 600, "center", 4));
+    text(NAME[T.r.root] ?? T.r.root, project([T.cx, T.top + 1.4, T.cz]), 14, .95 * near, 600);
+    text(`${T.rings.length} loops`, project([T.cx, T.top + 1.4, T.cz]), 11.5, .6 * near, 400, "center", 16);
+  }
+  for (const g0 of rings) {                         // hover targets: points round each ring
+    const live = run.get(g0.l.id), reach = live ? turnOf(g0.l.kind, live.shown) : turnOf(g0.l.kind, g0.l.reach ?? 1);
+    for (let j = 0; j <= 16; j++) marks.push([g0, project(at(g0.T, reach * j / 16, g0.y))]);
+    const lab = project(at(g0.T, 0, g0.y, R + .55)); if (lab.k * DY > 12) text(String(g0.l.seq), lab, 10.5, Math.min(.7, (lab.k * DY - 12) / 10), 400, "right", 4);
+    if (live) { const h = project(at(g0.T, reach, g0.y)); text(`${STATIONS[Math.min(5, Math.floor(reach * 6))].name}: ${Math.round(100 * live.shown)}%`, h, 13, 1, 600, "left", -14, "214,211,200"); }
+  }
+  for (const T of towers) { const last = [...T.rings].reverse().find(r => r.l.strict !== null && r.l.strict !== undefined); if (last) text(pct(last.l.strict), project(at(T, 4 / 6, last.y, R + .55)), 11.5, .85, 600, "left", 4); }
+  if (hover >= 0) { const h = rings[hover]; if (h.l.strict !== null && h.l.strict !== undefined) text(pct(h.l.strict), project(at(h.T, 4 / 6, h.y, R + .55)), 12, 1, 600, "left", 4); }
 }
 // ── frame ──
 let dragging = null, last = null, moved = 0, before = 0;
 function frame(t) {
   requestAnimationFrame(frame); if (document.hidden || t - before < 15) return; const dt = Math.min(.5, (t - before) / 1000); before = t;
-  const e = still ? 1 : 1 - Math.exp(-3.2 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt); for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q; if (!still && !dragging) goal.yaw += .02 * dt;
-  for (const p of pillars) if (p.live) p.live.shown += (p.live.done - p.live.shown) * (still ? 1 : 1 - Math.exp(-2 * dt));
-  off += ((Wd > 1000 ? 170 : 0) - off) * e; A = axes(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .051, .063, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  if (pillars.length || lanes.length) {
-    const { solid, glass } = boxes(); gl.useProgram(P.p); gl.uniformMatrix4fv(P.u.M, false, matrix()); gl.uniform1f(P.u.t, t / 1000); gl.bindVertexArray(cube); gl.bindBuffer(gl.ARRAY_BUFFER, inst);
-    gl.depthMask(true); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(solid.flat()), gl.DYNAMIC_DRAW); gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, solid.length);
-    gl.depthMask(false); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(glass.flat()), gl.DYNAMIC_DRAW); gl.drawArraysInstanced(gl.TRIANGLES, 0, 36, glass.length); gl.depthMask(true); gl.bindVertexArray(null);
-  }
+  const e = still ? 1 : 1 - Math.exp(-3 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt); for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q; if (!still && !dragging) goal.yaw += .05 * dt;
+  for (const [, v] of run) v.shown += (v.done - v.shown) * (still ? 1 : 1 - Math.exp(-1.5 * dt));
+  off += ((Wd > 1000 ? 150 : 0) - off) * e; A = axes(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .051, .063, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  if (rings.length) { const { solid, soft } = beads(t / 1000); gl.useProgram(P.p); gl.uniformMatrix4fv(P.u.M, false, matrix()); gl.uniform3fv(P.u.RR, A.r); gl.uniform3fv(P.u.UU, A.u); gl.bindVertexArray(quad); gl.bindBuffer(gl.ARRAY_BUFFER, inst);
+    const back = (a, b) => dot([b[0] - A.e[0], b[1] - A.e[1], b[2] - A.e[2]], A.f) - dot([a[0] - A.e[0], a[1] - A.e[1], a[2] - A.e[2]], A.f);
+    draw(soft, true); draw(solid.sort(back), false); gl.bindVertexArray(null); }
   labels();
 }
-function tip(i, x, y) { const t = $("tip"); t.hidden = i < 0; if (i < 0) return; const p = pillars[i], l = p.l; t.textContent = ""; t.append(el("b", "", `Loop ${l.seq}: ${KIND[l.kind] || l.kind}`), `${(STATE[l.state] || [l.state])[0]}${l.kind === "build" && l.state === "promoted" ? " (adopted)" : ""}, ${when(l.started)}${l.seconds ? ", took " + mins(l.seconds) : ""}`);
-  if (l.strict !== null && l.strict !== undefined) t.append(el("br"), `${pct(l.strict)} right, ${pct(l.near_miss)} right or one step away`); if (p.live) t.append(el("br"), `${Math.round(100 * p.live.done)}% done: ${p.live.phase}`); if (l.reason) t.append(el("br"), l.reason); if (l.error) t.append(el("br"), l.error);
-  t.style.left = Math.min(x + 16, innerWidth - 320) + "px"; t.style.top = Math.min(y + 16, innerHeight - t.offsetHeight - 10) + "px"; }
+function tip(i, x, y) { const t = $("tip"); t.hidden = i < 0; if (i < 0) return; const r = rings[i], l = r.l, live = run.get(l.id); t.textContent = "";
+  t.append(el("b", "", `Loop ${l.seq}: ${KIND[l.kind] || l.kind}`), `${(STATE[l.state] || [l.state])[0]}${l.kind === "build" && l.state === "promoted" ? " (adopted)" : ""}${r.champion ? ", the champion" : ""}, ${when(l.started)}${l.seconds ? ", took " + mins(l.seconds) : ""}`);
+  if (live) t.append(el("br"), `${Math.round(100 * live.done)}% done: ${live.phase}`);
+  else if ((l.reach ?? 1) < 1) t.append(el("br"), `It stopped at ${STATIONS[Math.min(5, Math.floor(turnOf(l.kind, l.reach) * 6))].name}.`);
+  if (l.accepted) t.append(el("br"), `${l.accepted.toLocaleString("en")} new self-labeled texts`); if (l.val_acc) t.append(el("br"), `${pct(l.val_acc)} right on its own check after training`);
+  if (l.strict !== null && l.strict !== undefined) t.append(el("br"), `${pct(l.strict)} right on the test, ${pct(l.near_miss)} right or one step away`); if (l.reason) t.append(el("br"), l.reason); if (l.error) t.append(el("br"), l.error);
+  t.style.left = Math.min(x + 16, innerWidth - 330) + "px"; t.style.top = Math.min(y + 16, innerHeight - t.offsetHeight - 10) + "px"; }
 canvas.addEventListener("pointerdown", e => { dragging = e.shiftKey || e.button === 2 ? "pan" : "turn"; last = [e.clientX, e.clientY]; moved = 0; canvas.classList.add("drag"); canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener("contextmenu", e => e.preventDefault());
 canvas.addEventListener("pointermove", e => {
-  if (dragging) { const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true; if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(.05, Math.min(1.4, goal.pitch + dy * .005)); } else { const k = cam.d * Math.tan(FOV / 2) * 2 / Ht; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return; }
-  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 22, w = -1; seen.forEach((p, i) => { if (p.z > .1) { const d = Math.hypot(p.x - x, Math.max(0, p.y - y) * .2 + Math.max(0, y - p.y - Math.max(12, pillars[i].h * p.k)) ); if (Math.abs(p.x - x) < Math.max(6, .45 * p.k) && y > p.y - 10 && d < best) { best = d; w = i; } } }); hover = w; canvas.style.cursor = w >= 0 ? "pointer" : ""; tip(w, e.clientX, e.clientY);
+  if (dragging) { const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true; if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(-.2, Math.min(1.4, goal.pitch + dy * .005)); } else { const k = cam.d * Math.tan(FOV / 2) * 2 / Ht; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return; }
+  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 10, w = null; for (const [r, p] of marks) if (p.z > .1) { const d = Math.hypot(p.x - x, p.y - y); if (d < best) { best = d; w = r; } }
+  hover = w ? rings.indexOf(w) : -1; canvas.style.cursor = hover >= 0 ? "pointer" : ""; tip(hover, e.clientX, e.clientY);
 });
-addEventListener("pointerup", () => { if (dragging && moved < 5 && hover >= 0) { const p = pillars[hover]; picked = p.l.id; goal.t = [p.x, 3, p.z]; goal.d = Math.max(10, goal.d * .6); const row = document.querySelector(`tr[data-id="${picked}"]`); document.querySelectorAll("tr.picked").forEach(r => r.classList.remove("picked")); if (row) row.classList.add("picked"); } dragging = null; canvas.classList.remove("drag"); });
+addEventListener("pointerup", () => { if (dragging && moved < 5) { if (hover >= 0) { const r = rings[hover]; picked = r.l.id; focus(r.T); document.querySelectorAll("tr.picked").forEach(x => x.classList.remove("picked")); const row = document.querySelector(`tr[data-id="${picked}"]`); if (row) row.classList.add("picked"); } else { const b = canvas.getBoundingClientRect(); const T = towers.find(T => { const p = project([T.cx, T.top / 2, T.cz]); return Math.abs(p.x - (last[0] - b.left)) < R * p.k * 1.3; }); if (T) focus(T); } } dragging = null; canvas.classList.remove("drag"); });
 canvas.addEventListener("pointerleave", () => { if (!dragging) { hover = -1; $("tip").hidden = true; } });
 canvas.addEventListener("wheel", e => { e.preventDefault(); goal.d = Math.max(6, Math.min(120, goal.d * Math.exp(e.deltaY * .0011))); }, { passive: false });
 canvas.addEventListener("dblclick", fit);
-canvas.addEventListener("keydown", e => { const k = { ArrowLeft: [-.14, 0], ArrowRight: [.14, 0], ArrowUp: [0, .08], ArrowDown: [0, -.08] }[e.key]; if (k) { goal.yaw += k[0]; goal.pitch = Math.max(.05, Math.min(1.4, goal.pitch + k[1])); e.preventDefault(); } if (e.key === "+" || e.key === "=") goal.d = Math.max(6, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(120, goal.d * 1.2); if (e.key === "Escape" || e.key === "Home") fit(); });
-
+canvas.addEventListener("keydown", e => { const k = { ArrowLeft: [-.14, 0], ArrowRight: [.14, 0], ArrowUp: [0, .08], ArrowDown: [0, -.08] }[e.key]; if (k) { goal.yaw += k[0]; goal.pitch = Math.max(-.2, Math.min(1.4, goal.pitch + k[1])); e.preventDefault(); } if (e.key === "+" || e.key === "=") goal.d = Math.max(6, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(120, goal.d * 1.2); if (e.key === "Escape" || e.key === "Home") fit(); });
 // ── the cards and the list ──
 function card(r) {
   const bar = el("div", "bar"), fill = el("i"); fill.style.width = (100 * r.done).toFixed(1) + "%"; bar.append(fill); bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuenow", Math.round(100 * r.done)); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-label", "How far along");
@@ -204,7 +254,7 @@ async function tick() {
   const sig = JSON.stringify(d.roots); if (sig !== lastFolders) { lastFolders = sig; data = d;
     $("folders").replaceChildren(...d.roots.filter(r => r.loops.length).map(r => { const nn = (r.loops.find(l => l.n) || {}).n; return el("section", "", el("h2", "", NAME[r.root] ?? r.root), el("p", "note", `${folderName(r)}: ${r.loops.length} loops${nn ? `, scored on a test of ${nn.toLocaleString("en")} texts` : ""}.`), table(r)); }));
     scene(); if (first) { fit(); first = false; } }
-  else { data = d; for (const p of pillars) p.live = run.get(p.l.id); }
+  else data = d;
 }
 (async () => { try { if (!gl) throw new Error("This browser cannot draw the scene (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); } catch (e) { $("clock").textContent = e.message; } await tick(); setInterval(tick, 2000); })();
 </script>

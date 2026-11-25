@@ -258,7 +258,7 @@ def save_embeddings(folder: Path, records: List[dict], train_embs: np.ndarray, t
                     test_embs: np.ndarray) -> None:
     """What a later `python -m train builds` needs to try coredrills on this
     encoder without embedding again: the rows, their labels and groups."""
-    keep = ("category", "source", "lang", "source_article", "article_title", "conversation")
+    keep = ("text", "category", "source", "lang", "source_article", "article_title", "conversation")
     np.savez(folder / "embeddings.npz", train=train_embs.astype(np.float16), test=test_embs.astype(np.float16),
              test_idx=np.asarray(test_idx, dtype=np.int64))
     with gzip.open(folder / "train_rows.json.gz", "wt", encoding="utf-8") as f:

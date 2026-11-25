@@ -199,8 +199,8 @@ def data_fingerprint(paths, inputs: bool = True) -> dict:
         if inputs:
             labeled = sorted(paths.labeled.glob("*.jsonl")) if paths.labeled.exists() else []
             out["labeled"] = [_file_info(p) for p in labeled]
-    except OSError as e:
-        out["error"] = str(e)
+    except Exception as e:  # noqa: BLE001 - bookkeeping must never stop a loop
+        out["error"] = f"{type(e).__name__}: {e}"
     return out
 
 
