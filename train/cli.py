@@ -41,6 +41,8 @@ FIT_HELP = {
     "anchor_weight": "pull toward stock LaBSE embeddings (keeps the space multilingual)",
     "ancestor_eps": "target mass a label shares with its ancestors",
     "pseudo_weight": "loss weight of a pseudo-label, times its confidence",
+    "balance": "1: every label weighs the same in all, whatever its size; 0: by its rows",
+    "node_cap": "the coredrill uses at most this many rows per node, evenly over its articles (0: no cap)",
     "patience": "epochs without validation gain before stopping",
     "seed": "random seed",
 }

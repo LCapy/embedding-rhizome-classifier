@@ -1,0 +1,132 @@
+# English Wikipedia articles whose text belongs to a territory, for
+# gather_territories.py. One line per territory: name: article | article | ...
+# Each article serves one territory. Only topics: territories that name
+# something people do in conversation (Greet, Argue, Apologize, ...) need real
+# conversations, not articles about them.
+
+Human Activity & Society: Society | Civilization | Culture | Social group | Tradition | Human behavior
+Physical Reality: Physics | Matter | Energy | Spacetime | State of matter | Physical property
+Inorganic Chemistry: Coordination complex | Metal | Salt (chemistry) | Oxide | Transition metal | Ionic bonding | Silicate | Ammonia
+Mechanics: Classical mechanics | Newton's laws of motion | Kinematics | Momentum | Friction | Rigid body | Statics
+Organic Chemistry: Hydrocarbon | Alcohol (chemistry) | Functional group | Polymer | Benzene | Ester | Carboxylic acid | Organic reaction
+Entropy: Second law of thermodynamics | Entropy (statistical thermodynamics) | Irreversible process | Boltzmann's entropy formula | Entropy as an arrow of time | Heat death of the universe | Maxwell's demon
+Heat Transfer: Thermal conduction | Convection | Thermal radiation | Heat exchanger | Thermal insulation | Convection (heat transfer)
+Measurement: Unit of measurement | International System of Units | Metrology | Accuracy and precision | Calibration | Measuring instrument | Observational error
+Life & Biology: Life | Organism | Biodiversity | Physiology | Homeostasis | Biological life cycle | Multicellular organism
+Ecosystems: Rainforest | Coral reef | Wetland | Food web | Tundra | Savanna | Marine ecosystem | Biome
+Epidemiology: Epidemic | Pandemic | Cohort study | Incidence (epidemiology) | Herd immunity | Case–control study | Basic reproduction number | Contact tracing
+Pharmacology: Pharmacokinetics | Pharmacodynamics | Drug interaction | Antibiotic | Analgesic | Drug metabolism | Dose–response relationship | Adverse effect
+Public Health: Vaccination | Sanitation | Health promotion | Health policy | Preventive healthcare | Environmental health | Occupational safety and health | Tobacco control
+DNA Inheritance: DNA replication | Mendelian inheritance | Chromosome | Meiosis | Heredity | Non-Mendelian inheritance | Mitochondrial DNA
+Natural Selection: Sexual selection | Directional selection | Stabilizing selection | Fitness (biology) | Peppered moth evolution | Survival of the fittest | Kin selection
+Adaptation: Camouflage | Mimicry | Convergent evolution | Exaptation | Coevolution | Vestigiality | Anti-predator adaptation
+Genes: Gene expression | Regulatory sequence | Allele | Mutation | Genetic code | Exon | Pseudogene
+Earth & Cosmos: Earth | Planet | Solar System | Geophysics | Earth system science | Biosphere | Moon
+Climate & Weather: Weather | Rain | Petrichor | Wind | Season | Monsoon | Snow | Thunderstorm | Drought | Climate | Humidity | Storm
+Geology: Rock (geology) | Mineral | Volcano | Sedimentary rock | Erosion | Stratigraphy | Igneous rock | Metamorphic rock
+Meteorology: Weather forecasting | Atmospheric pressure | Cloud | Weather front | Cyclone | Weather radar | Atmospheric circulation | Barometer | Numerical weather prediction | Jet stream | Weather station
+Big Bang Model: Cosmic inflation | Cosmic microwave background | Big Bang nucleosynthesis | Recombination (cosmology) | Chronology of the universe | Baryogenesis | Planck units
+Universe Expansion: Hubble's law | Dark energy | Redshift | Accelerating expansion of the universe | Comoving and proper distances | Friedmann equations | Cosmological constant
+Logic: Propositional logic | First-order logic | Modal logic | Fallacy | Mathematical logic | Term logic | Paradox
+Knowledge & Belief: Gettier problem | Justification (epistemology) | Opinion | Religious belief | Certainty | Delusion | Superstition | Faith
+Moral Philosophy: Virtue ethics | Deontology | Utilitarianism | Consequentialism | Applied ethics | Moral responsibility | Golden Rule | Normative ethics
+Proof & Inference: Mathematical proof | Deductive reasoning | Mathematical induction | Abductive reasoning | Syllogism | Proof by contradiction | Rule of inference
+Formal Systems: Formal system | Axiom | Formal language | Set theory | Model theory | Gödel's incompleteness theorems | Automata theory | Type theory
+Statistics: Descriptive statistics | Standard deviation | Regression analysis | Sampling (statistics) | Correlation | Normal distribution | Variance
+Probability & Inference: Probability theory | Bayesian inference | Confidence interval | Statistical hypothesis test | Conditional probability | Random variable | Maximum likelihood estimation
+Social Theory: Structural functionalism | Critical theory | Social constructionism | Symbolic interactionism | Conflict theories | Structuration theory | Actor–network theory
+Sociology: Social stratification | Urban sociology | Social mobility | Social movement | Deviance (sociology) | Social inequality | Émile Durkheim | Max Weber
+Institutions as Systems: Bureaucracy | Institutional theory | Organization | Systems theory | Social system | Total institution | Institutional economics
+Political Institutions: Parliament | Separation of powers | Political party | Constitution | Judiciary | Federalism | Executive (government)
+Public Ideology: Liberalism | Conservatism | Socialism | Nationalism | Populism | Anarchism | Fascism
+Social Norms: Etiquette | Taboo | Mores | Convention (norm) | Social stigma | Conformity | Peer pressure
+Daily Life: Everyday life | Hygiene | Sleep | Hobby | Leisure | Clothing | Morning | Bathing
+Food & Cooking: Cuisine | Food | Baking | Spice | Fermentation in food processing | Bread | Vegetable | Soup
+Meal Preparation: Meal | Breakfast | Lunch | Dinner | Recipe | Sandwich | Salad | Packed lunch
+Cook: Frying | Grilling | Roasting | Steaming | Sautéing | Braising | Stir frying | Simmering | Deep frying
+Home Life: Home | Household | Bedroom | Living room | Kitchen | Apartment | House
+Shopping & Consumption: Shopping mall | Consumerism | Retail | Consumer behaviour | Department store | Black Friday (shopping) | Window shopping | Consumption (economics)
+Transportation & Travel: Public transport | Train | Airline | Bicycle | Road | Airport | Bus | Ferry
+Commuting: Commuting | Rush hour | Commuter rail | Carpool | Park and ride | Bicycle commuting | Commuter town | Rapid transit
+Commute Delay: Traffic congestion | Flight cancellation and delay | Traffic bottleneck | Gridlock | Traffic collision | Roadworks | Slippery rail | Braess's paradox
+Domestic Planning: Home economics | Personal budget | Shopping list | Interior design | Homemaking | Child care | Home automation
+Household Maintenance: Housekeeping | Home repair | Laundry | Vacuum cleaner | Dishwashing | Gardening | Spring cleaning | Plumbing | Pest control
+Restaurant & Ordering: Restaurant | Menu | Fast-food restaurant | Waiting staff | Take-out | Café | Buffet | Drive-through
+Trip Planning: Travel agency | Package tour | Backpacking (travel) | Hotel | Tourist attraction | Travel insurance | Road trip | Guide book
+Travel: Tourism | Luggage | Air travel | Cruise ship | Adventure travel | Pilgrimage | Vacation | Grand Tour
+Grocery Purchase: Grocery store | Supermarket | Farmers' market | Convenience store | Shopping cart | Delicatessen | Greengrocer | Self-checkout
+Pay: Payment | Credit card | Cash | Debit card | Mobile payment | Cheque | Direct debit | Bank transfer
+Repair: Auto mechanic | Right to repair | Welding | Soldering | Maintenance | Shoemaking | Watchmaker
+Work & Economy: Economy | Labour economics | Employment | Market (economics) | Industry (economics) | Trade | Wage
+Business Operations: Business | Supply chain | Business process | Outsourcing | Corporation | Logistics | Entrepreneurship
+Customer Service: Customer service | Call centre | Help desk | Customer satisfaction | Customer experience | Customer relationship management | Customer support
+Jobs & Professions: Profession | Nursing | Engineer | Teacher | Carpentry | Accountant | Farmer | Lawyer | Chef | Electrician
+Transactions: Commerce | Sales | Barter | Financial transaction | Point of sale | Currency | Invoice | Receipt
+Client Communication: Business communication | Email | Customer engagement | Public relations | Business letter | Account manager | Request for proposal
+Education & Training: Vocational education | Apprenticeship | Training and development | Professional development | Curriculum | Internship | Distance education | Mentorship
+Operations Management: Inventory | Quality control | Lean manufacturing | Production planning | Just-in-time manufacturing | Six Sigma | Bottleneck (production)
+Troubleshooting Support: Troubleshooting | Technical support | Debugging | Root cause analysis | Knowledge base | Remote desktop software | Failure mode and effects analysis
+Workplace Coordination: Workplace | Project management | Office | Meeting | Delegation | Workflow | Shift work | Task management
+Technology: Technology | Engineering | Invention | Innovation | History of technology | Industrial Revolution | Machine | Tool
+Computing & Software: Computer | Software | Operating system | Programming language | Algorithm | Database | Software engineering | Open-source software
+Consumer Electronics: Television | Smartphone | Digital camera | Headphones | Video game console | Home appliance | Loudspeaker | Laptop
+Internet & Digital Media: Internet | World Wide Web | Web browser | Streaming media | Podcast | Blog | Website | Digital media
+Artificial Intelligence: Machine learning | Neural network (machine learning) | Natural language processing | Computer vision | Large language model | Expert system | Robotics | Reinforcement learning
+Cybersecurity: Computer security | Malware | Phishing | Encryption | Firewall (computing) | Ransomware | Password | Denial-of-service attack
+Online Commerce: E-commerce | Online shopping | Online auction | Digital wallet | Drop shipping | Amazon (company) | Online marketplace | EBay
+Social Media: Social media | Facebook | Twitter | Instagram | Influencer | Social networking service | YouTube | TikTok | Viral video
+Wearable Technology: Smartwatch | Activity tracker | Smartglasses | Wearable computer | Smart ring | E-textiles | Hearing aid | Virtual reality headset
+Institutions & Governance: Governance | State (polity) | Sovereignty | Rule of law | Democracy | Monarchy | Republic
+Elections & Campaigns: Election | Electoral system | Opinion poll | Primary election | Political campaign | Campaign finance | Exit poll
+Government: Local government | Cabinet (government) | Central government | Ministry (government department) | Head of government | Legislature | Form of government
+Campaign Messaging: Campaign advertising | Political communication | Negative campaigning | Canvassing | Spin (propaganda) | Propaganda | Push poll
+Jurisprudence: Philosophy of law | Legal positivism | Natural law | Legal realism | Precedent | Statutory interpretation | Common law | Civil law (legal system)
+Policy Impact: Program evaluation | Cost–benefit analysis | Impact assessment | Environmental impact assessment | Evidence-based policy | Unintended consequences | Policy analysis
+Policy Proposal: White paper | Bill (law) | Think tank | Universal basic income | Carbon tax | Policy | Green New Deal
+Policy Reform Proposal: Health care reform | Tax reform | Land reform | Education reform | Electoral reform | Pension reform | Prison reform | Welfare reform
+Public Administration: Civil service | Public sector | New Public Management | City manager | E-government | Administrative law | Public budgeting
+Public Services: Public library | Waste management | Mail | Public housing | Emergency service | Water supply | Social services | Fire department
+Rights & Obligations: Human rights | Civil and political rights | Duty | Freedom of speech | Universal Declaration of Human Rights | Right to privacy | Children's rights | Property rights (economics)
+Legal Obligation: Law of obligations | Duty of care | Tort | Breach of contract | Fiduciary | Legal liability | Negligence | Contract
+Rules & Enforcement: Law enforcement | Police | Regulation | Fine (penalty) | Sanctions (law) | Regulatory agency | Prison | Speed limit enforcement
+Voting Process: Secret ballot | Ballot | Polling place | Electronic voting | Postal voting | Voter registration | Vote counting | Absentee ballot
+Vote: Voting | Suffrage | Compulsory voting | Voter turnout | Ranked voting | First-past-the-post voting | Referendum | Strategic voting
+Utility Service Access: Public utility | Electricity meter | Electric power distribution | Water metering | Broadband | Sewerage | Power outage | Rural electrification
+Permit or Document Process: Driver's license | Planning permission | Identity document | Birth certificate | Work permit | License | Notary public | Passport | Travel visa
+Social Relations: Interpersonal relationship | Social relation | Social network | Trust (social science) | Kinship | Social capital | Social connection
+Emotion & Social Bonding: Emotion | Attachment theory | Empathy | Human bonding | Affect (psychology) | Jealousy | Compassion
+Romance & Intimacy: Romance (love) | Dating | Marriage | Love | Courtship | Flirting | Wedding | Valentine's Day
+Family Life: Family | Nuclear family | Extended family | Sibling | Grandparent | Adoption | Single parent
+Friendship & Community: Friendship | Peer group | Social support | Loneliness | Club (organization) | Neighbourhood | Community
+Affection & Reassurance: Affection | Hug | Kiss | Physical intimacy | Comfort object | Holding hands | The Five Love Languages
+Casual Socializing: Party | Nightlife | Bar | Pub | Barbecue | Coffee culture | Potluck | Tea party
+Community Coordination: Community organizing | Volunteering | Neighborhood watch | Mutual aid | Nonprofit organization | Town meeting | Community center
+Emotion Expression: Emotional expression | Crying | Laughter | Smile | Facial expression | Body language | Anger | Grief
+Parent–Child Interaction: Parenting | Parenting styles | Child development | Play (activity) | Father | Mother | Attachment in children
+Parent Guidance: Child discipline | Toilet training | Time-out (parenting) | Allowance (money) | Homeschooling | Bedtime story | Screen time
+Relationship Tension: Couples therapy | Infidelity | Breakup | Divorce | Legal separation | Marriage counseling | Relationship breakup
+Conflict & Cooperation: Conflict resolution | Cooperation | War | Peace | Mediation | Conflict (process) | Prisoner's dilemma
+Collaboration: Collaboration | Open collaboration | Crowdsourcing | Cooperative | Collaborative software | Pair programming | Co-creation
+Competition: Competition | Competition (economics) | Tournament | Sports rivalry | Competition (biology) | Competitive advantage | Monopoly
+Negotiation: Negotiation | Collective bargaining | Diplomacy | Treaty | Alternative dispute resolution | Best alternative to a negotiated agreement | Getting to Yes
+Bargaining: Bargaining | Bargaining power | Cooperative bargaining | Auction | Flea market | Bazaar | Ultimatum game
+Task Cooperation: Teamwork | Team building | Group dynamics | Division of labour | Cooperative learning | Crew resource management | Team
+Agreement Formation: Offer and acceptance | Memorandum of understanding | Gentlemen's agreement | Consensus decision-making | Compromise | Handshake | Meeting of the minds
+Debate: Debate | Policy debate | Parliamentary debate | British Parliamentary Style | Lincoln–Douglas debate format | Oxford Union
+Public Debate: Leaders' debate | Lincoln–Douglas debates | Town hall meeting | Public sphere | Deliberative democracy | Talk radio | Nixon–Kennedy debates
+Language Structure: Linguistics | Phonology | Morphology (linguistics) | Syntax | Grammar | Phonetics | Writing system
+Pragmatics: Implicature | Deixis | Politeness theory | Presupposition | Cooperative principle | Relevance theory | Context (linguistics)
+Meaning Relations: Synonym | Opposite (semantics) | Hyponymy and hypernymy | Polysemy | Homonym | Meronymy and holonymy | Metonymy | Ambiguity
+Sentence Structure: Sentence (linguistics) | Clause | Phrase | Subject (grammar) | Predicate (grammar) | Word order | Dependent clause | Verb phrase
+Speech Acts: Speech act | Performative utterance | Illocutionary act | Promise | Perlocutionary act | J. L. Austin
+Grammar Explanation: English grammar | Grammatical tense | Verb | Noun | Adjective | Adposition | Article (grammar) | Grammatical gender
+Discourse Forms: Discourse | Discourse analysis | Rhetoric | Genre | Conversation analysis | Essay
+Narrative & Reportage: Narrative | Journalism | Feature story | News | Investigative journalism | Documentary film | Creative nonfiction
+Event Narrative: Apollo 11 | Sinking of the Titanic | Great Fire of London | 1906 San Francisco earthquake | Battle of Hastings | Boston Tea Party | Eruption of Mount Vesuvius in 79 AD | Fall of the Berlin Wall
+Performance: Performing arts | Dance | Ballet | Circus | Puppetry | Magic (illusion) | Street performance | Stand-up comedy
+Visual Arts: Visual arts | Sculpture | Drawing | Photography | Printmaking | Ceramic art | Collage
+Image-making: Painting | Watercolor painting | Oil painting | Portrait | Illustration | Fresco | Landscape painting
+Song: Song | Ballad | Lullaby | Hymn | Songwriter | Work song | National anthem | Folk music
+Stage Interaction: Theatre | Acting | Improvisational theatre | Stagecraft | Theatre director | Audience | Blocking (stage)
+Dramatic Scene: Drama | Tragedy | Playwright | Monologue | Soliloquy | Melodrama | One-act play
+Lyric Expression: Lyric poetry | Lyrics | Sonnet | Ode | Elegy | Love song | Haiku

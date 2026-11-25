@@ -58,11 +58,11 @@ def deployed_answer(raw: dict) -> str:
     return (raw.get("prediction") or {}).get("best_node", "unknown")
 
 
-def build_coredrill(records: List[dict], embs: np.ndarray, taxonomy: List[dict]) -> dict:
+def build_coredrill(records: List[dict], embs: np.ndarray, taxonomy: List[dict], node_cap: int = 0) -> dict:
     """build_coredrill() on the given embeddings, round-tripped through JSON
     the way the API loads it."""
     with contextlib.redirect_stdout(io.StringIO()):
-        cd = eng.build_coredrill(records, embs, taxonomy)
+        cd = eng.build_coredrill(records, embs, taxonomy, per_node_cap=node_cap)
     return json.loads(json.dumps(eng.to_native(cd)))
 
 
@@ -108,7 +108,7 @@ def near_miss_fn(parents_map: Dict[str, List[str]]) -> Callable[[str, Optional[s
 def evaluate(corpus: Corpus, train_records: List[dict], train_embs: np.ndarray, test_idx: np.ndarray,
              test_embs: np.ndarray, head_logits: Optional[np.ndarray] = None,
              extra_systems: Optional[Dict[str, List[str]]] = None, classic: bool = True,
-             blocked_titles: Optional[Set[str]] = None, log=print) -> dict:
+             blocked_titles: Optional[Set[str]] = None, log=print, node_cap: int = 0) -> dict:
     """Scores every system on the holdout. Returns
       metrics      metrics[system][subset] = {strict, near_miss, n}; the gate reads these
       benchmark    12_by_article.py's layout, comparable with by_article.json's "by_article"
@@ -122,7 +122,7 @@ def evaluate(corpus: Corpus, train_records: List[dict], train_embs: np.ndarray, 
     X_te = np.ascontiguousarray(test_embs, dtype=np.float32)
 
     log(f"  building the coredrill from {len(train_records):,} training rows ...")
-    cd = build_coredrill(train_records, X_tr, corpus.taxonomy)
+    cd = build_coredrill(train_records, X_tr, corpus.taxonomy, node_cap)
     eng.SKIP_NODES.clear()                       # mirror api/app.py: the coredrill's own list
     eng.SKIP_NODES.update(cd.get("skip_nodes", []))
     near = near_miss_fn(cd["taxonomy_backbone"]["parents_map"])

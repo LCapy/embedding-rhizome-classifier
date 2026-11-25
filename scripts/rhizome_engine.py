@@ -378,6 +378,38 @@ def _balanced_source_sample_indices(indices: np.ndarray, sources: np.ndarray,
 
 
 
+def _even_sample_indices(indices: np.ndarray, groups: np.ndarray, cap: int) -> np.ndarray:
+    """At most `cap` of a node's records, taken in turn from each of its groups
+    (articles, conversations, or sources without either), so that no group
+    dominates and every node has about the same amount of data behind it."""
+    if cap <= 0 or len(indices) <= cap:
+        return indices
+    buckets: Dict[str, List[int]] = defaultdict(list)
+    for idx in indices.tolist():
+        buckets[str(groups[idx])].append(int(idx))
+    order = sorted(buckets)
+    # spread each group's turns over the whole group, not its first records
+    for g in order:
+        b = buckets[g]
+        n = min(len(b), cap)
+        buckets[g] = [b[int(i * len(b) / n)] for i in range(n)]
+    out: List[int] = []
+    turn = 0
+    while len(out) < cap:
+        more = [buckets[g][turn] for g in order if turn < len(buckets[g])]
+        if not more:
+            break
+        out += more[:cap - len(out)]
+        turn += 1
+    return np.array(sorted(out), dtype=np.int32)
+
+
+def record_group(r: dict) -> str:
+    """What a record shares with others of its kind: its article or its
+    conversation, else its source."""
+    return str(r.get("source_article") or r.get("article_title") or r.get("conversation") or r.get("source") or "unknown")
+
+
 def _clip_indices(indices: np.ndarray, cap: int) -> np.ndarray:
     if indices is None:
         return np.array([], dtype=np.int32)
@@ -1601,7 +1633,10 @@ def merge_and_save(new_records: List[dict], existing: List[dict],
         node_counts[cat] = node_counts.get(cat, 0) + 1
         node_source_counts[(cat, src)] = node_source_counts.get((cat, src), 0) + 1
 
-    seen: Set[Tuple[str, str]] = {(r.get("text", ""), r.get("category", "")) for r in existing}
+    # By text alone. It was by (text, category), so siblings with the same
+    # en_category (Family Life, Family Discussion, Family Planning Talk: all
+    # "Family") each kept a copy and ended up with one and the same centroid.
+    seen: Set[str] = {r.get("text", "") for r in existing}
 
     accepted_new: List[dict] = []
     added = 0
@@ -1611,7 +1646,7 @@ def merge_and_save(new_records: List[dict], existing: List[dict],
     for r in new_records:
         cat = r.get("category", "")
         src = r.get("source", "unknown")
-        key = (r.get("text", ""), cat)
+        key = r.get("text", "")
         if key in seen:
             continue
         if node_counts.get(cat, 0) >= max_per_node:
@@ -1800,7 +1835,8 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
                     rhizome_top_k: int = 6,
                     rhizome_min_sim: float = 0.45,
                     min_direct: int = 5,
-                    skip_nodes: Optional[Set[str]] = None) -> dict:
+                    skip_nodes: Optional[Set[str]] = None,
+                    per_node_cap: int = 0) -> dict:
     """Build the coredrill.
 
     Every node with at least `min_direct` records of its own gets a centroid
@@ -1820,6 +1856,10 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
 
     `parent_direct_min` only fed the removed blend; it is kept so existing
     CLI calls still work.
+
+    `per_node_cap` > 0 builds every node from at most that many of its records,
+    taken evenly from its articles and conversations, so that a node with ten
+    times the data does not get a ten times better-placed centroid and radius.
     """
     skip_nodes = set(skip_nodes or ())
     nrm = np.linalg.norm(embeddings, axis=1, keepdims=True)
@@ -1827,6 +1867,7 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
     d = embeddings.shape[1]
     cat_labels = np.array([r.get("category", "") for r in records], dtype=object)
     src_labels = np.array([r.get("source", "unknown") for r in records], dtype=object)
+    groups = np.array([record_group(r) for r in records], dtype=object)
 
     parents_map = taxonomy_parents_map(taxonomy)
     primary_parent_map = taxonomy_primary_parent_map(taxonomy)
@@ -1853,7 +1894,10 @@ def build_coredrill(records: List[dict], embeddings: np.ndarray,
         for i in idx:
             sc[str(src_labels[i])] += 1
         source_counts_by_node[n] = dict(sc)
-        balanced_idx = _balanced_source_sample_indices(idx, src_labels, per_source_cap=per_source_cap, total_cap=max(per_source_cap, 3000))
+        if per_node_cap > 0:
+            balanced_idx = _even_sample_indices(idx, groups, per_node_cap)
+        else:
+            balanced_idx = _balanced_source_sample_indices(idx, src_labels, per_source_cap=per_source_cap, total_cap=max(per_source_cap, 3000))
         if len(balanced_idx) == 0:
             continue
         direct_support_indices[n] = balanced_idx.astype(np.int32)
@@ -2857,7 +2901,8 @@ def cmd_build(args) -> None:
                          per_source_cap=args.build_per_source_cap,
                          parent_child_cap=args.parent_child_cap,
                          rhizome_top_k=args.rhizome_top_k,
-                         rhizome_min_sim=args.rhizome_min_sim)
+                         rhizome_min_sim=args.rhizome_min_sim,
+                         per_node_cap=args.per_node_cap)
     p  = out_dir / "coredrill_hierarchical.json"
     p.write_text(json.dumps(to_native(cd), indent=2), encoding="utf-8")
     kb = p.stat().st_size / 1024
@@ -3182,6 +3227,8 @@ def main():
     p_b.add_argument("--parent-child-cap", type=int, default=400)
     p_b.add_argument("--rhizome-top-k", type=int, default=6)
     p_b.add_argument("--rhizome-min-sim", type=float, default=0.45)
+    p_b.add_argument("--per-node-cap", type=int, default=0,
+                     help="build every node from at most this many records, evenly over its articles (0: no cap)")
 
     p_p = sub.add_parser("predict")
     p_p.add_argument("--coredrill", required=True)

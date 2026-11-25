@@ -31,6 +31,8 @@ class FitConfig:
     ancestor_eps: float = 0.1       # target mass moved from a label to its ancestors
     anchor_weight: float = 0.1      # pull toward stock LaBSE, to keep the space multilingual
     pseudo_weight: float = 0.5      # loss weight of a pseudo-label, times its confidence
+    balance: float = 0.0            # 1: every label weighs the same in all, whatever its size; 0: by its rows
+    node_cap: int = 0               # the coredrill uses at most this many rows per node (0: no cap)
     val_frac: float = 0.1
     patience: int = 3
     seed: int = 42

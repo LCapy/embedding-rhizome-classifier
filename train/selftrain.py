@@ -240,6 +240,10 @@ def assemble(corpus: Corpus, holdout: Holdout, extra: List[dict], pseudo: List[d
     f0 = np.vstack([corpus.f0[train_idx], np.full((len(extra), dim), np.nan, dtype=np.float32),
                     pseudo_f0.reshape(-1, dim)]).astype(np.float32)
     labeled = np.concatenate([np.ones(len(train_idx) + len(extra), dtype=bool), np.zeros(len(pseudo), dtype=bool)])
+    if cfg.balance > 0:                          # a label's rows share its weight, up to 3x and down to a third
+        size = np.bincount(y, weights=weight, minlength=len(corpus.labels))
+        typical = float(np.median(size[size > 0]))
+        weight = weight * np.clip((typical / np.maximum(size, 1e-9)) ** cfg.balance, 1 / 3, 3.0)[y]
     ts = TrainSet([r["text"] for r in records], y, weight, f0, labeled)
     return ts, records, test_idx
 
@@ -307,7 +311,7 @@ def train_and_evaluate(paths: Paths, corpus: Corpus, holdout: Holdout, cfg: FitC
     head_logits = head.scale * test_embs @ (protos / np.linalg.norm(protos, axis=1, keepdims=True)).T
     log("  scoring the holdout: deployed pipeline, centroid, linear head, logistic regression, prototype head")
     ev = evaluate(corpus, records, train_embs, test_idx, test_embs, head_logits,
-                  blocked_titles=holdout.blocked_titles, log=log)
+                  blocked_titles=holdout.blocked_titles, log=log, node_cap=cfg.node_cap)
     metrics, bench, cd = ev["metrics"], ev["benchmark"], ev["coredrill"]
     bench.update({"n_labeled": n_corpus, "n_hand_added": len(extra), "n_pseudo": len(pseudo)})
     meta.update({"metrics": metrics, "benchmark": bench, "seconds": round(time.perf_counter() - t0, 1)})
