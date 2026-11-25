@@ -29,7 +29,7 @@ from typing import Optional
 
 import numpy as np
 
-from . import coredrills, progress
+from . import coredrills, progress, rhizome
 from .frames import describe, pack, spread
 from .record import LEDGER, REPO, loops, memory, state
 
@@ -269,6 +269,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(list_models(self.runs))
         if path == "/api/progress":
             return self._json(self.progress_cache())
+        if path == "/api/rhizome":
+            loop = dict(p.partition("=")[::2] for p in query.split("&")).get("loop", "")
+            if not LOOP_ID.match(loop):
+                return self._json({"error": "unknown loop"}, 400)
+            try:
+                return self._json(rhizome.rhizome(self.runs, loop))
+            except (ValueError, OSError) as e:
+                return self._json({"error": str(e)}, 404)
         if path == "/api/coredrills":
             return self._json(coredrills.listing(self.runs))
         if path == "/api/coredrills/live":

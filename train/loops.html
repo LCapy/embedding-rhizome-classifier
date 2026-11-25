@@ -9,7 +9,7 @@
 :root { color-scheme: dark; --bg: #0c0d10; --card: #16181d; --panel: rgba(19,21,26,.9); --ink: #c9c7c0; --ink2: #9c9fa7; --muted: #858993; --line: rgba(255,255,255,.08); --good: #7d9a94; --rest: #696e79; --bad: #a98d80; --blue: #7888a6; --run: #aaa79e; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-#stage { position: relative; height: 68vh; min-height: 420px; border-bottom: 1px solid var(--line); }
+#stage { position: relative; height: 88vh; min-height: 560px; border-bottom: 1px solid var(--line); }
 #gl, #over { position: absolute; inset: 0; width: 100%; height: 100%; display: block; } #gl { cursor: grab; outline: none; touch-action: none; } #gl.drag { cursor: grabbing; } #over { pointer-events: none; }
 .hud { position: absolute; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
 #head { left: 18px; top: 16px; width: 340px; } #legend { right: 18px; top: 16px; font-size: 12.5px; color: var(--ink2); display: grid; gap: 3px; padding: 10px 14px; } #legend span { display: flex; align-items: center; gap: 8px; } #legend i { width: 11px; height: 11px; border-radius: 3px; flex: none; }
@@ -32,26 +32,31 @@ td.why { color: var(--ink2); font-size: 12.5px; min-width: 260px; } tr.now td { 
 #tip { position: fixed; z-index: 3; pointer-events: none; max-width: 310px; padding: 8px 11px; border-radius: 10px; background: rgba(15,16,20,.96); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink2); line-height: 1.45; } #tip b { color: var(--ink); font-weight: 600; display: block; } #tip[hidden] { display: none; }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 @media (max-width: 760px) { #head { width: auto; right: 18px; } #legend { display: none; } }
+#stem { left: 18px; right: 18px; bottom: 14px; padding: 10px 14px 6px; } .stemtop { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; } .stemtop .note { flex: 1; } #shoots { overflow-x: auto; } #shoots text { fill: var(--muted); font: 11px system-ui, "Segoe UI", sans-serif; }
+button { font: inherit; font-size: 12.5px; color: var(--ink2); background: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; cursor: pointer; } button:hover { color: var(--ink); } button[aria-pressed="true"] { color: var(--ink); background: rgba(255,255,255,.08); } button[aria-pressed="false"] { opacity: .65; } #corpora { display: flex; gap: 6px; } #legend button { text-align: left; } #legend i.dot { border-radius: 50%; background: var(--good); }
+#pipe { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0 4px; } #pipe span { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; } #pipe .done { color: var(--ink2); background: rgba(125,154,148,.14); } #pipe .now { color: var(--ink); border-color: var(--run); } #pipe .skip { text-decoration: line-through; opacity: .5; }
 </style>
 </head>
 <body>
 <div id="stage">
-  <canvas id="gl" tabindex="0" role="img" aria-label="The pipeline as a loop of six stations: texts, new text, training, coredrill, test, gate. Every loop is a ring through them, stacked into a tower per corpus; the running one draws itself as it goes. Drag or use the arrow keys to turn, scroll to zoom, click a ring to find it in the list below."></canvas>
-  <canvas id="over"></canvas>
+  <canvas id="gl" tabindex="0" role="img" aria-label="The territories as a rhizome, placed by likeness. Threads are test texts that left their territory for another. Drag or use the arrow keys to turn, scroll to zoom, click a territory to keep it."></canvas>
   <section class="hud" id="head">
     <nav aria-label="Views"><a href="/">Training</a><a href="/classify">Classifier</a><a href="/coredrill">Coredrill</a><a href="/loops" aria-current="page">Loops</a></nav>
-    <h1>Loops</h1>
-    <p class="note">The pipeline is a loop: texts, new text, training, coredrill, test, gate, and a new champion labels the next text. Each ring is one loop through it, oldest at the bottom; one tower per corpus.</p>
+    <h1 id="title">Loops</h1>
+    <p class="note" id="what">Placing the territories by likeness. The first time takes a few seconds.</p>
     <div id="mini"></div>
-    <p class="note" id="clock" role="status" aria-live="polite">Loading…</p>
+    <div id="pipe" aria-label="Steps of the pipeline"></div>
+    <p class="note" id="clock" role="status" aria-live="polite"></p>
   </section>
-  <section class="hud" id="legend" aria-label="Colors">
-    <span><i style="background:var(--good)"></i>promoted: a spoke joins the champions' column</span>
-    <span><i style="background:var(--rest)"></i>not promoted: the ring fades after the gate</span>
-    <span><i style="background:var(--blue)"></i>a model scored, no training</span>
-    <span><i style="background:var(--bad)"></i>failed or stopped: the ring breaks off</span>
-    <span><i style="background:var(--run)"></i>running: the ring draws itself</span>
-    <span><i style="background:transparent;border:1.5px solid var(--ink2)"></i>bead at Test: bigger is more right</span>
+  <section class="hud" id="legend" aria-label="What is shown">
+    <span><i class="dot"></i>a territory: fuller is more right</span>
+    <button id="t-flights">Escapes: texts answered elsewhere</button>
+    <button id="t-alliances">Alliances across branches</button>
+    <button id="t-tree">The taxonomy, traced over</button>
+  </section>
+  <section class="hud" id="stem">
+    <div class="stemtop"><div id="corpora"></div><span class="note">The thick stem is what was kept. Shoots above it did not take; below, they broke.</span><button id="play">Play the loops</button></div>
+    <div id="shoots"></div>
   </section>
 </div>
 <main>
@@ -62,8 +67,7 @@ td.why { color: var(--ink2); font-size: 12.5px; min-width: 260px; } tr.now td { 
 <div id="tip" hidden></div>
 <script>
 "use strict";
-const $ = id => document.getElementById(id), canvas = $("gl"), over = $("over"), g = over.getContext("2d");
-const gl = canvas.getContext("webgl2", { antialias: true, alpha: false, powerPreference: "low-power" }), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = id => document.getElementById(id), canvas = $("gl"), g = canvas.getContext("2d"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 function el(tag, cls, ...kids) { const e = document.createElement(tag); if (cls) e.className = cls; e.append(...kids.filter(k => k !== null && k !== undefined)); return e; }
 const KIND = { baseline: "Plain LaBSE, scored", score: "An earlier model, scored", fit: "Training", round: "Self-training round", build: "Coredrill build search" };
 const STATE = { promoted: ["Promoted", "var(--good)"], ok: ["Done", "var(--rest)"], not_promoted: ["Not promoted", "var(--rest)"], running: ["Running", "var(--run)"], failed: ["Failed", "var(--bad)"], killed: ["Stopped", "var(--bad)"], interrupted: ["Stopped", "var(--bad)"], nothing_accepted: ["Nothing new to learn", "var(--rest)"], no_candidates: ["Found nothing", "var(--rest)"] };
@@ -73,157 +77,90 @@ function mins(s) { if (s === null || s === undefined) return ""; s = Math.round(
 function when(iso) { if (!iso) return ""; const d = new Date(iso), today = new Date().toDateString() === d.toDateString(); return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + (today ? "" : " " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" })); }
 function state(l) { const [w, c] = STATE[l.state] || [l.state, "var(--rest)"], i = el("i"); i.style.background = c; return el("span", "st", i, l.kind === "build" && l.state === "promoted" ? "Adopted" : w); }
 const folderName = r => r.root ? `runs/${r.root}` : "runs";
-const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
-const COL = { good: hex("#7d9a94"), rest: hex("#696e79"), blue: hex("#7888a6"), bad: hex("#a98d80"), run: hex("#bdb9ad"), station: hex("#5d6371"), grid: hex("#3a3e47") };
-const blend = (a, b, k) => a.map((v, i) => v * (1 - k) + b[i] * k);
 
-let data = null, run = new Map(), hover = -1, picked = null;
-// ── the pipeline as a loop: six stations round a circle; every loop is a ring through them ──
-const STATIONS = [
-  { name: "Texts", say: "The corpus: training texts, and a test kept apart" },
-  { name: "New text", say: "Self-training: Wikipedia articles the champion labels" },
-  { name: "Training", say: "LaBSE's top layers and the territories' centers learn" },
-  { name: "Coredrill", say: "Every text embedded; territories built: centers and radii" },
-  { name: "Test", say: "Every test text answered; the bead is the share right" },
-  { name: "Gate", say: "Promoted only when clearly better than the champion" },
-];
-// how far round a loop is, from how far along it is, for each kind of loop
-const ANCHORS = {
-  fit: [[0, 0], [.02, 2 / 6], [.78, 3 / 6], [.9, 4 / 6], [.98, 5 / 6], [1, 1]],
-  round: [[0, 0], [.15, 1 / 6], [.2, 2 / 6], [.8, 3 / 6], [.91, 4 / 6], [.98, 5 / 6], [1, 1]],
-  score: [[0, 0], [.6, 3 / 6], [.75, 4 / 6], [.98, 5 / 6], [1, 1]],
-  baseline: [[0, 0], [.1, 3 / 6], [.35, 4 / 6], [.98, 5 / 6], [1, 1]],
-  build: [[0, 0], [.02, 3 / 6], [.82, 4 / 6], [.98, 5 / 6], [1, 1]],
-};
-const SKIPS = { fit: [1], round: [], score: [1, 2], baseline: [1, 2], build: [1, 2] };      // stations a kind passes by
-function turnOf(kind, done) { const a = ANCHORS[kind] || ANCHORS.fit; for (let i = 1; i < a.length; i++) if (done <= a[i][0]) { const [d0, t0] = a[i - 1], [d1, t1] = a[i]; return t0 + (t1 - t0) * (done - d0) / Math.max(1e-9, d1 - d0); } return 1; }
-const R = 3.2, DY = .42, TOWER = 17;
-let towers = [], rings = [], seenTower = null;
-function scene() {
-  towers = []; rings = []; if (!data) return;
-  const rs = data.roots.filter(r => r.loops.length);
-  rs.forEach((r, k) => {
-    const list = [...r.loops].reverse(), T = { r, cx: 0, cz: 0, top: list.length * DY, rings: [] };
-    T.cx = k === 0 ? 0 : (k % 2 ? -1 : 1) * Math.ceil(k / 2) * TOWER;                      // the newest corpus in the middle
-    list.forEach((l, i) => { const g = { l, T, y: (i + .6) * DY, i, champion: l.id === r.champion }; T.rings.push(g); rings.push(g); });
-    towers.push(T);
-  });
+// ── the rhizome: territories placed by likeness, and what each loop did to the threads between them ──
+const STEPS = ["Texts", "New text", "Training", "Coredrill", "Test", "Gate"];
+const ENDS = { fit: [.01, .02, .78, .9, .98], round: [.02, .2, .8, .91, .98], score: [.1, .1, .1, .75, .98], baseline: [.1, .1, .1, .35, .98], build: [.02, .02, .02, .82, .98] };
+const SKIPS = { fit: [1], round: [], score: [1, 2], baseline: [1, 2], build: [1, 2] };
+const BRANCH = { "Natural World": "125,154,148", "Human Mind & Knowledge": "134,130,166", "Human Activity & Society": "169,150,118", "Communication & Expression": "120,140,170" };
+let data = null, run = new Map(), hover = -1, picked = null, follow = true, root = null, map = null, asked = "", at = [], threads = new Map(), seen = [], playing = null;
+const show = { alliances: true, flights: true, tree: false };
+const all = () => data ? data.roots.filter(r => r.loops.length) : [];
+const loopsOf = () => { const r = all().find(r => r.root === root); return r ? [...r.loops].reverse() : []; };
+const scored = l => l.strict !== null && l.strict !== undefined;
+function choose(id, byHand) { picked = id; if (byHand) follow = false; load(); shoots(); document.querySelectorAll("tr.picked").forEach(x => x.classList.remove("picked")); const row = document.querySelector(`tr[data-id="${id}"]`); if (row) row.classList.add("picked"); }
+async function load() {
+  const id = picked; if (!id) return; asked = id; let d; try { const res = await fetch("/api/rhizome?loop=" + encodeURIComponent(id)); d = await res.json(); if (!res.ok) throw new Error(d.error); } catch (e) { $("what").textContent = e.message; return; }
+  if (asked !== id) return; map = d; const l = loopsOf().find(l => l.id === id) || {}, old = at; at = d.nodes.map((n, i) => ({ ...n, f: old[i] && old[i].name === n.name ? old[i].f : null, to: n.now ? n.now[0] / n.now[1] : null }));
+  const next = new Map(); for (const [a, b, n, w] of d.flights) { const k = a + ">" + b, p = threads.get(k); next.set(k, { a, b, n, w, size: p ? p.size : w }); } threads = next;
+  const own = d.shown === d.loop; let say = "";
+  if (d.live) say = `Training now. Lines are the nearest territories: sage ones are drawing together, clay ones are coming apart.`;
+  else if (!own) say = `This loop has no test answers${l.state === "running" ? " yet" : ""}. The map shows ${d.before ? "loop " + d.before.seq : "only the ground"}.`;
+  else say = `${pct(l.strict)} of test texts stayed in their territory; ${d.left.toLocaleString("en")} left for another.` + (d.before ? ` Compared with loop ${d.before.seq}: clay threads are new or thicker escapes, sage ones have been drawn back.` : "");
+  $("what").textContent = say; $("title").textContent = `Loop ${l.seq}: ${KIND[l.kind] || l.kind}`;
 }
-// Texts sits at the front left; the loop runs round from there
-function colorOf(l) { return l.state === "promoted" ? COL.good : ["failed", "killed", "interrupted"].includes(l.state) ? COL.bad : ["baseline", "score"].includes(l.kind) ? COL.blue : COL.rest; }
-const at = (T, turn, y, rad = R) => { const a = .75 * Math.PI - 2 * Math.PI * turn; return [T.cx + Math.cos(a) * rad, y, T.cz + Math.sin(a) * rad]; };
-function beads(time) {                              // [x, y, z, radius, r, g, b, alpha, glow]
-  const solid = [], soft = [];
-  for (const T of towers) {
-    for (let s = 0; s < 6; s++) {                      // the stations: a glowing post at the base, a faint column up
-      const b = at(T, s / 6, 0); soft.push([...b, .34, ...COL.station, .55, .5]);
-      for (let y = .4; y < T.top + DY; y += .5) soft.push([...at(T, s / 6, y), .03, ...COL.grid, .5, 0]);
-    }
-    for (let y = .5; y < T.top + DY; y += .9) soft.push([T.cx, y, T.cz, .025, ...COL.grid, .4, 0]);
-  }
-  for (const g of rings) {
-    const l = g.l, T = g.T, live = run.get(l.id), lit = g === rings[hover] || l.id === picked, c = colorOf(l);
-    const reach = live ? turnOf(l.kind, live.shown) : turnOf(l.kind, l.reach ?? 1), skip = SKIPS[l.kind] || [];
-    const steps = Math.max(2, Math.round(reach * 150));
-    for (let j = 0; j <= steps; j++) {
-      const t = reach * j / steps, station = Math.floor(t * 6 + 1e-9), passing = skip.includes(station) && t * 6 - station > .02;
-      const after = t > 5 / 6 + .005, faded = after && l.state !== "promoted" && !live;
-      if ((faded || passing) && j % 3) continue;
-      const p = at(T, t, g.y), rad = (passing ? .028 : faded ? .03 : .052) * (lit ? 1.35 : 1);
-      (passing || faded ? soft : solid).push([...p, rad, ...(live ? COL.run : c), passing || faded ? .45 : lit ? 1 : .93, lit ? .4 : 0]);
-    }
-    if (l.strict !== null && l.strict !== undefined) solid.push([...at(T, 4 / 6, g.y, R + .02), .05 + .5 * Math.max(0, l.strict - .25), ...blend(c, COL.run, .35), 1, lit ? .5 : .15]);
-    if (l.val_acc) solid.push([...at(T, 2 / 6, g.y), .045 + .35 * Math.max(0, l.val_acc - .6), ...c, .95, 0]);
-    if (l.accepted) solid.push([...at(T, 1 / 6, g.y), .045 + .05 * Math.log10(1 + l.accepted), ...c, .95, 0]);
-    if (l.state === "promoted") {                     // the champion's lineage: a spoke to the center, the center column
-      for (let k = 0; k <= 12; k++) soft.push([...at(T, 5 / 6, g.y, R * (1 - k / 12)), .035, ...COL.good, .75, .3]);
-      solid.push([T.cx, g.y, T.cz, g.champion ? .16 : .1, ...COL.good, 1, g.champion ? .8 : .2]);
-    }
-    if (live) {                                       // the head, and text flowing into the step it is on
-      const head = at(T, reach, g.y), pulse = .5 + .5 * Math.sin(time * 3);
-      solid.push([...head, .13, ...COL.run, 1, 1]); soft.push([...head, .42 + .08 * pulse, ...COL.run, .28, 1]);
-      const from = Math.floor(reach * 6) / 6;
-      for (let k = 0; k < 7; k++) { const f = ((time * .35 + k / 7) % 1), t = from + (reach - from) * f; soft.push([...at(T, t, g.y + .02), .06, ...COL.run, .8 * (1 - f) + .2, .6]); }
-    }
-  }
-  return { solid, soft };
-}
-// ── WebGL: every bead a small lit sphere ──
-let P, quad, inst;
-function program(v, f) { const p = gl.createProgram(); for (const [t, s] of [[gl.VERTEX_SHADER, v], [gl.FRAGMENT_SHADER, f]]) { const x = gl.createShader(t); gl.shaderSource(x, "#version 300 es\nprecision highp float;\n" + s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); gl.attachShader(p, x); } gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p)); const u = {}; for (let i = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS) - 1; i >= 0; i--) { const nm = gl.getActiveUniform(p, i).name; u[nm] = gl.getUniformLocation(p, nm); } return { p, u }; }
-function initGL() {
-  P = program(`layout(location=0) in vec2 q; layout(location=1) in vec3 a; layout(location=2) in float r; layout(location=3) in vec4 c; layout(location=4) in float glow;
-    uniform mat4 M; uniform vec3 RR, UU; uniform float soft; out vec2 v; out vec4 k; out float gl0; void main() { gl_Position = M * vec4(a + (RR * q.x + UU * q.y) * r, 1.0); v = q; k = c; gl0 = glow; }`,
-    `in vec2 v; in vec4 k; in float gl0; uniform float soft; out vec4 o; void main() { float d = dot(v, v); if (d > 1.0) discard;
-      if (soft > 0.5) { float a = k.a * exp(-d * 3.0) * (1.0 - d); o = vec4(k.rgb * a, a); return; }
-      vec3 n = vec3(v, sqrt(1.0 - d)); float lit = 0.45 + 0.45 * max(dot(n, normalize(vec3(-0.4, 0.65, 0.65))), 0.0) + 0.25 * gl0; float a = k.a; o = vec4(k.rgb * lit * a, a); }`);
-  quad = gl.createVertexArray(); gl.bindVertexArray(quad); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-  inst = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, inst); [[1, 3, 0], [2, 1, 12], [3, 4, 16], [4, 1, 32]].forEach(([i, n, o]) => { gl.enableVertexAttribArray(i); gl.vertexAttribPointer(i, n, gl.FLOAT, false, 36, o); gl.vertexAttribDivisor(i, 1); });
-  gl.bindVertexArray(null); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-}
-function draw(list, soft) { if (!list.length) return; gl.uniform1f(P.u.soft, soft ? 1 : 0); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(list.flat()), gl.DYNAMIC_DRAW); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, list.length); }
 // ── camera ──
-const FOV = 42 * Math.PI / 180, cam = { t: [0, 4, 0], d: 34, yaw: .8, pitch: .5 }, goal = { t: [0, 4, 0], d: 26, yaw: .35, pitch: .34 };
-let Wd = 1, Ht = 1, A, off = 0;
-const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-function resize() { const r = Math.min(devicePixelRatio || 1, 2), b = canvas.getBoundingClientRect(); Wd = b.width; Ht = b.height; for (const c of [canvas, over]) { c.width = Math.round(Wd * r); c.height = Math.round(Ht * r); } g.setTransform(r, 0, 0, r, 0, 0); }
-addEventListener("resize", resize);
+const FOV = 42 * Math.PI / 180, cam = { t: [0, 0, 0], d: 44, yaw: .4, pitch: .85 }, goal = { t: [0, 0, 0], d: 35, yaw: .4, pitch: .85 };
+let Wd = 1, Ht = 1, A, off = 0; const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+function resize() { const r = Math.min(devicePixelRatio || 1, 2), b = canvas.getBoundingClientRect(); Wd = b.width; Ht = b.height; canvas.width = Math.round(Wd * r); canvas.height = Math.round(Ht * r); g.setTransform(r, 0, 0, r, 0, 0); } addEventListener("resize", resize);
 function axes() { const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), f = [-sy * cp, -sp, -cy * cp]; return { f, r: [cy, 0, -sy], u: [-sy * sp, cp, -cy * sp], e: cam.t.map((v, i) => v - f[i] * cam.d) }; }
-function project(p) { const v = [p[0] - A.e[0], p[1] - A.e[1], p[2] - A.e[2]], z = dot(v, A.f), k = Ht / 2 / Math.tan(FOV / 2) / Math.max(z, .05); return { x: Wd / 2 + off + dot(v, A.r) * k, y: Ht / 2 - dot(v, A.u) * k, z, k }; }
-function matrix() { const c = 1 / Math.tan(FOV / 2), nr = .1, fr = 400, e = A.e, row = (v, s) => [v[0] * s, v[1] * s, v[2] * s, -dot(v, e) * s], X = row(A.r, c * Ht / Wd), Y = row(A.u, c), Z = row(A.f, 1), o = 2 * off / Wd, q = (fr + nr) / (fr - nr), w = -2 * fr * nr / (fr - nr), D = Z.map((v, i) => v * q + (i === 3 ? w : 0)); for (let i = 0; i < 4; i++) X[i] += o * Z[i]; return new Float32Array([X[0], Y[0], D[0], Z[0], X[1], Y[1], D[1], Z[1], X[2], Y[2], D[2], Z[2], X[3], Y[3], D[3], Z[3]]); }
-function focus(T) { seenTower = T; goal.t = [T.cx, Math.max(1.5, T.top * .5), T.cz]; goal.d = Math.max(16, Math.min(70, T.top * 1.7 + 10)); }
-function fit() { if (towers.length) focus(towers[0]); goal.yaw = .35; goal.pitch = .34; }
-// ── words ──
-function text(s, p, px, alpha, weight = 500, align = "center", dy = 0, rgb = "200,198,190") { if (p.z < .1 || alpha < .03) return; g.font = `${weight} ${px}px system-ui, "Segoe UI", sans-serif`; g.textAlign = align; g.lineWidth = 3.5; g.lineJoin = "round"; g.strokeStyle = `rgba(12,13,16,${.85 * alpha})`; g.fillStyle = `rgba(${rgb},${alpha})`; g.strokeText(s, p.x, p.y + dy); g.fillText(s, p.x, p.y + dy); }
-let marks = [];
-function labels() {
-  g.clearRect(0, 0, Wd, Ht); marks = [];
-  for (const T of towers) {
-    const near = T === (seenTower || towers[0]) ? 1 : .3;
-    STATIONS.forEach((s, i) => text(s.name, project(at(T, i / 6, -.15, R + 1.15)), 12.5, .85 * near, 600, "center", 4));
-    text(NAME[T.r.root] ?? T.r.root, project([T.cx, T.top + 1.4, T.cz]), 14, .95 * near, 600);
-    text(`${T.rings.length} loops`, project([T.cx, T.top + 1.4, T.cz]), 11.5, .6 * near, 400, "center", 16);
-  }
-  for (const g0 of rings) {                         // hover targets: points round each ring
-    const live = run.get(g0.l.id), reach = live ? turnOf(g0.l.kind, live.shown) : turnOf(g0.l.kind, g0.l.reach ?? 1);
-    for (let j = 0; j <= 16; j++) marks.push([g0, project(at(g0.T, reach * j / 16, g0.y))]);
-    const lab = project(at(g0.T, 0, g0.y, R + .55)); if (lab.k * DY > 12) text(String(g0.l.seq), lab, 10.5, Math.min(.7, (lab.k * DY - 12) / 10), 400, "right", 4);
-    if (live) { const h = project(at(g0.T, reach, g0.y)); text(`${STATIONS[Math.min(5, Math.floor(reach * 6))].name}: ${Math.round(100 * live.shown)}%`, h, 13, 1, 600, "left", -14, "214,211,200"); }
-  }
-  for (const T of towers) { const last = [...T.rings].reverse().find(r => r.l.strict !== null && r.l.strict !== undefined); if (last) text(pct(last.l.strict), project(at(T, 4 / 6, last.y, R + .55)), 11.5, .85, 600, "left", 4); }
-  if (hover >= 0) { const h = rings[hover]; if (h.l.strict !== null && h.l.strict !== undefined) text(pct(h.l.strict), project(at(h.T, 4 / 6, h.y, R + .55)), 12, 1, 600, "left", 4); }
-}
-// ── frame ──
+function project(p) { const v = p.map((x, i) => x - A.e[i]), z = dot(v, A.f), k = Ht / 2 / Math.tan(FOV / 2) / Math.max(z, .05); return { x: Wd / 2 + off + dot(v, A.r) * k, y: Ht / 2 - 75 - dot(v, A.u) * k, z, k }; }
+function home() { goal.t = [0, 0, 0]; goal.d = 35; goal.pitch = .85; hold = -1; } let hold = -1;
+function bend(a, b, lift) { const m = a.map((v, i) => (v + b[i]) / 2), d = Math.hypot(a[0] - b[0], a[2] - b[2]); return project([m[0] + (b[2] - a[2]) * .12, m[1] + lift * d, m[2] - (b[0] - a[0]) * .12]); }
+function line(p, c, q, rgb, al, w) { if (p.z < .1 || q.z < .1) return; g.strokeStyle = `rgba(${rgb},${al})`; g.lineWidth = w; g.beginPath(); g.moveTo(p.x, p.y); g.quadraticCurveTo(c.x, c.y, q.x, q.y); g.stroke(); }
+const on = (p, c, q, t) => [(1 - t) ** 2 * p.x + 2 * t * (1 - t) * c.x + t * t * q.x, (1 - t) ** 2 * p.y + 2 * t * (1 - t) * c.y + t * t * q.y];
 let dragging = null, last = null, moved = 0, before = 0;
 function frame(t) {
-  requestAnimationFrame(frame); if (document.hidden || t - before < 15) return; const dt = Math.min(.5, (t - before) / 1000); before = t;
-  const e = still ? 1 : 1 - Math.exp(-3 * dt), q = still ? 1 : 1 - Math.exp(-8 * dt); for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; cam.d += (goal.d - cam.d) * e; cam.yaw += (goal.yaw - cam.yaw) * q; cam.pitch += (goal.pitch - cam.pitch) * q; if (!still && !dragging) goal.yaw += .05 * dt;
-  for (const [, v] of run) v.shown += (v.done - v.shown) * (still ? 1 : 1 - Math.exp(-1.5 * dt));
-  off += ((Wd > 1000 ? 150 : 0) - off) * e; A = axes(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(.047, .051, .063, 1); gl.clear(gl.COLOR_BUFFER_BIT);
-  if (rings.length) { const { solid, soft } = beads(t / 1000); gl.useProgram(P.p); gl.uniformMatrix4fv(P.u.M, false, matrix()); gl.uniform3fv(P.u.RR, A.r); gl.uniform3fv(P.u.UU, A.u); gl.bindVertexArray(quad); gl.bindBuffer(gl.ARRAY_BUFFER, inst);
-    const back = (a, b) => dot([b[0] - A.e[0], b[1] - A.e[1], b[2] - A.e[2]], A.f) - dot([a[0] - A.e[0], a[1] - A.e[1], a[2] - A.e[2]], A.f);
-    draw(soft, true); draw(solid.sort(back), false); gl.bindVertexArray(null); }
-  labels();
+  requestAnimationFrame(frame); if (document.hidden || t - before < 24) return; const dt = Math.min(.4, (t - before) / 1000); before = t; const e = still ? 1 : 1 - Math.exp(-4 * dt);
+  for (let i = 0; i < 3; i++) cam.t[i] += (goal.t[i] - cam.t[i]) * e; for (const k of ["d", "yaw", "pitch"]) cam[k] += (goal[k] - cam[k]) * e; if (!still && !dragging && hover < 0 && hold < 0) goal.yaw += .015 * dt; off += ((Wd > 1000 ? 130 : 0) - off) * e; A = axes();
+  g.fillStyle = "#0c0d10"; g.fillRect(0, 0, Wd, Ht); if (!map) return; seen = at.map(n => project(n.at)); const me = hover >= 0 ? hover : hold;
+  const dim = (a, b) => me < 0 ? 1 : a === me || b === me ? 2.2 : .12;
+  if (show.tree) for (const [a, b] of map.tree) line(seen[a], seen[a], seen[b], "150,153,162", .16 * Math.min(1, dim(a, b)), 1);
+  if (map.live) for (const [a, b, w, n] of map.live.links) { const d = n - w; line(seen[a], bend(at[a].at, at[b].at, .08), seen[b], d > .02 ? "125,154,148" : d < -.02 ? "169,141,128" : "105,110,121", Math.min(.85, (.12 + 1.6 * Math.abs(d)) * dim(a, b)), .8 + 4 * Math.min(.5, Math.abs(d))); }
+  else {
+    if (show.alliances) for (const [a, b] of map.alliances) line(seen[a], bend(at[a].at, at[b].at, -.12), seen[b], "134,138,160", Math.min(.5, .13 * dim(a, b)), 1);
+    if (show.flights) for (const f of threads.values()) { f.size += (f.n - f.size) * e; if (f.size < .3) continue; const d = f.n - f.w, own = map.before && map.shown === map.loop, c = bend(at[f.a].at, at[f.b].at, .2), p = seen[f.a], q = seen[f.b]; const rgb = own && d >= 2 ? "169,141,128" : own && d <= -2 ? "125,154,148" : "120,124,134", al = Math.min(.8, (.1 + .03 * Math.min(12, f.size)) * dim(f.a, f.b));
+      line(p, c, q, rgb, al, .6 + .55 * Math.sqrt(f.size)); if (p.z > .1 && q.z > .1 && (me === f.a || me === f.b || f.size > 5)) { const [x, y] = on(p, c, q, (t / 4200 + (f.a * 37 % 100) / 100) % 1); g.fillStyle = `rgba(${rgb},${Math.min(.9, al * 1.8)})`; g.beginPath(); g.arc(x, y, 1.7, 0, 7); g.fill(); } }
+  }
+  taken = []; const words = []; at.map((n, i) => i).sort((a, b) => seen[b].z - seen[a].z).forEach(i => { const n = at[i], p = seen[i]; if (p.z < .1) return; if (n.to !== null) n.f = n.f === null ? n.to : n.f + (n.to - n.f) * e; else n.f = null;
+    const r = Math.max(2, p.k * (.09 + .035 * Math.sqrt(n.now ? Math.min(60, n.now[1]) : 8) / 2)), rgb = BRANCH[n.path[0]] || "140,144,152", a = me < 0 || me === i || near(me, i) ? 1 : .25;
+    g.fillStyle = "#0c0d10"; g.beginPath(); g.arc(p.x, p.y, r + 1, 0, 7); g.fill(); g.strokeStyle = `rgba(${rgb},${.55 * a})`; g.lineWidth = 1.1; g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.stroke();
+    if (n.f) { g.fillStyle = `rgba(${rgb},${.9 * a})`; g.beginPath(); g.arc(p.x, p.y, r * Math.sqrt(n.f), 0, 7); g.fill(); }
+    if (me === i || near(me, i) || (me < 0 && n.path.length <= 2) || p.k > 75) words.push([me === i ? -1 : n.path.length, n.name, p.x, p.y - r - 5, me === i ? 13 : 11, .85 * a, me === i]); });
+  words.sort((a, b) => a[0] - b[0]).forEach(w => word(...w.slice(1)));
 }
-function tip(i, x, y) { const t = $("tip"); t.hidden = i < 0; if (i < 0) return; const r = rings[i], l = r.l, live = run.get(l.id); t.textContent = "";
-  t.append(el("b", "", `Loop ${l.seq}: ${KIND[l.kind] || l.kind}`), `${(STATE[l.state] || [l.state])[0]}${l.kind === "build" && l.state === "promoted" ? " (adopted)" : ""}${r.champion ? ", the champion" : ""}, ${when(l.started)}${l.seconds ? ", took " + mins(l.seconds) : ""}`);
-  if (live) t.append(el("br"), `${Math.round(100 * live.done)}% done: ${live.phase}`);
-  else if ((l.reach ?? 1) < 1) t.append(el("br"), `It stopped at ${STATIONS[Math.min(5, Math.floor(turnOf(l.kind, l.reach) * 6))].name}.`);
-  if (l.accepted) t.append(el("br"), `${l.accepted.toLocaleString("en")} new self-labeled texts`); if (l.val_acc) t.append(el("br"), `${pct(l.val_acc)} right on its own check after training`);
-  if (l.strict !== null && l.strict !== undefined) t.append(el("br"), `${pct(l.strict)} right on the test, ${pct(l.near_miss)} right or one step away`); if (l.reason) t.append(el("br"), l.reason); if (l.error) t.append(el("br"), l.error);
+function near(me, i) { if (me < 0 || me === i) return false; if (map.live) return map.live.links.some(l => l[0] === me && l[1] === i || l[1] === me && l[0] === i); return show.flights && (threads.get(me + ">" + i)?.n > 0 || threads.get(i + ">" + me)?.n > 0); }
+let taken = [];
+function word(s, x, y, px, al, force) { const half = s.length * px * .28; if (!force && taken.some(t => Math.abs(t[0] - x) < t[2] + half && Math.abs(t[1] - y) < 14)) return; taken.push([x, y, half]); g.font = `500 ${px}px system-ui, "Segoe UI", sans-serif`; g.textAlign = "center"; g.lineWidth = 3.5; g.lineJoin = "round"; g.strokeStyle = `rgba(12,13,16,${.9 * al})`; g.fillStyle = `rgba(200,198,190,${al})`; g.strokeText(s, x, y); g.fillText(s, x, y); }
+function tip(i, x, y) { const t = $("tip"); t.hidden = i < 0; if (i < 0) return; const n = at[i], add = s => t.append(el("br"), s); t.textContent = ""; t.append(el("b", "", n.name), n.path.slice(0, -1).join(" › "));
+  if (n.now) add(`${n.now[0]} of ${n.now[1]} test texts right${n.old && map.before && map.shown === map.loop ? `, ${n.old[0]} before` : ""}`); else add("Not in the test");
+  if (map.live) { const k = map.live.links.filter(l => l[0] === i || l[1] === i).sort((a, b) => b[3] - a[3]).slice(0, 3); for (const l of k) add(`${at[l[0] === i ? l[1] : l[0]].name}: likeness ${l[2].toFixed(2)}, now ${l[3].toFixed(2)}`); }
+  else { const o = [...threads.values()].filter(f => f.a === i && f.n).sort((a, b) => b.n - a.n).slice(0, 4); if (o.length) add("Its texts leave for: " + o.map(f => `${at[f.b].name} (${f.n})`).join(", ")); const c = [...threads.values()].filter(f => f.b === i && f.n).sort((a, b) => b.n - a.n).slice(0, 3); if (c.length) add("Others arrive from: " + c.map(f => `${at[f.a].name} (${f.n})`).join(", ")); }
   t.style.left = Math.min(x + 16, innerWidth - 330) + "px"; t.style.top = Math.min(y + 16, innerHeight - t.offsetHeight - 10) + "px"; }
-canvas.addEventListener("pointerdown", e => { dragging = e.shiftKey || e.button === 2 ? "pan" : "turn"; last = [e.clientX, e.clientY]; moved = 0; canvas.classList.add("drag"); canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener("contextmenu", e => e.preventDefault());
-canvas.addEventListener("pointermove", e => {
-  if (dragging) { const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true; if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(-.2, Math.min(1.4, goal.pitch + dy * .005)); } else { const k = cam.d * Math.tan(FOV / 2) * 2 / Ht; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return; }
-  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 10, w = null; for (const [r, p] of marks) if (p.z > .1) { const d = Math.hypot(p.x - x, p.y - y); if (d < best) { best = d; w = r; } }
-  hover = w ? rings.indexOf(w) : -1; canvas.style.cursor = hover >= 0 ? "pointer" : ""; tip(hover, e.clientX, e.clientY);
-});
-addEventListener("pointerup", () => { if (dragging && moved < 5) { if (hover >= 0) { const r = rings[hover]; picked = r.l.id; focus(r.T); document.querySelectorAll("tr.picked").forEach(x => x.classList.remove("picked")); const row = document.querySelector(`tr[data-id="${picked}"]`); if (row) row.classList.add("picked"); } else { const b = canvas.getBoundingClientRect(); const T = towers.find(T => { const p = project([T.cx, T.top / 2, T.cz]); return Math.abs(p.x - (last[0] - b.left)) < R * p.k * 1.3; }); if (T) focus(T); } } dragging = null; canvas.classList.remove("drag"); });
-canvas.addEventListener("pointerleave", () => { if (!dragging) { hover = -1; $("tip").hidden = true; } });
-canvas.addEventListener("wheel", e => { e.preventDefault(); goal.d = Math.max(6, Math.min(120, goal.d * Math.exp(e.deltaY * .0011))); }, { passive: false });
-canvas.addEventListener("dblclick", fit);
-canvas.addEventListener("keydown", e => { const k = { ArrowLeft: [-.14, 0], ArrowRight: [.14, 0], ArrowUp: [0, .08], ArrowDown: [0, -.08] }[e.key]; if (k) { goal.yaw += k[0]; goal.pitch = Math.max(-.2, Math.min(1.4, goal.pitch + k[1])); e.preventDefault(); } if (e.key === "+" || e.key === "=") goal.d = Math.max(6, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(120, goal.d * 1.2); if (e.key === "Escape" || e.key === "Home") fit(); });
+canvas.addEventListener("pointerdown", e => { dragging = e.shiftKey || e.button === 2 ? "pan" : "turn"; last = [e.clientX, e.clientY]; moved = 0; canvas.setPointerCapture(e.pointerId); }); canvas.addEventListener("contextmenu", e => e.preventDefault());
+canvas.addEventListener("pointermove", e => { if (dragging) { const dx = e.clientX - last[0], dy = e.clientY - last[1]; moved += Math.abs(dx) + Math.abs(dy); last = [e.clientX, e.clientY]; $("tip").hidden = true; if (dragging === "turn") { goal.yaw -= dx * .006; goal.pitch = Math.max(.1, Math.min(1.5, goal.pitch + dy * .005)); } else { const k = cam.d * Math.tan(FOV / 2) * 2 / Ht; for (let i = 0; i < 3; i++) goal.t[i] += (-dx * A.r[i] + dy * A.u[i]) * k; } return; }
+  const b = canvas.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top; let best = 13, w = -1; seen.forEach((p, i) => { const d = Math.hypot(p.x - x, p.y - y); if (p.z > .1 && d < best) { best = d; w = i; } }); hover = w; canvas.style.cursor = w >= 0 ? "pointer" : ""; tip(w, e.clientX, e.clientY); });
+canvas.addEventListener("pointerup", () => { if (moved < 5) { hold = hover === hold ? -1 : hover; if (hold >= 0) goal.t = [...at[hold].at]; } dragging = null; }); canvas.addEventListener("pointerleave", () => { hover = -1; $("tip").hidden = true; });
+canvas.addEventListener("wheel", e => { e.preventDefault(); goal.d = Math.max(4, Math.min(60, goal.d * Math.exp(e.deltaY * .0011))); }, { passive: false }); canvas.addEventListener("dblclick", home);
+canvas.addEventListener("keydown", e => { const k = { ArrowLeft: -.14, ArrowRight: .14 }[e.key]; if (k) goal.yaw += k; if (e.key === "+" || e.key === "=") goal.d = Math.max(4, goal.d / 1.2); if (e.key === "-") goal.d = Math.min(60, goal.d * 1.2); if (e.key === "Escape") home(); });
+// ── the runner: loops as shoots off one stem ──
+const NS = "http://www.w3.org/2000/svg"; function sv(tag, o, txt) { const e = document.createElementNS(NS, tag); for (const k in o) e.setAttribute(k, o[k]); if (txt !== undefined) e.textContent = txt; return e; }
+function shoots() {
+  const box = $("shoots"), ls = loopsOf(), w = Math.max(box.clientWidth || 600, ls.length * 26 + 40), h = 88, y = 56, X = i => 26 + (ls.length < 2 ? 0 : i * Math.min(90, (w - 56) / (ls.length - 1))), s = sv("svg", { width: w, height: h });
+  let px = X(0), py = y; ls.forEach((l, i) => { const x = X(i), kept = l.state === "promoted", base = ["baseline", "score"].includes(l.kind), broke = ["failed", "killed", "interrupted"].includes(l.state), live = run.get(l.id), col = live ? "var(--run)" : kept ? "var(--good)" : broke ? "var(--bad)" : base ? "var(--blue)" : "var(--rest)";
+    const ny = kept || (base && i === 0) ? y : broke ? y + 13 : y - 25, c = sv("path", { d: `M${px} ${py} C${(px + x) / 2} ${py} ${(px + x) / 2} ${ny} ${x} ${ny}`, fill: "none", stroke: col, "stroke-width": kept ? 3 : 1.4, opacity: kept ? .9 : .5 }); if (broke || live) c.setAttribute("stroke-dasharray", "3 4"); s.append(c);
+    const b = sv("g", { tabindex: 0, role: "button", "aria-label": `Loop ${l.seq}, ${KIND[l.kind] || l.kind}, ${(STATE[l.state] || [l.state])[0]}`, style: "cursor:pointer" }); b.append(sv("circle", { cx: x, cy: ny, r: 12, fill: "transparent" }), sv("circle", { cx: x, cy: ny, r: kept ? 6.5 : 4.5, fill: broke ? "#16181d" : col, stroke: l.id === picked ? "#c9c7c0" : col, "stroke-width": l.id === picked ? 2 : 1.2 }), sv("title", {}, `Loop ${l.seq}: ${KIND[l.kind] || l.kind}. ${(STATE[l.state] || [l.state])[0]}. ${scored(l) ? pct(l.strict) + " right. " : ""}${l.reason || ""}`)); b.addEventListener("click", () => { stop(); choose(l.id, true); }); b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(l.id, true); } }); s.append(b);
+    if (kept || l.id === picked || live) s.append(sv("text", { x, y: ny - 11, "text-anchor": "middle" }, live ? Math.round(100 * live.done) + "%" : scored(l) ? pct(l.strict) : ""));
+    s.append(sv("text", { x, y: h - 4, "text-anchor": "middle" }, l.seq)); if (kept) { px = x; py = y; } });
+  box.replaceChildren(s); $("corpora").replaceChildren(...all().map(r => { const b = el("button", "", NAME[r.root] ?? r.root); b.setAttribute("aria-pressed", r.root === root); b.onclick = () => { stop(); root = r.root; follow = false; at = []; threads = new Map(); hold = -1; pickLatest(); }; return b; }));
+}
+function pickLatest() { const ls = loopsOf(), live = ls.find(l => run.has(l.id)), done = [...ls].reverse().find(scored); const l = live && ["fit", "round"].includes(live.kind) ? live : done || ls[ls.length - 1]; if (l) choose(l.id); }
+function stop() { clearInterval(playing); playing = null; $("play").textContent = "Play the loops"; }
+$("play").onclick = () => { if (playing) return stop(); follow = false; const ls = loopsOf().filter(scored); let i = 0; if (!ls.length) return; $("play").textContent = "Stop"; const go = () => { choose(ls[i].id); if (++i >= ls.length) stop(); }; playing = setInterval(go, 2600); go(); };
+for (const k of Object.keys(show)) { const b = $("t-" + k); b.onclick = () => { show[k] = !show[k]; b.setAttribute("aria-pressed", show[k]); }; b.setAttribute("aria-pressed", show[k]); }
+function pipeline() { const l = [...run.values()][0]; $("pipe").replaceChildren(...STEPS.map((s, i) => { const ends = l ? ENDS[l.kind] || ENDS.fit : [], now = l ? ends.filter(x => l.done >= x).length : -1, skip = l && (SKIPS[l.kind] || []).includes(i); return el("span", skip ? "skip" : i === now ? "now" : i < now ? "done" : "", s); })); }
+function scene() { const live = [...run.values()][0]; if (root === null || follow && live) { const r = live ? live.root : all()[0]?.root; if (r !== root) { root = r; at = []; threads = new Map(); } } if (follow) pickLatest(); else shoots(); }
+setInterval(() => { if (map?.live && picked && !document.hidden) load(); }, 4000);
 // ── the cards and the list ──
 function card(r) {
   const bar = el("div", "bar"), fill = el("i"); fill.style.width = (100 * r.done).toFixed(1) + "%"; bar.append(fill); bar.setAttribute("role", "progressbar"); bar.setAttribute("aria-valuenow", Math.round(100 * r.done)); bar.setAttribute("aria-valuemin", "0"); bar.setAttribute("aria-valuemax", "100"); bar.setAttribute("aria-label", "How far along");
@@ -244,7 +181,7 @@ function table(r) {
   const body = el("tbody"); for (const l of r.loops) { const tr = el("tr", (l.state === "running" ? "now" : "") + (l.id === picked ? " picked" : ""), el("td", "n", String(l.seq ?? "")), el("td", "", (KIND[l.kind] || l.kind) + (l.id === r.champion ? " (champion)" : "")), el("td", "", state(l)), el("td", "n", pct(l.strict)), el("td", "n", pct(l.near_miss)), el("td", "n", mins(l.seconds)), el("td", "n", when(l.started)), el("td", "why", l.error || l.reason || (l.accepted ? `${l.accepted} new self-labeled texts` : ""))); tr.dataset.id = l.id; body.append(tr); } t.append(body);
   return el("div", "scroll", t);
 }
-let lastFolders = "", first = true;
+let lastFolders = "";
 async function tick() {
   let d; try { const res = await fetch("/api/progress"); d = await res.json(); if (!res.ok) throw new Error(d.error); } catch (e) { $("clock").textContent = "The view is not running any more. Start it with: python -m train view"; return; }
   $("clock").textContent = "Updated " + new Date().toLocaleTimeString("en-GB");
@@ -253,10 +190,11 @@ async function tick() {
   const now = $("now"); now.replaceChildren(...d.running.map(card), ...(d.gathering && d.gathering.active ? [gathering(d.gathering)] : [])); if (!now.childElementCount) now.append(el("p", "card note", "Nothing is running now."));
   const sig = JSON.stringify(d.roots); if (sig !== lastFolders) { lastFolders = sig; data = d;
     $("folders").replaceChildren(...d.roots.filter(r => r.loops.length).map(r => { const nn = (r.loops.find(l => l.n) || {}).n; return el("section", "", el("h2", "", NAME[r.root] ?? r.root), el("p", "note", `${folderName(r)}: ${r.loops.length} loops${nn ? `, scored on a test of ${nn.toLocaleString("en")} texts` : ""}.`), table(r)); }));
-    scene(); if (first) { fit(); first = false; } }
-  else data = d;
+    data = d; scene(); }
+  else { data = d; if (d.running.length) shoots(); }
+  pipeline();
 }
-(async () => { try { if (!gl) throw new Error("This browser cannot draw the scene (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); } catch (e) { $("clock").textContent = e.message; } await tick(); setInterval(tick, 2000); })();
+(async () => { resize(); A = axes(); requestAnimationFrame(frame); await tick(); setInterval(tick, 2000); })();
 </script>
 </body>
 </html>
