@@ -210,14 +210,22 @@ async function follow(me) {
 async function load() {
   const me = ++turn; clearTimeout(liveTimer); tween = null; if (chosen().live) { liveMode(true); say("Following the training…"); return follow(me); } liveMode(false); say("Comparing…"); try { const d = await get(`/api/coredrills/compare?a=${$("a").value}&b=${$("b").value}`); if (me !== turn) return; data = d; build(); scale(); report(); say(`${d.nodes.filter(n => n.a && n.b).length} territories in both, ${d.nodes.filter(n => !n.a && n.b).length} new, ${d.nodes.filter(n => n.a && !n.b).length} gone.`); if (!time) get("/api/coredrills/timeline").then(t => { time = t.coredrills; if (me === turn) report(); }).catch(() => {}); } catch (e) { say(e.message, true); }
 }
-$("a").onchange = $("b").onchange = load; $("by").onchange = () => { by = $("by").value; scale(); if (data) build(); }; $("whole").onclick = home; $("t").oninput = () => { if (data && data.live && tween !== null) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); } playing = null; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); mix = +$("t").value; };
+let touched = false;
+$("a").onchange = $("b").onchange = () => { touched = true; load(); };
+function addTraining(c) { let g = $("b").querySelector("optgroup"); if (!g) { g = el("optgroup"); g.label = "Training, as it moves"; $("b").prepend(g); } const o = el("option", "", `${c.name}${c.root ? " (" + c.root + ")" : ""}`); o.value = c.id; g.prepend(o); }
+setInterval(async () => {                    // a training that starts while the page is open
+  try {
+    const now = await get("/api/coredrills"); for (const c of now.filter(c => c.live && !list.some(x => x.id === c.id))) { list.push(c); addTraining(c); if (!touched && c.running) { $("b").value = c.id; load(); } }
+    for (const c of now) { const old = list.find(x => x.id === c.id); if (old && old.running && !c.running) { old.running = false; old.name = c.name; } }
+  } catch {}
+}, 10000); $("by").onchange = () => { by = $("by").value; scale(); if (data) build(); }; $("whole").onclick = home; $("t").oninput = () => { if (data && data.live && tween !== null) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); } playing = null; $("play").textContent = "Play"; $("play").setAttribute("aria-pressed", "false"); mix = +$("t").value; };
 $("play").onclick = () => { if (data && data.live) { tween = null; data.nodes.forEach(n => n.from = n.start); build(); } const on = playing === null; playing = on ? 0 : null; $("play").textContent = on ? "Stop" : "Play"; $("play").setAttribute("aria-pressed", String(on)); if (on) { mix = 0; } };
 (async () => {
   try {
     if (!gl) throw new Error("This browser cannot draw the map (no WebGL 2)."); A = axes(); initGL(); resize(); requestAnimationFrame(frame); list = await get("/api/coredrills"); if (list.filter(c => !c.live).length < 2 && !list.some(c => c.live)) { say("There is nothing to compare yet: a second coredrill appears with the next training.", true); return; }
     const built = list.filter(c => !c.live), runs = list.filter(c => c.live).reverse();
     for (const c of built) for (const s of ["a", "b"]) { const o = el("option", "", where(c) + (c.champion ? ", champion" : "") + (c.strict ? `: ${(100 * c.strict).toFixed(1)}%` : "")); o.value = c.id; $(s).append(o); }
-    if (runs.length) { const g = el("optgroup"); g.label = "Training, as it moves"; for (const c of runs) { const o = el("option", "", `${c.name}${c.root ? " (" + c.root + ")" : ""}`); o.value = c.id; g.append(o); } $("b").prepend(g); }
+    for (const c of [...runs].reverse()) addTraining(c);
     const q = new URLSearchParams(location.search), champs = built.filter(c => c.champion), running = runs.find(c => c.running); $("a").value = q.get("a") || built[0].id; $("b").value = q.get("b") || (running || champs.at(-1) || built.at(-1)).id; if (!$("a").value) $("a").selectedIndex = 0; if (!$("b").value) $("b").selectedIndex = list.length - 1; await load(); if (q.get("play")) $("play").click();
   } catch (e) { say(e.message, true); }
 })();
