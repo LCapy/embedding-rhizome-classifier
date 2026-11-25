@@ -23,7 +23,7 @@ from typing import Dict, List
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-from train.data import record_keys, text_key, title_key  # noqa: E402
+from train.data import concept, record_keys, text_key, title_key  # noqa: E402
 from train.harvest import Wikipedia  # noqa: E402
 from train.record import now  # noqa: E402
 
@@ -70,6 +70,7 @@ def main() -> None:
     ap.add_argument("--fetch", action="store_true")
     ap.add_argument("--target", type=int, default=120, help="texts of its own a territory should have")
     ap.add_argument("--per-article", type=int, default=30)
+    ap.add_argument("--min-new", type=int, default=48, help="texts from new articles a territory of fewer than 3 gets")
     ap.add_argument("--delay", type=float, default=2.5, help="seconds between requests")
     ap.add_argument("--data", type=Path, default=REPO / "data")
     ap.add_argument("--runs", type=Path, default=REPO / "runs")
@@ -90,21 +91,32 @@ def main() -> None:
 
     holdout = json.loads((args.runs / "holdout.json").read_text(encoding="utf-8"))
     held, blocked = set(holdout["keys"]), set(holdout["blocked_titles"])
-    labels = defaultdict(set)
+    # what each territory will have of its own once build_corpus.py corrects the labels
+    from build_corpus import CONVERSATIONAL, ENCYCLOPEDIA, relabel
+    labels, concepts = defaultdict(set), defaultdict(set)
     for r in records:
-        labels[text_key(r["text"])].add(r["category"])
+        label, _ = relabel(r)
+        if label is None or (label in CONVERSATIONAL and r.get("source") in ENCYCLOPEDIA):
+            continue
+        labels[text_key(r["text"])].add(label)
+        if concept(r):
+            concepts[label].add(concept(r))
     own = Counter(next(iter(v)) for v in labels.values() if len(v) == 1)
+    known_texts = {text_key(r["text"]) for r in records}
     out = args.data / "sources" / "wikipedia.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     rows = [json.loads(z) for z in out.read_text(encoding="utf-8").splitlines()] if out.exists() else []
     done = {(r["category"], r["article"]) for r in rows}
     log = args.data / "sources" / "gather.log"
     fetched = {tuple(z.split("\t")[1:3]) for z in log.read_text(encoding="utf-8").splitlines()} if log.exists() else set()
-    known = set(labels) | {text_key(r["text"]) for r in rows}
+    known = known_texts | {text_key(r["text"]) for r in rows}
     have = Counter(own)
     have.update(r["category"] for r in rows)
-
-    short = {n: args.target - have[n] for n in articles if have[n] < args.target}
+    for r in rows:
+        concepts[r["category"]].add(r["article"])
+    # short of texts, or built from fewer than three articles: a territory then is one article's
+    short = {n: max(args.target - have[n], args.min_new if len(concepts[n]) < 3 else 0) for n in articles}
+    short = {n: k for n, k in short.items() if k > 0}
     skipped = [t for ts in articles.values() for t in ts if title_key(t) in blocked]
     print(f"{len(articles)} territories listed, {sum(map(len, articles.values()))} articles; {len(short)} territories "
           f"short of {args.target}, {sum(short.values()):,} texts missing. {len(rows):,} gathered so far.")
