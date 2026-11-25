@@ -46,6 +46,11 @@ class Sources(unittest.TestCase):
         titles = [title_key(t) for ts in self.articles.values() for t in ts]
         self.assertEqual(sorted({t for t in titles if titles.count(t) > 1}), [])
 
+    def test_no_territory_takes_anothers_article(self):
+        own = {title_key(n): n for n in NAMES}
+        taken = [(n, t) for n, ts in self.articles.items() for t in ts if own.get(title_key(t), n) != n]
+        self.assertEqual(taken, [])
+
     def test_no_articles_for_conversation(self):
         self.assertEqual(set(self.articles) & build_corpus.CONVERSATIONAL, set())
 

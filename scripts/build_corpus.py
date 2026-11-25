@@ -167,6 +167,9 @@ def main() -> None:
         if not options:
             continue
         title = next((article(records[i]) for i, _ in options.values() if article(records[i])), "")
+        if title in listed:                      # an article goes whole to the territory that lists it
+            i, _ = options.get(listed[title]) or next(iter(options.values()))
+            options = {listed[title]: (i, f"the article {title!r} belongs here")}
         label = choose(sorted(options), title, listed, first, level) if len(options) > 1 else next(iter(options))
         i, why = options[label]
         dropped["the same text under another label"] += len(idx) - 1 if len(idx) > 1 else 0
@@ -186,6 +189,8 @@ def main() -> None:
             if text_key(r["text"]) in known or r["category"] not in level:
                 continue
             known.add(text_key(r["text"]))
+            if name == "wikipedia.jsonl" and listed.get(title_key(r["article"])) != r["category"]:
+                continue                         # the list changed since it was fetched
             if name == "wikipedia.jsonl":        # the form 12_by_article.py groups by article
                 r = {"text": r["text"], "category": r["category"], "lang": r["lang"], "source": "wikipedia",
                      "article_title": r["source_article"], "gathered": "territory_articles.txt"}
@@ -216,9 +221,12 @@ def main() -> None:
     left = Counter(r["category"] for r in kept + new if text_key(r["text"]) not in in_test)
     in_test -= {text_key(r["text"]) for r in kept + new if not left[r["category"]]}     # nothing to learn it from
     # a whole concept is on one side, whoever it belongs to
+    tested = Counter(concept(r) for r in kept + new if text_key(r["text"]) in in_test)
+    trained = Counter(concept(r) for r in kept + new if text_key(r["text"]) not in in_test)
+    stray = {c for c in tested if c and trained[c] > tested[c]}       # a few shared sentences of a training article
+    in_test -= {text_key(r["text"]) for r in kept + new if concept(r) in stray}
     test_concepts = {concept(r) for r in kept + new if text_key(r["text"]) in in_test} - {None}
-    train_concepts = Counter(concept(r) for r in kept + new if text_key(r["text"]) not in in_test)
-    split = {c for c in test_concepts if train_concepts[c]}
+    split = {c for c in test_concepts if trained[c]}
     moved = 0
     final: List[dict] = []
     final_rows: List[int] = []
